@@ -1,4 +1,4 @@
-import { FC, Fragment, useEffect, useState } from 'react';
+import { FC, Fragment, useEffect, useState, useContext } from 'react';
 import Rightsidebar from './rightsidebar';
 import Switcher from './switcher';
 import { imagesData } from '../../common/commonimages';
@@ -10,10 +10,19 @@ import { ThemeChanger } from '../../common/redux/action';
 import { MENUITEMS, Menuitemtype } from '../../common/sidemenu';
 import { ShoppingcartData, appData, carttype, notificationsData, notificationtype } from '../../common/commondata';
 import SimpleBar from 'simplebar-react';
+import { AuthContext } from '../../auth/AuthProvider';
 
 interface ComponentProps { }
 
 const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
+  const auth = useContext(AuthContext);
+  const profile = auth?.profile;
+  const logout = auth?.logout;
+
+  const handleLogout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (logout) logout();
+  };
 
   function menuClose() {
     const theme = store.getState();
@@ -674,8 +683,8 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
                     <img src={imagesData('face2')} alt="img" width="32" height="32" className="rounded-circle" />
                   </div>
                   <div className="d-xl-block d-none">
-                    <p className="fw-semibold mb-0 lh-1">Ashton Cox</p>
-                    <span className="op-7 fw-normal d-block fs-11">Web Developer</span>
+                    <p className="fw-semibold mb-0 lh-1">{profile?.nombre || "Usuario"}</p>
+                    <span className="op-7 fw-normal d-block fs-11">{profile?.roles?.[0] || "Rol"}</span>
                   </div>
                 </div>
               </Dropdown.Toggle>
@@ -685,7 +694,7 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
                 <Link to={`${import.meta.env.BASE_URL}pages/mail/mail/`} className='dropdown-item d-flex border-bottom'><i className="far fa-envelope  fs-16 me-2 op-7"></i>Inbox <span className="badge bg-success-transparent ms-auto">25</span></Link>
                 <Link to={`${import.meta.env.BASE_URL}pages/mail/chat/`} className='dropdown-item d-flex border-bottom'><i className="far fa-comment-dots fs-16 me-2 op-7"></i>Messages</Link>
                 <Link to={`${import.meta.env.BASE_URL}pages/settings/`} className='dropdown-item d-flex border-bottom'><i className="far fa-sun fs-16 me-2 op-7"></i>Settings</Link>
-                <Link to={`${import.meta.env.BASE_URL}firebase/firebasesignin`} className='dropdown-item d-flex'><i className="far fa-arrow-alt-circle-left fs-16 me-2 op-7"></i>Sign Out</Link>
+                <Link to="#" onClick={handleLogout} className='dropdown-item d-flex'><i className="far fa-arrow-alt-circle-left fs-16 me-2 op-7"></i>Sign Out</Link>
               </Dropdown.Menu>
             </Dropdown>
 
