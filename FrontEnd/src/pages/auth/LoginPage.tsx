@@ -55,10 +55,10 @@ export default function LoginPage() {
         {/* Logo & Title */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/10 rounded-2xl mb-3 backdrop-blur-sm">
-            <Coffee className="w-7 h-7 text-coffee-300" />
+            <Coffee className="w-7 h-7 text-amber-200" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-1">Global Café</h1>
-          <p className="text-coffee-300">Sistema Integral de Gestión</p>
+          <p className="text-amber-100">Sistema Integral de Gestión</p>
         </div>
 
         {/* Login Card */}
@@ -76,7 +76,7 @@ export default function LoginPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="h-11 px-4 bg-white/10 border border-white/20 rounded-xl text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-coffee-400 focus:border-transparent transition-all"
+                className="h-11 px-4 bg-white border border-transparent rounded-xl text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all"
                 placeholder="Ingrese su usuario"
                 autoComplete="username"
               />
@@ -91,15 +91,15 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 px-4 bg-white/10 border border-white/20 rounded-l-xl text-white text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-coffee-400 focus:border-transparent transition-all border-r-0"
+                  className="h-11 px-4 bg-white border border-transparent rounded-l-xl text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all border-r-0"
                   style={{ height: '44px' }}
                   placeholder="Ingrese su contraseña"
                   autoComplete="current-password"
                 />
                 <InputGroup.Text
                   onClick={() => setShowPassword(!showPassword)}
-                  className="h-11 px-4 bg-white/10 border border-white/20 rounded-l-xl text-coffee-300 text-sm placeholder:text-white/40 focus:outline-none focus:ring-2 focus:ring-coffee-400 focus:border-transparent transition-all border-r-0"
-                  style={{ height: '44px' }}
+                  className="h-11 px-4 bg-white border border-transparent rounded-r-xl text-gray-500 cursor-pointer"
+                  style={{ height: '44px', borderLeft: 'none' }}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </InputGroup.Text>
