@@ -12,7 +12,7 @@ import {
   Loader2
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Card } from 'react-bootstrap';
+import { Container, Row, Col, Card } from 'react-bootstrap';
 import { moduleColors } from "../../config/colors.config";
 import { getResumenHoyApi } from "../../api/reception.api";
 import toast from "react-hot-toast";
@@ -39,10 +39,16 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[80vh]">
-        <Loader2 className="w-10 h-10 animate-spin text-coffee-600 mb-4" />
-        <span className="text-lg font-medium text-neutral-600">Cargando métricas operativas...</span>
-      </div>
+      <Container fluid className="d-flex flex-column align-items-center justify-content-center" style={{ minHeight: '80vh' }}>
+        <Loader2 size={40} className="text-primary mb-3" style={{ animation: 'spin 1s linear infinite' }} />
+        <span className="fs-5 fw-medium text-muted">Cargando métricas operativas...</span>
+        <style>{`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </Container>
     );
   }
 
@@ -70,113 +76,159 @@ export default function DashboardPage() {
   })) || [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Dashboard</h1>
-        <p className="text-neutral-600">Vista general del sistema Global Café</p>
+    <Container fluid className="py-4">
+      <div className="mb-4">
+        <h1 className="h3 fw-bold mb-1">Dashboard</h1>
+        <p className="text-muted mb-0">Vista general del sistema Global Café</p>
       </div>
 
-      <div className="grid grid-cols-4 lg:grid-cols-4 lg:grid-cols-4 gap-8">
+      {/* Cards de estadísticas principales */}
+      <Row className="g-4 mb-4">
         {stats.map((stat) => {
           const Icon = stat.icon;
           const colors = moduleColors[stat.module as keyof typeof moduleColors];
           return (
-            <Card key={stat.title} className="relative overflow-hidden border-0 shadow-lg">
-              <div className="absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 rounded-full opacity-10" style={{ backgroundColor: colors.border }} />
-              <Card.Body className="p-5">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm text-neutral-600 mb-1">{stat.title}</p>
-                    <p className="text-3xl font-bold text-neutral-900 mb-0">{stat.value}</p>
-                    <p className={`text-sm mt-1 mb-0 ${stat.changeType === "positive" ? "text-green-600" : "text-neutral-500"}`}>{stat.change}</p>
+            <Col key={stat.title} xs={12} sm={6} lg={3}>
+              <Card className="border-0 shadow-sm h-100">
+                <Card.Body className="p-4">
+                  <div className="d-flex align-items-start justify-content-between">
+                    <div className="flex-grow-1">
+                      <p className="text-muted small mb-2">{stat.title}</p>
+                      <h2 className="h3 fw-bold mb-1">{stat.value}</h2>
+                      <p className={`small mb-0 ${stat.changeType === "positive" ? "text-success" : "text-muted"}`}>
+                        {stat.change}
+                      </p>
+                    </div>
+                    <div 
+                      className="rounded-3 p-3 d-flex align-items-center justify-content-center" 
+                      style={{ backgroundColor: colors.bg, minWidth: '56px', minHeight: '56px' }}
+                    >
+                      <Icon size={24} style={{ color: colors.icon }} />
+                    </div>
                   </div>
-                  <div className="p-3 rounded-xl" style={{ backgroundColor: colors.bg }}>
-                    <Icon className="w-6 h-6" style={{ color: colors.icon }} />
-                  </div>
-                </div>
-              </Card.Body>
-            </Card>
+                </Card.Body>
+              </Card>
+            </Col>
           );
         })}
-      </div>
+      </Row>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-0 shadow-sm">
-          <Card.Header className="bg-transparent py-3">
-            <div className="flex items-center justify-between">
-              <Card.Title className="mb-0 fs-5 font-bold">Tareas Pendientes</Card.Title>
-              <span className="text-sm text-neutral-500">{pendingTasks.length} tareas</span>
-            </div>
-          </Card.Header>
-          <Card.Body>
-            {pendingTasks.length === 0 ? (
-              <div className="py-8 text-center text-neutral-500">
-                <CheckCircle className="w-8 h-8 mx-auto mb-2 text-emerald-500 opacity-50" />
-                <p>No hay tareas pendientes en Recepción</p>
+      {/* Tareas Pendientes y Actividad Reciente */}
+      <Row className="g-4 mb-4">
+        <Col xs={12} lg={8}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-white border-bottom py-3">
+              <div className="d-flex align-items-center justify-content-between">
+                <h5 className="mb-0 fw-bold">Tareas Pendientes</h5>
+                <span className="badge bg-secondary">{pendingTasks.length} tareas</span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingTasks.map((task) => {
-                  const colors = moduleColors[task.module as keyof typeof moduleColors];
-                  return (
-                    <Link to={task.link} key={task.id} className="flex items-center gap-4 p-3 rounded-xl bg-neutral-50 hover:bg-neutral-100 transition-colors cursor-pointer text-decoration-none">
-                      <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: colors.border }} />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 truncate mb-0">{task.task}</p>
-                      </div>
-                      {task.status === "urgente" && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-red-600 bg-red-50 px-2 py-1 rounded-full">
-                          <AlertCircle className="w-3 h-3" /> Urgente
-                        </span>
-                      )}
-                      {(task.status === "en_proceso" || task.status === "pendiente") && (
-                        <span className={`flex items-center gap-1 text-xs font-medium ${task.status === 'en_proceso' ? 'text-blue-600 bg-blue-50' : 'text-amber-600 bg-amber-50'} px-2 py-1 rounded-full`}>
-                          <Clock className="w-3 h-3" /> {task.status === "en_proceso" ? "En proceso" : "Pendiente"}
-                        </span>
-                      )}
-                      <ArrowRight className="w-4 h-4 text-neutral-400" />
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
+            </Card.Header>
+            <Card.Body>
+              {pendingTasks.length === 0 ? (
+                <div className="text-center py-5">
+                  <CheckCircle size={48} className="text-success mb-3 opacity-50" />
+                  <p className="text-muted mb-0">No hay tareas pendientes en Recepción</p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {pendingTasks.map((task) => {
+                    const colors = moduleColors[task.module as keyof typeof moduleColors];
+                    return (
+                      <Link 
+                        to={task.link} 
+                        key={task.id} 
+                        className="d-flex align-items-center gap-3 p-3 rounded-3 bg-light text-decoration-none"
+                        style={{ transition: 'all 0.2s' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#f8f9fa'}
+                      >
+                        <div 
+                          className="rounded-circle" 
+                          style={{ 
+                            width: '8px', 
+                            height: '8px', 
+                            backgroundColor: colors.border,
+                            flexShrink: 0
+                          }}
+                        />
+                        <div className="flex-grow-1 text-truncate">
+                          <p className="small fw-medium text-dark mb-0">{task.task}</p>
+                        </div>
+                        {task.status === "urgente" && (
+                          <span className="badge bg-danger d-flex align-items-center gap-1">
+                            <AlertCircle size={12} /> Urgente
+                          </span>
+                        )}
+                        {task.status === "en_proceso" && (
+                          <span className="badge bg-primary d-flex align-items-center gap-1">
+                            <Clock size={12} /> En proceso
+                          </span>
+                        )}
+                        {task.status === "pendiente" && (
+                          <span className="badge bg-warning d-flex align-items-center gap-1">
+                            <Clock size={12} /> Pendiente
+                          </span>
+                        )}
+                        <ArrowRight size={16} className="text-muted" style={{ flexShrink: 0 }} />
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
 
-        <Card className="border-0 shadow-sm">
-          <Card.Header className="bg-transparent py-3">
-            <Card.Title className="mb-0 fs-5 font-bold">Actividad Reciente</Card.Title>
-          </Card.Header>
-          <Card.Body>
-            {recentActivity.length === 0 ? (
-              <div className="py-8 text-center text-neutral-500">
-                <p className="mb-0">No hay actividad reciente hoy.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {recentActivity.map((activity) => {
-                  const colors = moduleColors[activity.module as keyof typeof moduleColors];
-                  return (
-                    <div key={activity.id} className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: colors.bg }}>
-                        <CheckCircle className="w-4 h-4" style={{ color: colors.icon }} />
+        <Col xs={12} lg={4}>
+          <Card className="border-0 shadow-sm h-100">
+            <Card.Header className="bg-white border-bottom py-3">
+              <h5 className="mb-0 fw-bold">Actividad Reciente</h5>
+            </Card.Header>
+            <Card.Body>
+              {recentActivity.length === 0 ? (
+                <div className="text-center py-5">
+                  <p className="text-muted mb-0">No hay actividad reciente hoy.</p>
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {recentActivity.map((activity) => {
+                    const colors = moduleColors[activity.module as keyof typeof moduleColors];
+                    return (
+                      <div key={activity.id} className="d-flex gap-3">
+                        <div 
+                          className="rounded-circle d-flex align-items-center justify-content-center"
+                          style={{ 
+                            width: '40px', 
+                            height: '40px', 
+                            backgroundColor: colors.bg,
+                            flexShrink: 0
+                          }}
+                        >
+                          <CheckCircle size={20} style={{ color: colors.icon }} />
+                        </div>
+                        <div className="flex-grow-1">
+                          <p className="small fw-medium mb-1">{activity.action}</p>
+                          <p className="small text-muted mb-0" style={{ fontSize: '0.75rem' }}>
+                            {activity.detail}
+                          </p>
+                          <p className="small text-muted mb-0" style={{ fontSize: '0.7rem' }}>
+                            {activity.time}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-neutral-900 mb-0">{activity.action}</p>
-                        <p className="text-xs text-neutral-500 mb-0">{activity.detail} • {activity.time}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </Card.Body>
-        </Card>
-      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
-      <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-4">Acceso Rápido</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      {/* Acceso Rápido */}
+      <div className="mb-4">
+        <h5 className="fw-semibold mb-3">Acceso Rápido</h5>
+        <Row className="g-3">
           {[
             { name: "Recepción", to: "/recepcion/remision", module: "recepcion", icon: Package },
             { name: "Comercial", to: "/comercial/contratos", module: "comercial", icon: TrendingUp },
@@ -187,14 +239,32 @@ export default function DashboardPage() {
             const colors = moduleColors[item.module as keyof typeof moduleColors];
             const Icon = item.icon;
             return (
-              <Link key={item.name} to={item.to} className="p-4 rounded-2xl border-2 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-decoration-none" style={{ backgroundColor: colors.bg, borderColor: colors.border }}>
-                <Icon className="w-8 h-8 mb-2" style={{ color: colors.icon }} />
-                <p className="font-medium mb-0" style={{ color: colors.text }}>{item.name}</p>
-              </Link>
+              <Col key={item.name} xs={6} sm={4} md={4} lg={2} className="col-6">
+                <Link 
+                  to={item.to} 
+                  className="d-block p-4 rounded-3 border border-2 text-decoration-none h-100"
+                  style={{ 
+                    backgroundColor: colors.bg, 
+                    borderColor: colors.border,
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <Icon size={32} className="mb-2" style={{ color: colors.icon }} />
+                  <p className="fw-medium mb-0" style={{ color: colors.text }}>{item.name}</p>
+                </Link>
+              </Col>
             );
           })}
-        </div>
+        </Row>
       </div>
-    </div>
+    </Container>
   );
 }
