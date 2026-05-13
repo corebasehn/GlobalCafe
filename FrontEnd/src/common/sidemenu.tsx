@@ -80,242 +80,242 @@ export interface Menuitemtype {
 
 
 export const MENUITEMS: Menuitemtype[] = [
-  { menutitle: "MAIN" },
+  // { menutitle: "MAIN" },
 
-  {
-    title: "Dashboards", icon: dashboardsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}dashboard/dashboard`, type: "link", active: false, selected: false, dirchange: false, title: "Dashboard-1" },
-      { path: `${import.meta.env.BASE_URL}dashboard/dashboard2`, type: "link", active: false, selected: false, dirchange: false, title: "Dashboard-2" },
-      { path: `${import.meta.env.BASE_URL}dashboard/dashboard3`, type: "link", active: false, selected: false, dirchange: false, title: "Dashboard-3" },
-    ]
-  },
+  // {
+  //   title: "Dashboards", icon: dashboardsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}dashboard/dashboard`, type: "link", active: false, selected: false, dirchange: false, title: "Dashboard-1" },
+  //     { path: `${import.meta.env.BASE_URL}dashboard/dashboard2`, type: "link", active: false, selected: false, dirchange: false, title: "Dashboard-2" },
+  //     { path: `${import.meta.env.BASE_URL}dashboard/dashboard3`, type: "link", active: false, selected: false, dirchange: false, title: "Dashboard-3" },
+  //   ]
+  // },
 
-  { menutitle: "WEB APPS" },
+  // { menutitle: "WEB APPS" },
 
-  {
-    title: "Apps", icon: appsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}app/fullcalendar`, type: "link", active: false, selected: false, dirchange: false, title: "Full Calendar" },
-      { path: `${import.meta.env.BASE_URL}app/contacts`, type: "link", active: false, selected: false, dirchange: false, title: "Contacts" },
-      { path: `${import.meta.env.BASE_URL}app/gallery`, type: "link", active: false, selected: false, dirchange: false, title: "Gallery" },
-      { path: `${import.meta.env.BASE_URL}app/sweetalert`, type: "link", active: false, selected: false, dirchange: false, title: "Sweet Alerts" },
-      { path: `${import.meta.env.BASE_URL}app/notification`, type: "link", active: false, selected: false, dirchange: false, title: "Notification" },
-      { path: `${import.meta.env.BASE_URL}app/widgetnotification`, type: "link", active: false, selected: false, dirchange: false, title: "Widget-notification" },
-      { path: `${import.meta.env.BASE_URL}app/treeview`, type: "link", active: false, selected: false, dirchange: false, title: "Treeview" },
-      { path: `${import.meta.env.BASE_URL}app/filemanager`, type: "link", active: false, selected: false, dirchange: false, title: "File-manager" },
-      { path: `${import.meta.env.BASE_URL}app/filemanager1`, type: "link", active: false, selected: false, dirchange: false, title: "File-manager1" },
-      { path: `${import.meta.env.BASE_URL}app/filedetails`, type: "link", active: false, selected: false, dirchange: false, title: "File-details" },
+  // {
+  //   title: "Apps", icon: appsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}app/fullcalendar`, type: "link", active: false, selected: false, dirchange: false, title: "Full Calendar" },
+  //     { path: `${import.meta.env.BASE_URL}app/contacts`, type: "link", active: false, selected: false, dirchange: false, title: "Contacts" },
+  //     { path: `${import.meta.env.BASE_URL}app/gallery`, type: "link", active: false, selected: false, dirchange: false, title: "Gallery" },
+  //     { path: `${import.meta.env.BASE_URL}app/sweetalert`, type: "link", active: false, selected: false, dirchange: false, title: "Sweet Alerts" },
+  //     { path: `${import.meta.env.BASE_URL}app/notification`, type: "link", active: false, selected: false, dirchange: false, title: "Notification" },
+  //     { path: `${import.meta.env.BASE_URL}app/widgetnotification`, type: "link", active: false, selected: false, dirchange: false, title: "Widget-notification" },
+  //     { path: `${import.meta.env.BASE_URL}app/treeview`, type: "link", active: false, selected: false, dirchange: false, title: "Treeview" },
+  //     { path: `${import.meta.env.BASE_URL}app/filemanager`, type: "link", active: false, selected: false, dirchange: false, title: "File-manager" },
+  //     { path: `${import.meta.env.BASE_URL}app/filemanager1`, type: "link", active: false, selected: false, dirchange: false, title: "File-manager1" },
+  //     { path: `${import.meta.env.BASE_URL}app/filedetails`, type: "link", active: false, selected: false, dirchange: false, title: "File-details" },
 
-    ],
-  },
+  //   ],
+  // },
 
-  {
-    title: "Elements", icon: elementsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}elements/alerts`, type: "link", active: false, selected: false, dirchange: false, title: "Alerts" },
-      { path: `${import.meta.env.BASE_URL}elements/breadcrumbs`, type: "link", active: false, selected: false, dirchange: false, title: "Breadcrumbs" },
-      { path: `${import.meta.env.BASE_URL}elements/buttongroups`, type: "link", active: false, selected: false, dirchange: false, title: "Button Group" },
-      { path: `${import.meta.env.BASE_URL}elements/buttons`, type: "link", active: false, selected: false, dirchange: false, title: "Buttons" },
-      { path: `${import.meta.env.BASE_URL}elements/badge`, type: "link", active: false, selected: false, dirchange: false, title: "Badges" },
-      { path: `${import.meta.env.BASE_URL}elements/cards`, type: "link", active: false, selected: false, dirchange: false, title: "Cards" },
-      { path: `${import.meta.env.BASE_URL}elements/dropdown`, type: "link", active: false, selected: false, dirchange: false, title: "Dropdown" },
-      { path: `${import.meta.env.BASE_URL}elements/images`, type: "link", active: false, selected: false, dirchange: false, title: "Images & Figures" },
-      { path: `${import.meta.env.BASE_URL}elements/listgroup`, type: "link", active: false, selected: false, dirchange: false, title: "List Group" },
-      { path: `${import.meta.env.BASE_URL}elements/navtabs`, type: "link", active: false, selected: false, dirchange: false, title: "Navs & Tabs" },
-      { path: `${import.meta.env.BASE_URL}elements/mediaObject`, type: "link", active: false, selected: false, dirchange: false, title: "Media Object" },
-      { path: `${import.meta.env.BASE_URL}elements/pagination`, type: "link", active: false, selected: false, dirchange: false, title: "Pagination" },
-      { path: `${import.meta.env.BASE_URL}elements/popover`, type: "link", active: false, selected: false, dirchange: false, title: "Popovers" },
-      { path: `${import.meta.env.BASE_URL}elements/progress`, type: "link", active: false, selected: false, dirchange: false, title: "Progress" },
-      { path: `${import.meta.env.BASE_URL}elements/spinners`, type: "link", active: false, selected: false, dirchange: false, title: "Spinners" },
-      { path: `${import.meta.env.BASE_URL}elements/tooltip`, type: "link", active: false, selected: false, dirchange: false, title: "Tooltips" },
-      { path: `${import.meta.env.BASE_URL}elements/toast`, type: "link", active: false, selected: false, dirchange: false, title: "Toasts" },
-      { path: `${import.meta.env.BASE_URL}elements/tags`, type: "link", active: false, selected: false, dirchange: false, title: "Tags" },
-    ],
-  },
+  // {
+  //   title: "Elements", icon: elementsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}elements/alerts`, type: "link", active: false, selected: false, dirchange: false, title: "Alerts" },
+  //     { path: `${import.meta.env.BASE_URL}elements/breadcrumbs`, type: "link", active: false, selected: false, dirchange: false, title: "Breadcrumbs" },
+  //     { path: `${import.meta.env.BASE_URL}elements/buttongroups`, type: "link", active: false, selected: false, dirchange: false, title: "Button Group" },
+  //     { path: `${import.meta.env.BASE_URL}elements/buttons`, type: "link", active: false, selected: false, dirchange: false, title: "Buttons" },
+  //     { path: `${import.meta.env.BASE_URL}elements/badge`, type: "link", active: false, selected: false, dirchange: false, title: "Badges" },
+  //     { path: `${import.meta.env.BASE_URL}elements/cards`, type: "link", active: false, selected: false, dirchange: false, title: "Cards" },
+  //     { path: `${import.meta.env.BASE_URL}elements/dropdown`, type: "link", active: false, selected: false, dirchange: false, title: "Dropdown" },
+  //     { path: `${import.meta.env.BASE_URL}elements/images`, type: "link", active: false, selected: false, dirchange: false, title: "Images & Figures" },
+  //     { path: `${import.meta.env.BASE_URL}elements/listgroup`, type: "link", active: false, selected: false, dirchange: false, title: "List Group" },
+  //     { path: `${import.meta.env.BASE_URL}elements/navtabs`, type: "link", active: false, selected: false, dirchange: false, title: "Navs & Tabs" },
+  //     { path: `${import.meta.env.BASE_URL}elements/mediaObject`, type: "link", active: false, selected: false, dirchange: false, title: "Media Object" },
+  //     { path: `${import.meta.env.BASE_URL}elements/pagination`, type: "link", active: false, selected: false, dirchange: false, title: "Pagination" },
+  //     { path: `${import.meta.env.BASE_URL}elements/popover`, type: "link", active: false, selected: false, dirchange: false, title: "Popovers" },
+  //     { path: `${import.meta.env.BASE_URL}elements/progress`, type: "link", active: false, selected: false, dirchange: false, title: "Progress" },
+  //     { path: `${import.meta.env.BASE_URL}elements/spinners`, type: "link", active: false, selected: false, dirchange: false, title: "Spinners" },
+  //     { path: `${import.meta.env.BASE_URL}elements/tooltip`, type: "link", active: false, selected: false, dirchange: false, title: "Tooltips" },
+  //     { path: `${import.meta.env.BASE_URL}elements/toast`, type: "link", active: false, selected: false, dirchange: false, title: "Toasts" },
+  //     { path: `${import.meta.env.BASE_URL}elements/tags`, type: "link", active: false, selected: false, dirchange: false, title: "Tags" },
+  //   ],
+  // },
 
-  {
-    title: "Advanced UI", icon: advanceduisvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}advancedui/accordion`, type: "link", active: false, selected: false, dirchange: false, title: "Accordions" },
-      { path: `${import.meta.env.BASE_URL}advancedui/carousel`, type: "link", active: false, selected: false, dirchange: false, title: "Carousel" },
-      { path: `${import.meta.env.BASE_URL}advancedui/draggable`, type: "link", active: false, selected: false, dirchange: false, title: "Draggable Card" },
-      { path: `${import.meta.env.BASE_URL}advancedui/modals`, type: "link", active: false, selected: false, dirchange: false, title: "Modal & closes" },
-      { path: `${import.meta.env.BASE_URL}advancedui/navbar`, type: "link", active: false, selected: false, dirchange: false, title: "Navbar" },
-      { path: `${import.meta.env.BASE_URL}advancedui/offcanvas`, type: "link", active: false, selected: false, dirchange: false, title: "Offcanvas" },
-      { path: `${import.meta.env.BASE_URL}advancedui/placeholder`, type: "link", active: false, selected: false, dirchange: false, title: "placeholder" },
-      { path: `${import.meta.env.BASE_URL}advancedui/ratings`, type: "link", active: false, selected: false, dirchange: false, title: "Ratings" },
-      { path: `${import.meta.env.BASE_URL}advancedui/swiperjs`, type: "link", active: false, selected: false, dirchange: false, title: "Swiper JS" },
-      { path: `${import.meta.env.BASE_URL}advancedui/timeline`, type: "link", active: false, selected: false, dirchange: false, title: "Timeline" },
-      { path: `${import.meta.env.BASE_URL}advancedui/search`, type: "link", active: false, selected: false, dirchange: false, title: "Search" },
-      { path: `${import.meta.env.BASE_URL}advancedui/userlist`, type: "link", active: false, selected: false, dirchange: false, title: "Userlist" },
-      { path: `${import.meta.env.BASE_URL}advancedui/blog`, type: "link", active: false, selected: false, dirchange: false, title: "Blog" },
-      { path: `${import.meta.env.BASE_URL}advancedui/blogdetails`, type: "link", active: false, selected: false, dirchange: false, title: "Blog-details" },
-      { path: `${import.meta.env.BASE_URL}advancedui/editPost`, type: "link", active: false, selected: false, dirchange: false, title: "Edit-post" },
-    ],
-  },
+  // {
+  //   title: "Advanced UI", icon: advanceduisvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}advancedui/accordion`, type: "link", active: false, selected: false, dirchange: false, title: "Accordions" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/carousel`, type: "link", active: false, selected: false, dirchange: false, title: "Carousel" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/draggable`, type: "link", active: false, selected: false, dirchange: false, title: "Draggable Card" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/modals`, type: "link", active: false, selected: false, dirchange: false, title: "Modal & closes" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/navbar`, type: "link", active: false, selected: false, dirchange: false, title: "Navbar" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/offcanvas`, type: "link", active: false, selected: false, dirchange: false, title: "Offcanvas" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/placeholder`, type: "link", active: false, selected: false, dirchange: false, title: "placeholder" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/ratings`, type: "link", active: false, selected: false, dirchange: false, title: "Ratings" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/swiperjs`, type: "link", active: false, selected: false, dirchange: false, title: "Swiper JS" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/timeline`, type: "link", active: false, selected: false, dirchange: false, title: "Timeline" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/search`, type: "link", active: false, selected: false, dirchange: false, title: "Search" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/userlist`, type: "link", active: false, selected: false, dirchange: false, title: "Userlist" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/blog`, type: "link", active: false, selected: false, dirchange: false, title: "Blog" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/blogdetails`, type: "link", active: false, selected: false, dirchange: false, title: "Blog-details" },
+  //     { path: `${import.meta.env.BASE_URL}advancedui/editPost`, type: "link", active: false, selected: false, dirchange: false, title: "Edit-post" },
+  //   ],
+  // },
 
 
-  {
-    menutitle: "PAGES",
-  },
-  {
-    title: "Pages", icon: pagessvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      {
-        title: "Authentication", type: "sub", active: false, selected: false, dirchange: false, children: [
-          { path: `${import.meta.env.BASE_URL}pages/authentication/signin`, type: "link", active: false, selected: false, dirchange: false, title: "Sign In" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/signup`, type: "link", active: false, selected: false, dirchange: false, title: "Sign Up" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/forgotpassword`, type: "link", active: false, selected: false, dirchange: false, title: "Forgot Password" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/resetpassword`, type: "link", active: false, selected: false, dirchange: false, title: "Reset Password" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/lockscreen`, type: "link", active: false, selected: false, dirchange: false, title: "Lockscreen" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/underconstruction`, type: "link", active: false, selected: false, dirchange: false, title: "UnderConstruction" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/404error`, type: "link", active: false, selected: false, dirchange: false, title: "404 Error" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/500error`, type: "link", active: false, selected: false, dirchange: false, title: "500 Error" },
-          { path: `${import.meta.env.BASE_URL}pages/authentication/501error`, type: "link", active: false, selected: false, dirchange: false, title: "501 Error" },
-        ]
-      },
-      {
-        title: "E-Commerce", type: "sub", active: false, selected: false, dirchange: false, children: [
-          { path: `${import.meta.env.BASE_URL}pages/ecommerce/shop`, type: "link", active: false, selected: false, dirchange: false, title: "Shop" },
-          { path: `${import.meta.env.BASE_URL}pages/ecommerce/productdetails`, type: "link", active: false, selected: false, dirchange: false, title: "Product Details" },
-          { path: `${import.meta.env.BASE_URL}pages/ecommerce/cart`, type: "link", active: false, selected: false, dirchange: false, title: "Cart" },
-          { path: `${import.meta.env.BASE_URL}pages/ecommerce/checkout`, type: "link", active: false, selected: false, dirchange: false, title: "Checkout" },
-          { path: `${import.meta.env.BASE_URL}pages/ecommerce/wishlist`, type: "link", active: false, selected: false, dirchange: false, title: "Wish-list" },
-        ]
-      },
-      { path: `${import.meta.env.BASE_URL}pages/profile`, type: "link", active: false, selected: false, dirchange: false, title: "Profile" },
-      { path: `${import.meta.env.BASE_URL}pages/notificationslist`, type: "link", active: false, selected: false, dirchange: false, title: "Notification-list" },
-      { path: `${import.meta.env.BASE_URL}pages/aboutus`, type: "link", active: false, selected: false, dirchange: false, title: "About Us" },
-      { path: `${import.meta.env.BASE_URL}pages/settings`, type: "link", active: false, selected: false, dirchange: false, title: "Settings" },
-      {
-        title: "Mail", type: "sub", active: false, selected: false, dirchange: false, children: [
-          { path: `${import.meta.env.BASE_URL}pages/mail/mail`, type: "link", active: false, selected: false, dirchange: false, title: "Mail" },
-          { path: `${import.meta.env.BASE_URL}pages/mail/mailcompose`, type: "link", active: false, selected: false, dirchange: false, title: "Mail Compose" },
-          { path: `${import.meta.env.BASE_URL}pages/mail/readmail`, type: "link", active: false, selected: false, dirchange: false, title: "Read-Mail" },
-          { path: `${import.meta.env.BASE_URL}pages/mail/mailsettings`, type: "link", active: false, selected: false, dirchange: false, title: "Mail-Settings" },
-          { path: `${import.meta.env.BASE_URL}pages/mail/chat`, type: "link", active: false, selected: false, dirchange: false, title: "Chat" },
-        ]
-      },
-      { path: `${import.meta.env.BASE_URL}pages/invoice`, type: "link", active: false, selected: false, dirchange: false, title: "Invoice" },
-      { path: `${import.meta.env.BASE_URL}pages/pricing`, type: "link", active: false, selected: false, dirchange: false, title: "Pricing" },
-      { path: `${import.meta.env.BASE_URL}pages/todotask`, type: "link", active: false, selected: false, dirchange: false, title: "Todotask" },
-      { path: `${import.meta.env.BASE_URL}pages/faqs`, type: "link", active: false, selected: false, dirchange: false, title: "FAQS" },
-      { path: `${import.meta.env.BASE_URL}pages/emptypage`, type: "link", active: false, selected: false, dirchange: false, title: "Empty Page" },
-    ],
-  },
-  {
-    title: "Utilities", icon: utilitysvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}utilities/avatars`, type: "link", active: false, selected: false, dirchange: false, title: "Avatars" },
-      { path: `${import.meta.env.BASE_URL}utilities/borders`, type: "link", active: false, selected: false, dirchange: false, title: "Borders" },
-      { path: `${import.meta.env.BASE_URL}utilities/breakpoints`, type: "link", active: false, selected: false, dirchange: false, title: "Break points" },
-      { path: `${import.meta.env.BASE_URL}utilities/colors`, type: "link", active: false, selected: false, dirchange: false, title: "colors" },
-      { path: `${import.meta.env.BASE_URL}utilities/columns`, type: "link", active: false, selected: false, dirchange: false, title: "Columns" },
-      { path: `${import.meta.env.BASE_URL}utilities/flex`, type: "link", active: false, selected: false, dirchange: false, title: "Flex" },
-      { path: `${import.meta.env.BASE_URL}utilities/gutters`, type: "link", active: false, selected: false, dirchange: false, title: "Gutters" },
-      { path: `${import.meta.env.BASE_URL}utilities/helpers`, type: "link", active: false, selected: false, dirchange: false, title: "Helpers" },
-      { path: `${import.meta.env.BASE_URL}utilities/position`, type: "link", active: false, selected: false, dirchange: false, title: "Position" },
-      { path: `${import.meta.env.BASE_URL}utilities/additionalcontent`, type: "link", active: false, selected: false, dirchange: false, title: "Additional Content" },
-    ],
-  },
-  {
-    menutitle: "GENERAL",
-  },
-  {
-    path: `${import.meta.env.BASE_URL}icons`, title: "Icons", icon: iconsvg, type: "link", active: false, selected: false, dirchange: false
-  },
-  {
-    title: "Charts", icon: chartsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  // {
+  //   menutitle: "PAGES",
+  // },
+  // {
+  //   title: "Pages", icon: pagessvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     {
+  //       title: "Authentication", type: "sub", active: false, selected: false, dirchange: false, children: [
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/signin`, type: "link", active: false, selected: false, dirchange: false, title: "Sign In" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/signup`, type: "link", active: false, selected: false, dirchange: false, title: "Sign Up" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/forgotpassword`, type: "link", active: false, selected: false, dirchange: false, title: "Forgot Password" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/resetpassword`, type: "link", active: false, selected: false, dirchange: false, title: "Reset Password" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/lockscreen`, type: "link", active: false, selected: false, dirchange: false, title: "Lockscreen" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/underconstruction`, type: "link", active: false, selected: false, dirchange: false, title: "UnderConstruction" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/404error`, type: "link", active: false, selected: false, dirchange: false, title: "404 Error" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/500error`, type: "link", active: false, selected: false, dirchange: false, title: "500 Error" },
+  //         { path: `${import.meta.env.BASE_URL}pages/authentication/501error`, type: "link", active: false, selected: false, dirchange: false, title: "501 Error" },
+  //       ]
+  //     },
+  //     {
+  //       title: "E-Commerce", type: "sub", active: false, selected: false, dirchange: false, children: [
+  //         { path: `${import.meta.env.BASE_URL}pages/ecommerce/shop`, type: "link", active: false, selected: false, dirchange: false, title: "Shop" },
+  //         { path: `${import.meta.env.BASE_URL}pages/ecommerce/productdetails`, type: "link", active: false, selected: false, dirchange: false, title: "Product Details" },
+  //         { path: `${import.meta.env.BASE_URL}pages/ecommerce/cart`, type: "link", active: false, selected: false, dirchange: false, title: "Cart" },
+  //         { path: `${import.meta.env.BASE_URL}pages/ecommerce/checkout`, type: "link", active: false, selected: false, dirchange: false, title: "Checkout" },
+  //         { path: `${import.meta.env.BASE_URL}pages/ecommerce/wishlist`, type: "link", active: false, selected: false, dirchange: false, title: "Wish-list" },
+  //       ]
+  //     },
+  //     { path: `${import.meta.env.BASE_URL}pages/profile`, type: "link", active: false, selected: false, dirchange: false, title: "Profile" },
+  //     { path: `${import.meta.env.BASE_URL}pages/notificationslist`, type: "link", active: false, selected: false, dirchange: false, title: "Notification-list" },
+  //     { path: `${import.meta.env.BASE_URL}pages/aboutus`, type: "link", active: false, selected: false, dirchange: false, title: "About Us" },
+  //     { path: `${import.meta.env.BASE_URL}pages/settings`, type: "link", active: false, selected: false, dirchange: false, title: "Settings" },
+  //     {
+  //       title: "Mail", type: "sub", active: false, selected: false, dirchange: false, children: [
+  //         { path: `${import.meta.env.BASE_URL}pages/mail/mail`, type: "link", active: false, selected: false, dirchange: false, title: "Mail" },
+  //         { path: `${import.meta.env.BASE_URL}pages/mail/mailcompose`, type: "link", active: false, selected: false, dirchange: false, title: "Mail Compose" },
+  //         { path: `${import.meta.env.BASE_URL}pages/mail/readmail`, type: "link", active: false, selected: false, dirchange: false, title: "Read-Mail" },
+  //         { path: `${import.meta.env.BASE_URL}pages/mail/mailsettings`, type: "link", active: false, selected: false, dirchange: false, title: "Mail-Settings" },
+  //         { path: `${import.meta.env.BASE_URL}pages/mail/chat`, type: "link", active: false, selected: false, dirchange: false, title: "Chat" },
+  //       ]
+  //     },
+  //     { path: `${import.meta.env.BASE_URL}pages/invoice`, type: "link", active: false, selected: false, dirchange: false, title: "Invoice" },
+  //     { path: `${import.meta.env.BASE_URL}pages/pricing`, type: "link", active: false, selected: false, dirchange: false, title: "Pricing" },
+  //     { path: `${import.meta.env.BASE_URL}pages/todotask`, type: "link", active: false, selected: false, dirchange: false, title: "Todotask" },
+  //     { path: `${import.meta.env.BASE_URL}pages/faqs`, type: "link", active: false, selected: false, dirchange: false, title: "FAQS" },
+  //     { path: `${import.meta.env.BASE_URL}pages/emptypage`, type: "link", active: false, selected: false, dirchange: false, title: "Empty Page" },
+  //   ],
+  // },
+  // {
+  //   title: "Utilities", icon: utilitysvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}utilities/avatars`, type: "link", active: false, selected: false, dirchange: false, title: "Avatars" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/borders`, type: "link", active: false, selected: false, dirchange: false, title: "Borders" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/breakpoints`, type: "link", active: false, selected: false, dirchange: false, title: "Break points" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/colors`, type: "link", active: false, selected: false, dirchange: false, title: "colors" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/columns`, type: "link", active: false, selected: false, dirchange: false, title: "Columns" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/flex`, type: "link", active: false, selected: false, dirchange: false, title: "Flex" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/gutters`, type: "link", active: false, selected: false, dirchange: false, title: "Gutters" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/helpers`, type: "link", active: false, selected: false, dirchange: false, title: "Helpers" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/position`, type: "link", active: false, selected: false, dirchange: false, title: "Position" },
+  //     { path: `${import.meta.env.BASE_URL}utilities/additionalcontent`, type: "link", active: false, selected: false, dirchange: false, title: "Additional Content" },
+  //   ],
+  // },
+  // {
+  //   menutitle: "GENERAL",
+  // },
+  // {
+  //   path: `${import.meta.env.BASE_URL}icons`, title: "Icons", icon: iconsvg, type: "link", active: false, selected: false, dirchange: false
+  // },
+  // {
+  //   title: "Charts", icon: chartsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
 
-      { title: "Apex-Charts", type: "sub", active: false, selected: false, dirchange: false, children: [
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/linechart`, type: "link", active: false, selected: false, dirchange: false, title: "Line Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/areachart`, type: "link", active: false, selected: false, dirchange: false, title: "Area Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/columnchart`, type: "link", active: false, selected: false, dirchange: false, title: "Column Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/barchart`, type: "link", active: false, selected: false, dirchange: false, title: "Bar Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/mixedchart`, type: "link", active: false, selected: false, dirchange: false, title: "Mixed Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/rangeareachart`, type: "link", active: false, selected: false, dirchange: false, title: "Range Area Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/timelinechart`, type: "link", active: false, selected: false, dirchange: false, title: "Timeline Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/candlestickchart`, type: "link", active: false, selected: false, dirchange: false, title: "CandleStick Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/boxplotchart`, type: "link", active: false, selected: false, dirchange: false, title: "Boxplot Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/bubblechart`, type: "link", active: false, selected: false, dirchange: false, title: "Bubble Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/scatterchart`, type: "link", active: false, selected: false, dirchange: false, title: "Scatter Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/heatmapchart`, type: "link", active: false, selected: false, dirchange: false, title: "Heatmap Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/treemapchart`, type: "link", active: false, selected: false, dirchange: false, title: "Treemap Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/piechart`, type: "link", active: false, selected: false, dirchange: false, title: "Pie Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/radialbarchart`, type: "link", active: false, selected: false, dirchange: false, title: "Radialbar Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/radarchart`, type: "link", active: false, selected: false, dirchange: false, title: "Radar Charts" },
-          { path: `${import.meta.env.BASE_URL}charts/apexchart/polarareachart`, type: "link", active: false, selected: false, dirchange: false, title: "Polararea Charts" },
-        ]
-      },
-      { path: `${import.meta.env.BASE_URL}charts/chartjs`, type: "link", active: false, selected: false, dirchange: false, title: "Chart Js" },
-      { path: `${import.meta.env.BASE_URL}charts/echart`, type: "link", active: false, selected: false, dirchange: false, title: "ECharts" }
-    ],
-  },
-  {
-    menutitle: "MULTI LEVEL",
-  },
+  //     { title: "Apex-Charts", type: "sub", active: false, selected: false, dirchange: false, children: [
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/linechart`, type: "link", active: false, selected: false, dirchange: false, title: "Line Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/areachart`, type: "link", active: false, selected: false, dirchange: false, title: "Area Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/columnchart`, type: "link", active: false, selected: false, dirchange: false, title: "Column Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/barchart`, type: "link", active: false, selected: false, dirchange: false, title: "Bar Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/mixedchart`, type: "link", active: false, selected: false, dirchange: false, title: "Mixed Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/rangeareachart`, type: "link", active: false, selected: false, dirchange: false, title: "Range Area Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/timelinechart`, type: "link", active: false, selected: false, dirchange: false, title: "Timeline Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/candlestickchart`, type: "link", active: false, selected: false, dirchange: false, title: "CandleStick Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/boxplotchart`, type: "link", active: false, selected: false, dirchange: false, title: "Boxplot Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/bubblechart`, type: "link", active: false, selected: false, dirchange: false, title: "Bubble Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/scatterchart`, type: "link", active: false, selected: false, dirchange: false, title: "Scatter Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/heatmapchart`, type: "link", active: false, selected: false, dirchange: false, title: "Heatmap Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/treemapchart`, type: "link", active: false, selected: false, dirchange: false, title: "Treemap Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/piechart`, type: "link", active: false, selected: false, dirchange: false, title: "Pie Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/radialbarchart`, type: "link", active: false, selected: false, dirchange: false, title: "Radialbar Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/radarchart`, type: "link", active: false, selected: false, dirchange: false, title: "Radar Charts" },
+  //         { path: `${import.meta.env.BASE_URL}charts/apexchart/polarareachart`, type: "link", active: false, selected: false, dirchange: false, title: "Polararea Charts" },
+  //       ]
+  //     },
+  //     { path: `${import.meta.env.BASE_URL}charts/chartjs`, type: "link", active: false, selected: false, dirchange: false, title: "Chart Js" },
+  //     { path: `${import.meta.env.BASE_URL}charts/echart`, type: "link", active: false, selected: false, dirchange: false, title: "ECharts" }
+  //   ],
+  // },
+  // {
+  //   menutitle: "MULTI LEVEL",
+  // },
 
-  {
-    title: "Menu-levels", icon: multilevelsvg, type: "sub",
-    children: [
-      { path: "#Nested1", type: "empty", active: false, selected: false, dirchange: false, title: "Level-1" },
-      {
-        title: "Level-2", type: "sub", menusub: true, active: false, selected: false, dirchange: false,
-        children: [
-          { path: "#Nested21", type: "empty", active: false, selected: false, dirchange: false, title: "Level-2-1" },
-          {
-            title: "Level-2-2", type: "sub", menusub: true, active: false, selected: false, dirchange: false,
-            children: [
-              { path: "#Nested221", type: "empty", active: false, selected: false, dirchange: false, title: "Level-2-2-1" },
-              { path: "#Nested222", type: "empty", active: false, selected: false, dirchange: false, title: "Level-2-2-2" },
+  // {
+  //   title: "Menu-levels", icon: multilevelsvg, type: "sub",
+  //   children: [
+  //     { path: "#Nested1", type: "empty", active: false, selected: false, dirchange: false, title: "Level-1" },
+  //     {
+  //       title: "Level-2", type: "sub", menusub: true, active: false, selected: false, dirchange: false,
+  //       children: [
+  //         { path: "#Nested21", type: "empty", active: false, selected: false, dirchange: false, title: "Level-2-1" },
+  //         {
+  //           title: "Level-2-2", type: "sub", menusub: true, active: false, selected: false, dirchange: false,
+  //           children: [
+  //             { path: "#Nested221", type: "empty", active: false, selected: false, dirchange: false, title: "Level-2-2-1" },
+  //             { path: "#Nested222", type: "empty", active: false, selected: false, dirchange: false, title: "Level-2-2-2" },
 
-            ],
-          },
-        ],
-      },
-    ],
-  },
+  //           ],
+  //         },
+  //       ],
+  //     },
+  //   ],
+  // },
 
-  {
-    menutitle: "COMPONENTS",
-  },
-  {
-    title: "Forms", icon: formssvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      {
-        title: "Form Elements", icon: chartsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-          { path: `${import.meta.env.BASE_URL}forms/formelement/input`, type: "link", active: false, selected: false, dirchange: false, title: "Inputs" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/checkradios`, type: "link", active: false, selected: false, dirchange: false, title: "Check & Radios" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/inputgroup`, type: "link", active: false, selected: false, dirchange: false, title: "Input Groups" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/formselect`, type: "link", active: false, selected: false, dirchange: false, title: "Form Select" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/rangeslider`, type: "link", active: false, selected: false, dirchange: false, title: "RangeSlider" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/inputmasks`, type: "link", active: false, selected: false, dirchange: false, title: "Input Masks" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/fileupload`, type: "link", active: false, selected: false, dirchange: false, title: "File Uploads" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/datetimepicker`, type: "link", active: false, selected: false, dirchange: false, title: "Date, Time Picker" },
-          { path: `${import.meta.env.BASE_URL}forms/formelement/colorpicker`, type: "link", active: false, selected: false, dirchange: false, title: "Color Picker" },
-        ],
-      },
-      { path: `${import.meta.env.BASE_URL}forms/floatinglabels`, type: "link", active: false, selected: false, dirchange: false, title: "Floating labels" },
-      { path: `${import.meta.env.BASE_URL}forms/formlayouts`, type: "link", active: false, selected: false, dirchange: false, title: "Form Layouts" },
-      {
-        title: "Form Editors", icon: chartsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-          { path: `${import.meta.env.BASE_URL}forms/formeditor/editor`, type: "link", active: false, selected: false, dirchange: false, title: "Sun Editor" },
-        ],
-      },
-      { path: `${import.meta.env.BASE_URL}forms/validation`, type: "link", active: false, selected: false, dirchange: false, title: "Validation" },
-      { path: `${import.meta.env.BASE_URL}forms/select2`, type: "link", active: false, selected: false, dirchange: false, title: "Select2" },
-    ],
-  },
-  {
-    title: "Tables", icon: tablessvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}tables/defaulttables`, type: "link", active: false, selected: false, dirchange: false, title: "Tables" },
-      { path: `${import.meta.env.BASE_URL}tables/gridjstables`, type: "link", active: false, selected: false, dirchange: false, title: "Grid Js Tables" },
-      { path: `${import.meta.env.BASE_URL}tables/datatables`, type: "link", active: false, selected: false, dirchange: false, title: "Data Tables" },
-    ],
-  },
-  { title: "Widgets", path: `${import.meta.env.BASE_URL}widgets`, icon: widgetsvg, type: "link", active: false, selected: false, dirchange: false },
-  {
-    title: "Maps", icon: mapsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}maps/simplemaps`, type: "link", active: false, selected: false, dirchange: false, title: "Simple maps" },
-      { path: `${import.meta.env.BASE_URL}maps/leafletmaps`, type: "link", active: false, selected: false, dirchange: false, title: "Leaflet maps" },
-    ],
-  },
+  // {
+  //   menutitle: "COMPONENTS",
+  // },
+  // {
+  //   title: "Forms", icon: formssvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     {
+  //       title: "Form Elements", icon: chartsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/input`, type: "link", active: false, selected: false, dirchange: false, title: "Inputs" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/checkradios`, type: "link", active: false, selected: false, dirchange: false, title: "Check & Radios" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/inputgroup`, type: "link", active: false, selected: false, dirchange: false, title: "Input Groups" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/formselect`, type: "link", active: false, selected: false, dirchange: false, title: "Form Select" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/rangeslider`, type: "link", active: false, selected: false, dirchange: false, title: "RangeSlider" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/inputmasks`, type: "link", active: false, selected: false, dirchange: false, title: "Input Masks" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/fileupload`, type: "link", active: false, selected: false, dirchange: false, title: "File Uploads" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/datetimepicker`, type: "link", active: false, selected: false, dirchange: false, title: "Date, Time Picker" },
+  //         { path: `${import.meta.env.BASE_URL}forms/formelement/colorpicker`, type: "link", active: false, selected: false, dirchange: false, title: "Color Picker" },
+  //       ],
+  //     },
+  //     { path: `${import.meta.env.BASE_URL}forms/floatinglabels`, type: "link", active: false, selected: false, dirchange: false, title: "Floating labels" },
+  //     { path: `${import.meta.env.BASE_URL}forms/formlayouts`, type: "link", active: false, selected: false, dirchange: false, title: "Form Layouts" },
+  //     {
+  //       title: "Form Editors", icon: chartsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //         { path: `${import.meta.env.BASE_URL}forms/formeditor/editor`, type: "link", active: false, selected: false, dirchange: false, title: "Sun Editor" },
+  //       ],
+  //     },
+  //     { path: `${import.meta.env.BASE_URL}forms/validation`, type: "link", active: false, selected: false, dirchange: false, title: "Validation" },
+  //     { path: `${import.meta.env.BASE_URL}forms/select2`, type: "link", active: false, selected: false, dirchange: false, title: "Select2" },
+  //   ],
+  // },
+  // {
+  //   title: "Tables", icon: tablessvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}tables/defaulttables`, type: "link", active: false, selected: false, dirchange: false, title: "Tables" },
+  //     { path: `${import.meta.env.BASE_URL}tables/gridjstables`, type: "link", active: false, selected: false, dirchange: false, title: "Grid Js Tables" },
+  //     { path: `${import.meta.env.BASE_URL}tables/datatables`, type: "link", active: false, selected: false, dirchange: false, title: "Data Tables" },
+  //   ],
+  // },
+  // { title: "Widgets", path: `${import.meta.env.BASE_URL}widgets`, icon: widgetsvg, type: "link", active: false, selected: false, dirchange: false },
+  // {
+  //   title: "Maps", icon: mapsvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+  //     { path: `${import.meta.env.BASE_URL}maps/simplemaps`, type: "link", active: false, selected: false, dirchange: false, title: "Simple maps" },
+  //     { path: `${import.meta.env.BASE_URL}maps/leafletmaps`, type: "link", active: false, selected: false, dirchange: false, title: "Leaflet maps" },
+  //   ],
+  // },
 
-  { menutitle: "GLOBAL CAFE" },
+  { menutitle: "GLOBAL COFFEE" },
   {
     title: "Recepción", icon: recepcionSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
       { path: `${import.meta.env.BASE_URL}recepcion/remision`, type: "link", active: false, selected: false, dirchange: false, title: "Registro de Remisión" },
@@ -362,6 +362,8 @@ export const MENUITEMS: Menuitemtype[] = [
       { path: `${import.meta.env.BASE_URL}ventas/salida`, type: "link", active: false, selected: false, dirchange: false, title: "Salida Venta Local" },
     ]
   },
+
+  { menutitle: "SEGURIDAD" },
   {
     title: "Administración", icon: adminSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
       { path: `${import.meta.env.BASE_URL}admin/usuarios`, type: "link", active: false, selected: false, dirchange: false, title: "Gestión de Usuarios" },
