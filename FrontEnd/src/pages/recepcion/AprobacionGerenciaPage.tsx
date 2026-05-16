@@ -1,15 +1,12 @@
 import { useState, useEffect } from "react";
-import { CheckSquare, Search, Eye, Loader2, CheckCircle, RefreshCcw, XCircle, FileText, Printer } from "lucide-react";
-import PageHeader from "../../components/layout/PageHeader";
-import { Card, Table, Badge, Button, Modal, Form, InputGroup } from 'react-bootstrap';
-import { moduleColors } from "../../config/colors.config";
+import { Search, Loader2, CheckCircle, RefreshCcw, XCircle, FileText, Printer } from "lucide-react";
+import Pageheader from "../../layout/layoutcomponent/pageheader";
+import { Card, Table, Badge, Button, Modal, Form, InputGroup, Row, Col, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import toast from "react-hot-toast";
 import { useAuth } from "../../auth/useAuth";
 
 // APIs
 import { getAnalisisPendientesApi, veredictoGerenciaApi, VeredictoGerenciaRequest } from "../../api/analisis.api";
-
-const colors = moduleColors.recepcion;
 
 interface MuestraGerencia {
   id_analisis_calidad: number;
@@ -141,7 +138,7 @@ export default function AprobacionGerenciaPage() {
 
   return (
     <div>
-      <PageHeader title="Aprobación de Gerencia" subtitle="Evaluación y Autorización de Muestras Previas" icon={CheckSquare} iconBg={colors.bg} iconColor={colors.icon} />
+      <Pageheader title="Aprobación de Gerencia" heading="Recepción" active="Aprobación de Gerencia" />
 
       <Card className="mb-6">
         <Card.Body className="p-4">
@@ -186,9 +183,13 @@ export default function AprobacionGerenciaPage() {
                 <tr key={m.id_analisis_calidad}>
                   {hasRowActions && (
                     <td className="text-center">
-                      <Button variant="primary" size="sm" onClick={() => handleOpenEvaluation(m)} className="flex items-center gap-1 mx-auto">
-                        <Eye className="w-4 h-4"/> Evaluar
-                      </Button>
+                      <div className="d-flex justify-content-center">
+                        <OverlayTrigger placement="top" overlay={<Tooltip>Evaluar Muestra</Tooltip>}>
+                          <a href="#!" className="btn btn-icon btn-sm btn-info-light rounded-pill" onClick={(e) => { e.preventDefault(); handleOpenEvaluation(m); }}>
+                            <i className="fe fe-eye"></i>
+                          </a>
+                        </OverlayTrigger>
+                      </div>
                     </td>
                   )}
                   <td>
@@ -220,71 +221,131 @@ export default function AprobacionGerenciaPage() {
             <Modal.Header closeButton>
               <Modal.Title>Evaluación de Muestra del Laboratorio</Modal.Title>
             </Modal.Header>
-            <Modal.Body className="space-y-6">
-              
-              {/* Tarjeta Resumen de Resultados */}
-              <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200">
-                <h3 className="font-bold text-neutral-800 border-b border-neutral-200 pb-2 mb-4 flex items-center gap-2"><FileText className="w-4 h-4"/> Resultados del Laboratorio</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
-                  <div><p className="text-neutral-500 mb-0">Catador</p><p className="font-medium mb-0">{selectedMuestra.catador_nombre}</p></div>
-                  <div><p className="text-neutral-500 mb-0">Calidad Perfilada</p><p className="font-medium text-coffee-700 mb-0">{selectedMuestra.calidad_nombre}</p></div>
-                  <div><p className="text-neutral-500 mb-0">Humedad</p><p className="font-medium mb-0">{selectedMuestra.humedad}%</p></div>
-                  <div><p className="text-neutral-500 mb-0">Daño</p><p className="font-medium mb-0">{selectedMuestra.dano}%</p></div>
-                  <div><p className="text-neutral-500 mb-0">Primer Rend.</p><p className="font-medium mb-0">{selectedMuestra.primer_rendimiento || "N/A"}</p></div>
-                  <div><p className="text-neutral-500 mb-0">Segundo Rend.</p><p className="font-medium mb-0">{selectedMuestra.segundo_rendimiento || "N/A"}</p></div>
-                </div>
+            <Modal.Body className="p-3">
 
-                {/* Tablas resumen de atributos */}
-                <div className="grid grid-cols-3 gap-6 text-sm mb-4 bg-white p-3 rounded-lg border border-neutral-200">
-                  <div>
-                    <h4 className="font-bold text-center border-b pb-1 mb-2 text-neutral-700">Defectos</h4>
-                    {selectedMuestra.analisis_defectos.length ? selectedMuestra.analisis_defectos.map(d => <div key={d.id_defecto} className="flex justify-between border-b border-neutral-100 py-0.5"><span className="text-neutral-600 truncate mr-2">{d.defecto.nombre}</span><span className="font-medium">{d.cantidad}</span></div>) : <p className="text-center text-xs text-neutral-400 italic mb-0">Ninguno</p>}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-center border-b pb-1 mb-2 text-neutral-700">Zarandas</h4>
-                    {selectedMuestra.analisis_zarandas.length ? selectedMuestra.analisis_zarandas.map(z => <div key={z.id_zaranda} className="flex justify-between border-b border-neutral-100 py-0.5"><span className="text-neutral-600 truncate mr-2">{z.zaranda.nombre}</span><span className="font-medium">{z.cantidad}</span></div>) : <p className="text-center text-xs text-neutral-400 italic mb-0">Ninguna</p>}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-center border-b pb-1 mb-2 text-neutral-700">Atributos Taza</h4>
-                    {selectedMuestra.analisis_tazas.length ? selectedMuestra.analisis_tazas.map(t => <div key={t.id_tazas} className="flex justify-between border-b border-neutral-100 py-0.5"><span className="text-neutral-600 truncate mr-2">{t.taza.nombre}</span><span className="font-medium">{t.cantidad}</span></div>) : <p className="text-center text-xs text-neutral-400 italic mb-0">Ninguno</p>}
-                  </div>
+              {/* ── Resultados del Laboratorio ── */}
+              <div className="border rounded mb-3">
+                <div className="bg-light px-3 py-2 border-bottom d-flex align-items-center gap-2">
+                  <FileText size={14} className="text-muted" />
+                  <span className="fw-semibold" style={{ fontSize: '0.875rem' }}>Resultados del Laboratorio</span>
                 </div>
+                <div className="p-3">
 
-                <div className="text-sm">
-                  <span className="text-neutral-500 block mb-1">Notas del Catador:</span>
-                  <p className="bg-white p-2 rounded border border-neutral-200 text-neutral-700 whitespace-pre-wrap mb-0">{selectedMuestra.observaciones_laboratorio}</p>
-                </div>
-              </div>
+                  {/* Métricas */}
+                  <Row className="g-2 mb-3">
+                    <Col xs={6} md={4}>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.72rem' }}>Catador</p>
+                      <p className="fw-medium mb-0" style={{ fontSize: '0.85rem' }}>{selectedMuestra.catador_nombre}</p>
+                    </Col>
+                    <Col xs={6} md={4}>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.72rem' }}>Calidad Perfilada</p>
+                      <Badge bg="info">{selectedMuestra.calidad_nombre}</Badge>
+                    </Col>
+                    <Col xs={6} md={4}>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.72rem' }}>Humedad</p>
+                      <p className="fw-medium mb-0" style={{ fontSize: '0.85rem' }}>{selectedMuestra.humedad}%</p>
+                    </Col>
+                    <Col xs={6} md={4}>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.72rem' }}>Daño</p>
+                      <p className="fw-medium mb-0" style={{ fontSize: '0.85rem' }}>{selectedMuestra.dano}%</p>
+                    </Col>
+                    <Col xs={6} md={4}>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.72rem' }}>Primer Rend.</p>
+                      <p className="fw-medium mb-0" style={{ fontSize: '0.85rem' }}>{selectedMuestra.primer_rendimiento || 'N/A'}</p>
+                    </Col>
+                    <Col xs={6} md={4}>
+                      <p className="text-muted mb-0" style={{ fontSize: '0.72rem' }}>Segundo Rend.</p>
+                      <p className="fw-medium mb-0" style={{ fontSize: '0.85rem' }}>{selectedMuestra.segundo_rendimiento || 'N/A'}</p>
+                    </Col>
+                  </Row>
 
-              {/* Formulario de Decisión */}
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
-                <h3 className="font-bold text-blue-900 mb-4 flex items-center gap-2">{getVeredictoIcon()} Veredicto de Gerencia</h3>
-                <div className="grid grid-cols-1 gap-4">
+                  {/* Tablas Defectos / Zarandas / Tazas */}
+                  <Row className="g-2 mb-3">
+                    {[
+                      { title: 'Defectos', items: selectedMuestra.analisis_defectos, keyProp: 'id_defecto', nameFn: (x: any) => x.defecto.nombre },
+                      { title: 'Zarandas', items: selectedMuestra.analisis_zarandas, keyProp: 'id_zaranda', nameFn: (x: any) => x.zaranda.nombre },
+                      { title: 'Atrib. Taza', items: selectedMuestra.analisis_tazas, keyProp: 'id_tazas', nameFn: (x: any) => x.taza.nombre },
+                    ].map(({ title, items, keyProp, nameFn }) => (
+                      <Col xs={4} key={title}>
+                        <Table size="sm" bordered className="mb-0" style={{ fontSize: '0.78rem' }}>
+                          <thead className="table-light">
+                            <tr><th colSpan={2} className="text-center py-1">{title}</th></tr>
+                          </thead>
+                          <tbody>
+                            {items.length
+                              ? items.map((item: any) => (
+                                  <tr key={item[keyProp]}>
+                                    <td className="text-muted">{nameFn(item)}</td>
+                                    <td className="text-end fw-medium">{item.cantidad}</td>
+                                  </tr>
+                                ))
+                              : <tr><td colSpan={2} className="text-center fst-italic text-muted">—</td></tr>
+                            }
+                          </tbody>
+                        </Table>
+                      </Col>
+                    ))}
+                  </Row>
+
+                  {/* Notas */}
                   <Form.Group>
-                    <Form.Label>Decisión a Tomar</Form.Label>
-                    <Form.Select 
-                      value={formData.veredicto} 
-                      onChange={e => setFormData({...formData, veredicto: e.target.value as any})} 
-                      required
-                    >
-                      <option value="APROBAR">Aprobar Muestra (Autorizar Descarga)</option>
-                      <option value="SEGUNDA_MUESTRA">Solicitar otro analisis de calidad(Regresa a Muestreo)</option>
-                      <option value="DEVOLUCION">Rechazar Carga (Devolución a Productor)</option>
-                    </Form.Select>
-                  </Form.Group>
-                  <Form.Group>
-                    <Form.Label>{formData.veredicto === "DEVOLUCION" ? "Motivo de la Devolución (Obligatorio)" : "Comentarios u Observaciones de Gerencia"}</Form.Label>
-                    <Form.Control 
+                    <Form.Label className="text-muted mb-1" style={{ fontSize: '0.72rem' }}>Notas del Catador</Form.Label>
+                    <Form.Control
                       as="textarea"
                       rows={2}
-                      placeholder={formData.veredicto === "DEVOLUCION" ? "Especifique claramente por qué se rechaza el café para el reporte..." : "Instrucciones adicionales para la bodega o el proveedor..."} 
-                      value={formData.observaciones} 
-                      onChange={e => setFormData({...formData, observaciones: e.target.value})} 
-                      required={formData.veredicto === "DEVOLUCION"}
+                      readOnly
+                      value={selectedMuestra.observaciones_laboratorio}
+                      className="bg-light"
+                      style={{ fontSize: '0.85rem', resize: 'none' }}
                     />
                   </Form.Group>
                 </div>
               </div>
+
+              {/* ── Veredicto de Gerencia ── */}
+              <div className="border border-primary rounded">
+                <div className="bg-primary bg-opacity-10 px-3 py-2 border-bottom d-flex align-items-center gap-2">
+                  {getVeredictoIcon()}
+                  <span className="fw-semibold" style={{ fontSize: '0.875rem' }}>Veredicto de Gerencia</span>
+                </div>
+                <div className="p-3">
+                  <Row className="g-3">
+                    <Col md={5}>
+                      <Form.Group>
+                        <Form.Label className="fw-medium mb-1" style={{ fontSize: '0.82rem' }}>Decisión</Form.Label>
+                        <Form.Select
+                          size="sm"
+                          value={formData.veredicto}
+                          onChange={e => setFormData({ ...formData, veredicto: e.target.value as any })}
+                          required
+                        >
+                          <option value="APROBAR">✅ Aprobar (Autorizar Descarga)</option>
+                          <option value="SEGUNDA_MUESTRA">🔄 Segunda Muestra (Regresa a Muestreo)</option>
+                          <option value="DEVOLUCION">❌ Rechazar (Devolución al Productor)</option>
+                        </Form.Select>
+                      </Form.Group>
+                    </Col>
+                    <Col md={7}>
+                      <Form.Group>
+                        <Form.Label className="fw-medium mb-1" style={{ fontSize: '0.82rem' }}>
+                          {formData.veredicto === 'DEVOLUCION' ? 'Motivo de Devolución (Obligatorio)' : 'Observaciones de Gerencia'}
+                        </Form.Label>
+                        <Form.Control
+                          as="textarea"
+                          size="sm"
+                          rows={3}
+                          placeholder={formData.veredicto === 'DEVOLUCION' ? 'Especifique claramente el motivo del rechazo...' : 'Instrucciones adicionales para la bodega o el proveedor...'}
+                          value={formData.observaciones}
+                          onChange={e => setFormData({ ...formData, observaciones: e.target.value })}
+                          required={formData.veredicto === 'DEVOLUCION'}
+                          style={{ resize: 'none' }}
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+                </div>
+              </div>
+
             </Modal.Body>
             <Modal.Footer>
               <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>Cancelar</Button>

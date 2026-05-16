@@ -2,6 +2,12 @@
 @import './assets/scss/switcher';
 @import'./assets/css/bootstrap.css';
 
+/* Ocultar flechas de inputs type=number en Chrome/Edge/Safari */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
 
 //light gallery
 @import 'yet-another-react-lightbox/styles.css';

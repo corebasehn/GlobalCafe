@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { Scale, Search, Loader2, Weight, Save, ChevronRight, ChevronDown, MoreVertical, Truck } from "lucide-react";
 import PageHeader from "../../components/layout/PageHeader";
-import { Card, Table, Badge, Button, Modal, Form, InputGroup } from 'react-bootstrap';
+import { Card, Table, Badge, Button, Modal, Form, InputGroup, Dropdown, Row, Col } from 'react-bootstrap';
 import { moduleColors } from "../../config/colors.config";
 import toast from "react-hot-toast";
 
 // APIs
 import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi } from "../../api/reception.api";
 import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal } from "../../api/catalogs.api";
+import Pageheader from "../../layout/layoutcomponent/pageheader";
 
 const colors = moduleColors.recepcion;
 
@@ -20,7 +21,7 @@ export default function BasculaEntradaPage() {
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [placasCabezal, setPlacasCabezal] = useState<PlacaCabezal[]>([]);
-  const [actionMenuOpen, setActionMenuOpen] = useState<number | null>(null);
+
   
   // Estado del Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -32,13 +33,6 @@ export default function BasculaEntradaPage() {
   const [placaInput, setPlacaInput] = useState("");
 
   const handleCloseModal = () => setIsModalOpen(false);
-
-  // Efecto para cerrar el Dropdown al dar clic fuera
-  useEffect(() => {
-    const handleClickOutside = () => setActionMenuOpen(null);
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
 
   useEffect(() => {
     loadData();
@@ -163,8 +157,8 @@ export default function BasculaEntradaPage() {
 
   return (
     <div>
-      <PageHeader title="Báscula de Entrada" subtitle="Control de Pesaje Bruto y Tara" icon={Scale} iconBg={colors.bg} iconColor={colors.icon} />
-
+      {/* <PageHeader title="Báscula de Entrada" subtitle="Control de Pesaje Bruto y Tara" icon={Scale} iconBg={colors.bg} iconColor={colors.icon} /> */}
+      <Pageheader title="Báscula de Entrada" heading="Recepción" active="Báscula de Entrada" />
       <Card className="mb-6">
         <Card.Body className="p-4">
           <InputGroup>
@@ -278,47 +272,43 @@ export default function BasculaEntradaPage() {
 
                                     return (
                                       <tr key={carga.id_detalle_recepcion} className={rowClasses}>
-                                        <td className="text-center">
+                                        <td className="text-center" style={{ verticalAlign: 'middle' }}>
                                           {(isEntrada || isSalida || isSinCabezal) ? (
-                                            <div className="position-relative">
-                                              <Button 
-                                                variant="light" 
-                                                size="sm" 
-                                                className="p-1 rounded-lg"
-                                                onClick={(e) => { e.stopPropagation(); setActionMenuOpen(actionMenuOpen === carga.id_detalle_recepcion ? null : carga.id_detalle_recepcion); }}
+                                            <Dropdown onClick={(e) => e.stopPropagation()}>
+                                              <Dropdown.Toggle
+                                                as={Button}
+                                                variant="light"
+                                                size="sm"
+                                                className="p-1 border-0"
+                                                id={`menu-basc-${carga.id_detalle_recepcion}`}
+                                                bsPrefix="btn"
                                               >
-                                                <MoreVertical className="w-5 h-5 text-neutral-600" />
-                                              </Button>
-                                              {actionMenuOpen === carga.id_detalle_recepcion && (
-                                                <Card 
-                                                  className="position-absolute shadow-lg z-3 py-1" 
-                                                  style={{ top: '100%', left: 0, minWidth: '200px', cursor: 'default' }}
-                                                  onClick={e => e.stopPropagation()}
-                                                >
-                                                  {isEntrada && (
-                                                    <Button variant="link" className="w-100 text-start px-3 py-2 text-dark text-decoration-none d-flex align-items-center gap-2 hover-bg-light" onClick={() => { setActionMenuOpen(null); handleOpenModal(r, carga, "ENTRADA"); }}>
-                                                      <Scale className="w-4 h-4 text-primary"/> Pesar Entrada (Bruto)
-                                                    </Button>
-                                                  )}
-                                                  {isSalida && (
-                                                    <>
-                                                      <Button variant="link" className="w-100 text-start px-3 py-2 text-dark text-decoration-none d-flex align-items-center gap-2 hover-bg-light" onClick={() => { setActionMenuOpen(null); handleOpenModal(r, carga, "SALIDA"); }}>
-                                                        <Scale className="w-4 h-4 text-success"/> Pesar Salida (Tara)
-                                                      </Button>
-                                                      <div className="border-top my-1"></div>
-                                                      <Button variant="link" className="w-100 text-start px-3 py-2 text-dark text-decoration-none d-flex align-items-center gap-2 hover-bg-light" onClick={() => { setActionMenuOpen(null); handleOpenModal(r, carga, "SALIDA_CABEZAL"); }}>
-                                                        <Truck className="w-4 h-4 text-warning"/> Destarse (Salida de Cabezal)
-                                                      </Button>
-                                                    </>
-                                                  )}
-                                                  {isSinCabezal && (
-                                                    <Button variant="link" className="w-100 text-start px-3 py-2 text-dark text-decoration-none d-flex align-items-center gap-2 hover-bg-light" onClick={() => { setActionMenuOpen(null); handleOpenModal(r, carga, "ENTRADA_CABEZAL"); }}>
-                                                      <Truck className="w-4 h-4 text-primary"/> Reenganchar (Entrada Cabezal)
-                                                    </Button>
-                                                  )}
-                                                </Card>
-                                              )}
-                                            </div>
+                                                <MoreVertical size={18} className="text-secondary" />
+                                              </Dropdown.Toggle>
+                                              <Dropdown.Menu renderOnMount popperConfig={{ strategy: 'fixed' }}>
+                                                {isEntrada && (
+                                                  <Dropdown.Item onClick={() => handleOpenModal(r, carga, "ENTRADA")} className="d-flex align-items-center gap-2">
+                                                    <Scale size={15} className="text-primary" /> Pesar Entrada (Bruto)
+                                                  </Dropdown.Item>
+                                                )}
+                                                {isSalida && (
+                                                  <>
+                                                    <Dropdown.Item onClick={() => handleOpenModal(r, carga, "SALIDA")} className="d-flex align-items-center gap-2">
+                                                      <Scale size={15} className="text-success" /> Pesar Salida (Tara)
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Divider />
+                                                    <Dropdown.Item onClick={() => handleOpenModal(r, carga, "SALIDA_CABEZAL")} className="d-flex align-items-center gap-2">
+                                                      <Truck size={15} className="text-warning" /> Destarse (Salida Cabezal)
+                                                    </Dropdown.Item>
+                                                  </>
+                                                )}
+                                                {isSinCabezal && (
+                                                  <Dropdown.Item onClick={() => handleOpenModal(r, carga, "ENTRADA_CABEZAL")} className="d-flex align-items-center gap-2">
+                                                    <Truck size={15} className="text-primary" /> Reenganchar (Entrada Cabezal)
+                                                  </Dropdown.Item>
+                                                )}
+                                              </Dropdown.Menu>
+                                            </Dropdown>
                                           ) : (
                                             <div className="text-center">
                                               {isPendiente && <Badge bg="warning" className="text-dark"><Loader2 className="w-3 h-3 animate-spin me-1"/> Esperando</Badge>}
@@ -357,7 +347,7 @@ export default function BasculaEntradaPage() {
         </Table>
       </Card>
 
-      <Modal show={isModalOpen} onHide={handleCloseModal} size="lg">
+      <Modal show={isModalOpen} onHide={handleCloseModal}>
         {selectedRecepcion && selectedCarga && (
           <Form onSubmit={handleSubmitPeso}>
             <Modal.Header closeButton>
@@ -368,57 +358,60 @@ export default function BasculaEntradaPage() {
                  "Reenganchar - Registrar Entrada de Cabezal"}
               </Modal.Title>
             </Modal.Header>
-            <Modal.Body className="space-y-6">
-              
-              <div className="bg-neutral-50 p-4 rounded-xl text-sm border border-neutral-200">
-                <div className="grid grid-cols-2 gap-2">
-                  <p className="text-neutral-500 mb-0">Ingreso / Remisión:</p>
-                  <p className="font-bold text-end text-coffee-700 mb-0">{selectedRecepcion.numero_entrada} / {selectedCarga.remision}</p>
-                  <p className="text-neutral-500 mb-0">Proveedor:</p>
-                  <p className="font-medium text-end truncate mb-0">{selectedCarga.proveedor?.nombre}</p>
-                  <p className="text-neutral-500 mb-0">Sacos Declarados:</p>
-                  <p className="font-medium text-end mb-0">{selectedCarga.cantidad_sacos}</p>
-                </div>
-                
+            <Modal.Body className="p-4">
+
+              {/* Resumen de la carga */}
+              <div className="bg-light rounded border p-3 mb-4">
+                <Row className="g-2 text-sm">
+                  <Col xs={5} className="text-muted fw-medium">Ingreso / Remisión:</Col>
+                  <Col xs={7} className="fw-bold text-end">{selectedRecepcion.numero_entrada} / {selectedCarga.remision}</Col>
+                  <Col xs={5} className="text-muted fw-medium">Proveedor:</Col>
+                  <Col xs={7} className="fw-semibold text-end text-truncate">{selectedCarga.proveedor?.nombre}</Col>
+                  <Col xs={5} className="text-muted fw-medium">Sacos Declarados:</Col>
+                  <Col xs={7} className="fw-semibold text-end">{selectedCarga.cantidad_sacos}</Col>
+                </Row>
                 {modalMode !== "ENTRADA" && selectedCarga.pesada_entrada && (
-                  <div className="mt-3 pt-3 border-top border-neutral-200 d-flex justify-content-between align-items-center text-primary">
-                    <span className="font-medium">Peso Bruto de Referencia:</span>
-                    <span className="font-monospace font-bold">{Number(selectedCarga.pesada_entrada).toLocaleString()} LB</span>
-                  </div>
+                  <Row className="mt-2 pt-2 border-top g-0 align-items-center text-primary">
+                    <Col className="fw-semibold">Peso Bruto de Referencia:</Col>
+                    <Col xs="auto" className="font-monospace fw-bold">
+                      {Number(selectedCarga.pesada_entrada).toLocaleString('en-US', { minimumFractionDigits: 2 })} LB
+                    </Col>
+                  </Row>
                 )}
               </div>
 
-              <Form.Group>
+              {/* Lectura de báscula */}
+              <Form.Group className="mb-4">
                 <Form.Label className="fw-bold">Lectura del Indicador de la Báscula</Form.Label>
                 <InputGroup size="lg">
-                  <InputGroup.Text className="bg-white border-end-0">
-                    <Weight className="h-6 w-6 text-neutral-400" />
+                  <InputGroup.Text>
+                    <Weight size={20} />
                   </InputGroup.Text>
-                  <Form.Control 
-                    type="number" 
-                    step="0.01" 
-                    autoFocus 
-                    required 
-                    value={pesoInput} 
-                    onChange={(e) => setPesoInput(e.target.value)}
-                    className="text-end font-monospace fw-black border-start-0 fs-2"
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    autoFocus
+                    required
+                    value={pesoInput}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "" || Number(val) >= 0) setPesoInput(val);
+                    }}
+                    className="text-end font-monospace fw-bold fs-3"
                     placeholder="0.00"
+                    style={{ MozAppearance: 'textfield' } as React.CSSProperties}
+                    onWheel={(e) => e.currentTarget.blur()}
                   />
-                  <InputGroup.Text className="bg-white border-start-0 fw-bold text-neutral-500">
-                    LB
-                  </InputGroup.Text>
+                  <InputGroup.Text className="fw-bold">LB</InputGroup.Text>
                 </InputGroup>
               </Form.Group>
 
-              {/* Selector de Bodega (Solo visible en ENTRADA) */}
+              {/* Selector de Bodega (Solo en ENTRADA) */}
               {modalMode === "ENTRADA" && (
-                <Form.Group className="mt-4 pt-4 border-top border-neutral-200">
+                <Form.Group className="pt-3 border-top">
                   <Form.Label className="fw-bold">Bodega de Descarga</Form.Label>
-                  <Form.Select
-                    value={bodegaSearch}
-                    onChange={(e) => setBodegaSearch(e.target.value)}
-                    required
-                  >
+                  <Form.Select value={bodegaSearch} onChange={(e) => setBodegaSearch(e.target.value)} required>
                     <option value="">Seleccione a qué bodega física debe dirigirse...</option>
                     {bodegas.map(b => (
                       <option key={b.id_bodega} value={b.id_bodega.toString()}>{b.nombre}</option>
@@ -427,10 +420,12 @@ export default function BasculaEntradaPage() {
                 </Form.Group>
               )}
 
-              {/* Selector de Placa (Visible en CAMBIOS DE CABEZAL) */}
+              {/* Selector de Placa (Solo en CAMBIOS DE CABEZAL) */}
               {(modalMode === "SALIDA_CABEZAL" || modalMode === "ENTRADA_CABEZAL") && (
-                <Form.Group className="mt-4 pt-4 border-top border-neutral-200">
-                  <Form.Label className="fw-bold">{modalMode === "SALIDA_CABEZAL" ? "Placa del Cabezal que SALE" : "Placa del Cabezal que ENTRA"}</Form.Label>
+                <Form.Group className="pt-3 border-top">
+                  <Form.Label className="fw-bold">
+                    {modalMode === "SALIDA_CABEZAL" ? "Placa del Cabezal que SALE" : "Placa del Cabezal que ENTRA"}
+                  </Form.Label>
                   <Form.Select
                     value={placaInput}
                     onChange={(e) => setPlacaInput(e.target.value)}
@@ -444,11 +439,12 @@ export default function BasculaEntradaPage() {
                   </Form.Select>
                 </Form.Group>
               )}
+
             </Modal.Body>
             <Modal.Footer>
               <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>Cancelar</Button>
               <Button variant="primary" type="submit" disabled={submitting} className="flex items-center gap-2">
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Guardar Peso
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin"/> : <Save className="w-4 h-4"/>} Capturar Peso
               </Button>
             </Modal.Footer>
           </Form>

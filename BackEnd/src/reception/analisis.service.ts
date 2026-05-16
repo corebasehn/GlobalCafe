@@ -12,6 +12,8 @@ export class AnalisisService {
 
   // 1. GUARDAR ANÁLISIS (Desde pantalla de Laboratorio)
   async createAnalisis(dto: CreateAnalisisDto, usuarioId: number) {
+    console.log('[createAnalisis] Payload recibido:', JSON.stringify(dto, null, 2));
+    console.log('[createAnalisis] usuarioId:', usuarioId);
     const estadoDestino = await this.prisma.estadoTransaccion.findUnique({
       where: { nombre: 'Muestra Previa Pendiente de Aprobacion' }
     });
@@ -24,7 +26,9 @@ export class AnalisisService {
     const count = await this.prisma.analisisCalidad.count();
     const correlativo = `AN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-    const resultado = await this.prisma.$transaction(async (tx) => {
+    let resultado: any;
+    try {
+    resultado = await this.prisma.$transaction(async (tx) => {
       // A. Guardamos el resultado del laboratorio
       const analisis = await tx.analisisCalidad.create({
         data: {
@@ -77,13 +81,24 @@ export class AnalisisService {
 
       return analisis;
     });
+    } catch (txErr: any) {
+      console.error('[createAnalisis] ERROR en transacción Prisma:');
+      console.error('  message:', txErr?.message);
+      console.error('  code:', txErr?.code);
+      console.error('  meta:', JSON.stringify(txErr?.meta));
+      throw txErr;
+    }
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Análisis de Laboratorio Completado',
-      message: `Se registraron resultados para ${correlativo}. Esperando veredicto de Gerencia.`,
-      type: 'warning',
-      module: 'RECEPCION'
-    });
+    try {
+      this.notifications.emitNotification('new_notification', {
+        title: 'Análisis de Laboratorio Completado',
+        message: `Se registraron resultados para ${correlativo}. Esperando veredicto de Gerencia.`,
+        type: 'warning',
+        module: 'RECEPCION'
+      });
+    } catch (notifErr: any) {
+      console.warn('[createAnalisis] Notificación WebSocket falló (no crítico):', notifErr?.message);
+    }
 
     return resultado;
   }
