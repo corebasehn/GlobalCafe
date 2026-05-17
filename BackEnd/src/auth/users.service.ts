@@ -41,17 +41,35 @@ export class UsersService {
 
   async create(data: CreateUserDto, currentUser: any): Promise<Usuario> {
     try {
-      // 1. Hashear la contraseña
+      // 1. Validar que el rol existe (si se proporcionó)
+      if (data.rol) {
+        const roleExists = await this.prisma.rol.findUnique({
+          where: { codigo: data.rol }
+        });
+        if (!roleExists) {
+          throw new NotFoundException(`El rol con código '${data.rol}' no existe.`);
+        }
+      }
+
+      // 2. Hashear la contraseña
+      if (!data.password) {
+        throw new ConflictException('La contraseña es obligatoria para nuevos usuarios.');
+      }
       const salt = await bcrypt.genSalt();
       const hashedPassword = await bcrypt.hash(data.password, salt);
 
-      // 2. Crear usuario
+      // 3. Preparar correo (Si viene vacío, generar uno automático para evitar duplicados en la DB)
+      const userEmail = (data.email && data.email.trim() !== '') 
+        ? data.email 
+        : `${data.usuario.toLowerCase()}@globalcafe.hn`;
+
+      // 4. Crear usuario
       const newUser = await this.prisma.usuario.create({
         data: {
           usuario: data.usuario,
           clave_hash: hashedPassword,
           nombre_visible: data.nombre,
-          correo: data.email,
+          correo: userEmail,
           activo: true,
           roles: data.rol ? {
             create: {
@@ -64,32 +82,46 @@ export class UsersService {
       });
 
       // Log
-      await this.prisma.logSistema.create({
-        data: {
-          usuario_id: currentUser?.id,
-          usuario_login: currentUser?.username,
-          nombre_usuario: currentUser?.nombre,
-          id_accion: 1, // 1: CREAR
-          accion_nombre: 'CREAR',
-          tabla_nombre: 'usuario',
-          modulo: 'USUARIOS',
-          entidad: 'Usuario',
-          id_entidad: newUser.id.toString(),
-          datos_despues: newUser as any,
-          origen: 'BACKEND',
-        },
-      });
+      try {
+        await this.prisma.logSistema.create({
+          data: {
+            usuario_id: currentUser?.id,
+            usuario_login: currentUser?.username,
+            nombre_usuario: currentUser?.nombre,
+            id_accion: 1, // 1: CREAR
+            accion_nombre: 'CREAR',
+            tabla_nombre: 'usuario',
+            modulo: 'USUARIOS',
+            entidad: 'Usuario',
+            id_entidad: newUser.id.toString(),
+            datos_despues: newUser as any,
+            origen: 'BACKEND',
+          },
+        });
+      } catch (logError) {
+        console.error('Error al crear log de sistema:', logError);
+        // No lanzamos error para no interrumpir la creación del usuario
+      }
 
       return newUser;
-    } catch (error) {
-      // P2002 es el código de Prisma para violación de restricción única (Unique constraint)
+    } catch (error: any) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
-          throw new ConflictException('El usuario ya existe');
+          const target = error.meta?.target as string[];
+          if (target?.includes('usuario')) {
+            throw new ConflictException(`El nombre de inicio de sesión '${data.usuario}' ya está en uso por otro usuario.`);
+          }
+          if (target?.includes('correo')) {
+            throw new ConflictException(`El correo electrónico '${data.email}' ya está registrado en el sistema.`);
+          }
+          throw new ConflictException('Ya existe un usuario con estos datos (nombre de usuario o correo duplicado).');
         }
       }
-      console.error(error);
-      throw new InternalServerErrorException('Error al crear el usuario');
+      if (error instanceof NotFoundException || error instanceof ConflictException) {
+        throw error;
+      }
+      console.error('UsersService.create Error:', error);
+      throw new InternalServerErrorException('Error interno al crear el usuario: ' + (error.message || 'Sin detalle'));
     }
   }
 

@@ -112,7 +112,7 @@ export const NAV: NavGroup[] = [
         to: "/recepcion/wms-patio", 
         icon: Warehouse,
         description: "Almacenamiento pergamino",
-        //requirePermission: "VER_WMS_PATIO"
+        requirePermission: "VER_WMS_PATIO"
       },
       { 
         label: "Nota de Peso", 

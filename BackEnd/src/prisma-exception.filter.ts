@@ -13,8 +13,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    // Aquí capturamos el mensaje real del error
-    const message = exception.message || 'Error inesperado';
+    // Mejorar la captura de mensajes para errores de validación (400 Bad Request)
+    let message = exception.message || 'Error inesperado';
+    
+    if (status === HttpStatus.BAD_REQUEST && typeof exception.getResponse === 'function') {
+      const responseBody = exception.getResponse();
+      if (typeof responseBody === 'object' && responseBody !== null && responseBody.message) {
+        // ValidationPipe suele devolver un array de strings en 'message'
+        message = Array.isArray(responseBody.message) 
+          ? responseBody.message.join(', ') 
+          : responseBody.message;
+      }
+    }
     
     // Si el error viene de Prisma, solemos tener un 'code' (ej: P2002)
     const prismaCode = exception.code || null;

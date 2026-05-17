@@ -76,6 +76,7 @@ export interface Menuitemtype {
   badgetxt?: string;
   class?: string;
   menusub?: boolean;
+  requirePermission?: string;
 }
 
 
@@ -318,58 +319,58 @@ export const MENUITEMS: Menuitemtype[] = [
   { menutitle: "GLOBAL COFFEE" },
   {
     title: "Recepción", icon: recepcionSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}recepcion/remision`, type: "link", active: false, selected: false, dirchange: false, title: "Registro de Remisión" },
-      { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, type: "link", active: false, selected: false, dirchange: false, title: "Muestreo en Patio" },
-      { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, type: "link", active: false, selected: false, dirchange: false, title: "Laboratorio" },
-      { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula de Entrada" },
-      { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, selected: false, dirchange: false, title: "WMS Patio" },
-      { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, selected: false, dirchange: false, title: "Nota de Peso" },
-      { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, selected: false, dirchange: false, title: "Aprobación Gerencia" },
+      { path: `${import.meta.env.BASE_URL}recepcion/remision`, type: "link", active: false, selected: false, dirchange: false, title: "Registro de Remisión", requirePermission: "VER_RECEPCION" },
+      { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, type: "link", active: false, selected: false, dirchange: false, title: "Muestreo en Patio", requirePermission: "VER_MUESTREO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, type: "link", active: false, selected: false, dirchange: false, title: "Laboratorio", requirePermission: "VER_MUESTRA" },
+      { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula de Entrada", requirePermission: "VER_BASCULA" },
+      { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, selected: false, dirchange: false, title: "WMS Patio", requirePermission: "VER_WMS_PATIO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, selected: false, dirchange: false, title: "Nota de Peso", requirePermission: "VER_NOTA_PESO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, selected: false, dirchange: false, title: "Aprobación Gerencia", requirePermission: "VER_APROBACIONES" },
     ]
   },
   {
     title: "Comercial", icon: comercialSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}comercial/contratos`, type: "link", active: false, selected: false, dirchange: false, title: "Contratos de Venta" },
-      { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, type: "link", active: false, selected: false, dirchange: false, title: "Lab. Pre-Embarque" },
-      { path: `${import.meta.env.BASE_URL}comercial/aprobacion`, type: "link", active: false, selected: false, dirchange: false, title: "Aprobación Cliente" },
-      { path: `${import.meta.env.BASE_URL}comercial/lotes`, type: "link", active: false, selected: false, dirchange: false, title: "Generación de Lotes" },
-      { path: `${import.meta.env.BASE_URL}comercial/instrucciones-embarque`, type: "link", active: false, selected: false, dirchange: false, title: "Inst. de Embarque" },
-      { path: `${import.meta.env.BASE_URL}comercial/inventario-pergamino`, type: "link", active: false, selected: false, dirchange: false, title: "Inventario Pergamino" },
+      { path: `${import.meta.env.BASE_URL}comercial/contratos`, type: "link", active: false, selected: false, dirchange: false, title: "Contratos de Venta", requirePermission: "VER_CONTRATOS" },
+      { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, type: "link", active: false, selected: false, dirchange: false, title: "Lab. Pre-Embarque", requirePermission: "VER_LAB_PREEMBARQUE" },
+      { path: `${import.meta.env.BASE_URL}comercial/aprobacion`, type: "link", active: false, selected: false, dirchange: false, title: "Aprobación Cliente", requirePermission: "VER_APROBACIONES_CLIENTE" },
+      { path: `${import.meta.env.BASE_URL}comercial/lotes`, type: "link", active: false, selected: false, dirchange: false, title: "Generación de Lotes", requirePermission: "VER_LOTES" },
+      { path: `${import.meta.env.BASE_URL}comercial/instrucciones-embarque`, type: "link", active: false, selected: false, dirchange: false, title: "Inst. de Embarque", requirePermission: "VER_SI" },
+      { path: `${import.meta.env.BASE_URL}comercial/inventario-pergamino`, type: "link", active: false, selected: false, dirchange: false, title: "Inventario Pergamino", requirePermission: "VER_INVENTARIO" },
     ]
   },
   {
     title: "Industrial", icon: industrialSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}industrial/programa`, type: "link", active: false, selected: false, dirchange: false, title: "Programa Producción" },
-      { path: `${import.meta.env.BASE_URL}industrial/orden-sacos`, type: "link", active: false, selected: false, dirchange: false, title: "Orden de Sacos" },
-      { path: `${import.meta.env.BASE_URL}industrial/trilla`, type: "link", active: false, selected: false, dirchange: false, title: "Proceso de Trilla" },
-      { path: `${import.meta.env.BASE_URL}industrial/balance-masas`, type: "link", active: false, selected: false, dirchange: false, title: "Balance de Masas" },
-      { path: `${import.meta.env.BASE_URL}industrial/producto-terminado`, type: "link", active: false, selected: false, dirchange: false, title: "Producto Terminado" },
-      { path: `${import.meta.env.BASE_URL}industrial/merma`, type: "link", active: false, selected: false, dirchange: false, title: "Merma / Remanente" },
+      { path: `${import.meta.env.BASE_URL}industrial/programa`, type: "link", active: false, selected: false, dirchange: false, title: "Programa Producción", requirePermission: "VER_PROGRAMA" },
+      { path: `${import.meta.env.BASE_URL}industrial/orden-sacos`, type: "link", active: false, selected: false, dirchange: false, title: "Orden de Sacos", requirePermission: "VER_ORDEN_SACOS" },
+      { path: `${import.meta.env.BASE_URL}industrial/trilla`, type: "link", active: false, selected: false, dirchange: false, title: "Proceso de Trilla", requirePermission: "VER_TRILLA" },
+      { path: `${import.meta.env.BASE_URL}industrial/balance-masas`, type: "link", active: false, selected: false, dirchange: false, title: "Balance de Masas", requirePermission: "VER_BALANCE_MASAS" },
+      { path: `${import.meta.env.BASE_URL}industrial/producto-terminado`, type: "link", active: false, selected: false, dirchange: false, title: "Producto Terminado", requirePermission: "VER_PRODUCTO_TERMINADO" },
+      { path: `${import.meta.env.BASE_URL}industrial/merma`, type: "link", active: false, selected: false, dirchange: false, title: "Merma / Remanente", requirePermission: "VER_REMANENTE" },
     ]
   },
   {
     title: "Despacho", icon: despachoSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}despacho/carga`, type: "link", active: false, selected: false, dirchange: false, title: "Carga de Contenedor" },
-      { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula de Salida" },
-      { path: `${import.meta.env.BASE_URL}despacho/documentacion`, type: "link", active: false, selected: false, dirchange: false, title: "Documentación Final" },
+      { path: `${import.meta.env.BASE_URL}despacho/carga`, type: "link", active: false, selected: false, dirchange: false, title: "Carga de Contenedor", requirePermission: "VER_CARGA" },
+      { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula de Salida", requirePermission: "VER_BASCULA_SALIDA" },
+      { path: `${import.meta.env.BASE_URL}despacho/documentacion`, type: "link", active: false, selected: false, dirchange: false, title: "Documentación Final", requirePermission: "VER_DOCUMENTOS" },
     ]
   },
   {
     title: "Ventas Locales", icon: ventasSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}ventas/kardex`, type: "link", active: false, selected: false, dirchange: false, title: "Kardex Subproductos" },
-      { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, type: "link", active: false, selected: false, dirchange: false, title: "Orden de Venta Local" },
-      { path: `${import.meta.env.BASE_URL}ventas/bascula`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula Venta Local" },
-      { path: `${import.meta.env.BASE_URL}ventas/salida`, type: "link", active: false, selected: false, dirchange: false, title: "Salida Venta Local" },
+      { path: `${import.meta.env.BASE_URL}ventas/kardex`, type: "link", active: false, selected: false, dirchange: false, title: "Kardex Subproductos", requirePermission: "VER_KARDEX" },
+      { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, type: "link", active: false, selected: false, dirchange: false, title: "Orden de Venta Local", requirePermission: "VER_ORDEN_VENTA" },
+      { path: `${import.meta.env.BASE_URL}ventas/bascula`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula Venta Local", requirePermission: "VER_BASCULA_VENTA" },
+      { path: `${import.meta.env.BASE_URL}ventas/salida`, type: "link", active: false, selected: false, dirchange: false, title: "Salida Venta Local", requirePermission: "VER_SALIDA" },
     ]
   },
 
   { menutitle: "SEGURIDAD" },
   {
     title: "Administración", icon: adminSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
-      { path: `${import.meta.env.BASE_URL}admin/usuarios`, type: "link", active: false, selected: false, dirchange: false, title: "Gestión de Usuarios" },
-      { path: `${import.meta.env.BASE_URL}admin/roles`, type: "link", active: false, selected: false, dirchange: false, title: "Roles y Permisos" },
-      { path: `${import.meta.env.BASE_URL}admin/configuracion`, type: "link", active: false, selected: false, dirchange: false, title: "Configuración" },
-      { path: `${import.meta.env.BASE_URL}admin/catalogos`, type: "link", active: false, selected: false, dirchange: false, title: "Mantenimiento Catálogos" },
+      { path: `${import.meta.env.BASE_URL}admin/usuarios`, type: "link", active: false, selected: false, dirchange: false, title: "Gestión de Usuarios", requirePermission: "VER_USUARIOS" },
+      { path: `${import.meta.env.BASE_URL}admin/roles`, type: "link", active: false, selected: false, dirchange: false, title: "Roles y Permisos", requirePermission: "VER_ROLES" },
+      { path: `${import.meta.env.BASE_URL}admin/configuracion`, type: "link", active: false, selected: false, dirchange: false, title: "Configuración", requirePermission: "VER_CONFIGURACION" },
+      { path: `${import.meta.env.BASE_URL}admin/catalogos`, type: "link", active: false, selected: false, dirchange: false, title: "Mantenimiento Catálogos", requirePermission: "VER_CATALOGOS" },
     ]
   },
 ];
