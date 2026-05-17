@@ -120,11 +120,11 @@ import RequirePermission from '../auth/RequirePermission';
 // Módulo 1: Recepción
 import RemisionPage from "../pages/recepcion/RemisionPage";
 import MuestreoPage from "../pages/recepcion/MuestreoPage";
-import LaboratorioPage from "../pages/recepcion/LaboratorioPage";
-import BasculaEntradaPage from "../pages/recepcion/BasculaEntradaPage";
+import LaboratorioPage from "../pages/recepcion/laboratorio/Containers/LaboratorioPage";
+import BasculaEntradaPage from "../pages/recepcion/bascula/Containers/BasculaEntradaPage";
 import WMSPatioPage from "../pages/recepcion/WMSPatioPage";
 import NotaPesoPage from "../pages/recepcion/NotaPesoPage";
-import AprobacionGerenciaPage from '../pages/recepcion/AprobacionGerenciaPage';
+import AprobacionGerenciaPage from '../pages/recepcion/aprobacion-gerencia/Containers/AprobacionGerenciaPage';
 // Módulo 2: Comercial
 import ContratosPage from "../pages/comercial/ContratosPage";
 import LabPreembarquePage from "../pages/comercial/LabPreembarquePage";
