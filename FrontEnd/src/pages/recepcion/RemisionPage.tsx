@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { ClipboardList, Plus, Search, Loader2, Trash2, ChevronRight, ChevronDown, MoreVertical, Edit, Printer } from "lucide-react";
 import PageHeader from "../../components/layout/PageHeader";
-import { Card, Table, Badge, Button, Modal, Form, InputGroup } from 'react-bootstrap';
+import { Card, Table, Badge, Button, Modal, Form, InputGroup, Row, Col, Dropdown, Pagination } from 'react-bootstrap';
 import { moduleColors } from "../../config/colors.config";
 import { useAuth } from "../../auth/useAuth";
 import toast from "react-hot-toast";
 
 // APIs
-import { 
+import {
   getCosechasApi, getPlacasCabezalApi, getPlacasFurgonApi, getTransportesApi,
-  getConductoresApi, getMunicipiosApi, getProveedoresApi, 
+  getConductoresApi, getMunicipiosApi, getProveedoresApi,
   Cosecha, PlacaCabezal, PlacaFurgon, Conductor, Municipio, Proveedor, Transporte
 } from "../../api/catalogs.api";
 import { getReceptionsApi, createReceptionApi, updateReceptionApi, deleteReceptionApi, registrarImpresionApi, Recepcion, CreateReceptionRequest } from "../../api/reception.api";
@@ -43,17 +43,17 @@ const initialState: RemisionFormData = {
   tipo_vehiculo: "Camión Rígido",
   id_placa_cabezal: "",
   id_placa_furgon: "",
-  id_transporte: "", 
+  id_transporte: "",
   id_conductor: "",
   id_municipio: "",
   marchamo: "",
-  observaciones: "", 
+  observaciones: "",
   detalles: [{
     id_proveedor: "",
     cantidad_sacos: "",
     cantidad_qq: "",
     remision: "",
-    observaciones: "", 
+    observaciones: "",
     is_editable: true
   }]
 };
@@ -75,18 +75,21 @@ export default function RemisionPage() {
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [transportes, setTransportes] = useState<Transporte[]>([]);
-  
+
   // Datos principales de la tabla
   const [recepciones, setRecepciones] = useState<Recepcion[]>([]);
   const [formData, setFormData] = useState(initialState);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [actionMenuOpen, setActionMenuOpen] = useState<number | null>(null);
-  
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 15;
+
   // Estados para Anular (Eliminar)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [receptionToDelete, setReceptionToDelete] = useState<Recepcion | null>(null);
-  
+
   // Estados para Imprimir Boleta
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [receptionToPrint, setReceptionToPrint] = useState<Recepcion | null>(null);
@@ -95,9 +98,8 @@ export default function RemisionPage() {
   const handleCloseDeleteModal = () => setIsDeleteModalOpen(false);
   const handleClosePrintModal = () => setIsPrintModalOpen(false);
 
-  // Efecto para cerrar el Dropdown al dar clic fuera
   useEffect(() => {
-    const handleClickOutside = () => setActionMenuOpen(null);
+    const handleClickOutside = () => { setActionMenuOpen(null); setMenuPos(null); };
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
@@ -176,7 +178,7 @@ export default function RemisionPage() {
         is_editable: d.estado_transaccion?.nombre === "Pendiente de Muestrear"
       }))
     });
-    
+
     setIsModalOpen(true);
   };
 
@@ -191,6 +193,7 @@ export default function RemisionPage() {
   };
 
   const confirmDelete = async () => {
+    debugger;
     if (!receptionToDelete) return;
     try {
       setSubmitting(true);
@@ -199,7 +202,7 @@ export default function RemisionPage() {
       setIsDeleteModalOpen(false);
       loadData();
     } catch (error: any) {
-      console.error(error);
+      console.error(error.response?.data?.message);
       toast.error(error.response?.data?.message || "Error al anular el ingreso");
     } finally {
       setSubmitting(false);
@@ -213,11 +216,11 @@ export default function RemisionPage() {
   };
 
   const confirmPrint = async () => {
-    window.print(); 
+    window.print();
     if (receptionToPrint) {
       try {
         await registrarImpresionApi(receptionToPrint.id_recepcion);
-        loadData(); 
+        loadData();
       } catch (error) {
         console.error("Error al registrar impresión:", error);
       }
@@ -273,16 +276,16 @@ export default function RemisionPage() {
       }
 
       setIsModalOpen(false);
-      loadData(); 
+      loadData();
     } catch (error: any) {
-      console.error(error);
+      console.error(error.response?.data?.message);
       toast.error(error.response?.data?.message || "Error al registrar la remisión");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const recepcionesActivas = recepciones.filter(r => 
+  const recepcionesActivas = recepciones.filter(r =>
     r.detalles?.some(d => d.estado && d.estado_transaccion?.nombre === "Pendiente de Muestrear")
   );
 
@@ -295,25 +298,34 @@ export default function RemisionPage() {
     return r.numero_entrada.toLowerCase().includes(term) || transporteName.toLowerCase().includes(term) || provNames.some(name => name.toLowerCase().includes(term));
   });
 
+  const totalPages = Math.max(1, Math.ceil(filteredRecepciones.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedRecepciones = filteredRecepciones.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const totalSacosGlobal = filteredRecepciones.reduce((sum, r) =>
+    sum + (r.detalles?.filter(d => d.estado).reduce((s, d) => s + d.cantidad_sacos, 0) ?? 0), 0);
+  const totalQqGlobal = filteredRecepciones.reduce((sum, r) =>
+    sum + (r.detalles?.filter(d => d.estado).reduce((s, d) => s + Number(d.cantidad_qq), 0) ?? 0), 0);
+
   return (
     <div>
-      <PageHeader 
-        title="Ingreso de Remisión" 
-        subtitle="Registro de vehículos y carga en portería" 
-        icon={ClipboardList} 
-        iconBg={colors.bg} 
-        iconColor={colors.icon} 
-        actions={hasPermission("CREAR_RECEPCION") ? [{ label: "Nueva Remisión", onClick: handleOpenModal, icon: Plus }] : []} 
+      <PageHeader
+        title="Ingreso de Remisión"
+        subtitle="Registro de vehículos y carga en portería"
+        icon={ClipboardList}
+        iconBg={colors.bg}
+        iconColor={colors.icon}
+        actions={hasPermission("CREAR_RECEPCION") ? [{ label: "Nueva Remisión", onClick: handleOpenModal, icon: Plus }] : []}
       />
 
       <Card className="mb-6">
         <Card.Body className="p-4">
           <InputGroup>
             <InputGroup.Text><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
-            <Form.Control 
-              placeholder="Buscar por número de entrada o proveedor..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
+            <Form.Control
+              placeholder="Buscar por número de entrada o proveedor..."
+              value={searchTerm}
+              onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             />
           </InputGroup>
         </Card.Body>
@@ -325,8 +337,8 @@ export default function RemisionPage() {
             <tr>
               <th style={{ width: '40px' }} />
               {hasRowActions && <th className="text-center" style={{ width: '80px' }}>Acciones</th>}
-              <th>No. Entrada</th>
-              <th>Fecha / Hora</th>
+              <th>N° Entrada</th>
+              <th>Fecha y hora</th>
               <th>Transporte</th>
               <th>Placas</th>
               <th>Conductor</th>
@@ -348,7 +360,7 @@ export default function RemisionPage() {
                 </td>
               </tr>
             ) : (
-              filteredRecepciones.map((r) => {
+              paginatedRecepciones.map((r) => {
                 const detallesActivos = r.detalles?.filter(d => d.estado) || [];
                 const totalSacos = detallesActivos.reduce((sum, d) => sum + d.cantidad_sacos, 0);
                 const totalQq = detallesActivos.reduce((sum, d) => sum + Number(d.cantidad_qq), 0);
@@ -360,14 +372,14 @@ export default function RemisionPage() {
                 const isExpanded = expandedRows.includes(r.id_recepcion);
                 const activeDetails = r.detalles?.filter(d => d.estado) || [];
                 const canModify = activeDetails.length > 0 && activeDetails.every(d => d.estado_transaccion?.nombre === "Pendiente de Muestrear");
-                
+
                 return (
                   <React.Fragment key={r.id_recepcion}>
                     <tr className={isExpanded ? "table-warning bg-opacity-10" : ""}>
                       <td>
-                        <Button 
-                          variant="link" 
-                          size="sm" 
+                        <Button
+                          variant="link"
+                          size="sm"
                           className="p-1 text-neutral-500"
                           onClick={() => toggleRow(r.id_recepcion)}
                         >
@@ -376,57 +388,64 @@ export default function RemisionPage() {
                       </td>
                       {hasRowActions && (
                         <td className="text-center">
-                          <div className="position-relative">
-                            <Button 
-                              variant="light" 
-                              size="sm" 
-                              className="p-1 rounded-lg"
-                              onClick={(e) => { e.stopPropagation(); setActionMenuOpen(actionMenuOpen === r.id_recepcion ? null : r.id_recepcion); }}
+                          <Button
+                            variant="light"
+                            size="sm"
+                            className="p-1 rounded-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (actionMenuOpen === r.id_recepcion) {
+                                setActionMenuOpen(null);
+                                setMenuPos(null);
+                              } else {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setActionMenuOpen(r.id_recepcion);
+                                const menuWidth = 180;
+                                const left = Math.min(rect.right + 3, window.innerWidth - menuWidth - 8);
+                                setMenuPos({ top: rect.bottom + 4, left });
+                              }
+                            }}
+                          >
+                            <MoreVertical className="w-5 h-5 text-neutral-600" />
+                          </Button>
+                          {actionMenuOpen === r.id_recepcion && menuPos && (
+                            <div
+                              className="card shadow-lg py-1"
+                              style={{ position: 'fixed', top: menuPos.top, left: menuPos.left, width: '180px', zIndex: 9999 }}
+                              onClick={e => e.stopPropagation()}
                             >
-                              <MoreVertical className="w-5 h-5 text-neutral-600" />
-                            </Button>
-                            {actionMenuOpen === r.id_recepcion && (
-                              <Card 
-                                className="position-absolute shadow-lg z-3 py-1" 
-                                style={{ top: '100%', left: 0, minWidth: '160px', cursor: 'default' }}
-                                onClick={e => e.stopPropagation()}
-                              >
-                                {hasPermission("EDITAR_RECEPCION") && (
-                                  <Button 
-                                    variant="link" 
-                                    className={`w-100 text-start px-3 py-2 text-dark text-decoration-none d-flex align-items-center gap-2 ${canModify ? 'hover-bg-light' : 'opacity-50 text-muted cursor-not-allowed'}`}
+                              {hasPermission("EDITAR_RECEPCION") && (
+                                <button
+                                  className={`dropdown-item d-flex align-items-center gap-2 ${!canModify ? 'disabled text-muted' : ''}`}
+                                  disabled={!canModify}
+                                  title={!canModify ? "No se puede editar porque ya hay cargas en proceso" : ""}
+                                  onClick={() => { handleEdit(r); setActionMenuOpen(null); setMenuPos(null); }}
+                                >
+                                  <Edit className="w-4 h-4" /> Editar Viaje
+                                </button>
+                              )}
+                              {hasPermission("IMPRIMIR_RECEPCION") && (
+                                <button
+                                  className="dropdown-item d-flex align-items-center gap-2"
+                                  onClick={() => { handlePrintClick(r); setActionMenuOpen(null); setMenuPos(null); }}
+                                >
+                                  <Printer className="w-4 h-4" /> Imprimir Boleta
+                                </button>
+                              )}
+                              {hasPermission("ANULAR_RECEPCION") && (
+                                <>
+                                  <div className="dropdown-divider"></div>
+                                  <button
+                                    className={`dropdown-item d-flex align-items-center gap-2 text-danger ${!canModify ? 'disabled text-muted' : ''}`}
                                     disabled={!canModify}
-                                    title={!canModify ? "No se puede editar porque ya hay cargas en proceso" : ""}
-                                    onClick={() => { handleEdit(r); setActionMenuOpen(null); }}
+                                    onClick={() => { handleDeleteClick(r); setMenuPos(null); }}
                                   >
-                                    <Edit className="w-4 h-4"/> Editar Viaje
-                                  </Button>
-                                )}
-                                {hasPermission("IMPRIMIR_RECEPCION") && (
-                                  <Button 
-                                    variant="link" 
-                                    className="w-100 text-start px-3 py-2 text-dark text-decoration-none d-flex align-items-center gap-2 hover-bg-light"
-                                    onClick={() => { handlePrintClick(r); setActionMenuOpen(null); }}
-                                  >
-                                    <Printer className="w-4 h-4"/> Imprimir Boleta
-                                  </Button>
-                                )}
-                                {hasPermission("ANULAR_RECEPCION") && (
-                                  <>
-                                    <div className="border-top my-1"></div>
-                                    <Button 
-                                      variant="link" 
-                                      className={`w-100 text-start px-3 py-2 text-danger text-decoration-none d-flex align-items-center gap-2 ${canModify ? 'hover-bg-danger-subtle' : 'opacity-50 text-muted cursor-not-allowed'}`}
-                                      disabled={!canModify}
-                                      onClick={() => { handleDeleteClick(r); setActionMenuOpen(null); }}
-                                    >
-                                      <Trash2 className="w-4 h-4"/> Anular Ingreso
-                                    </Button>
-                                  </>
-                                )}
-                              </Card>
-                            )}
-                          </div>
+                                    <Trash2 className="w-4 h-4" /> Anular Ingreso
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </td>
                       )}
                       <td className="font-bold text-coffee-700">{r.numero_entrada}</td>
@@ -482,7 +501,45 @@ export default function RemisionPage() {
               })
             )}
           </tbody>
+          {!loading && filteredRecepciones.length > 0 && (
+            <tfoot className="table-light border-top border-2">
+              <tr>
+                <td colSpan={hasRowActions ? 5 : 4} className="text-end fw-bold text-neutral-600 py-2">
+                  Total ({filteredRecepciones.length} {filteredRecepciones.length === 1 ? 'entrada' : 'entradas'}):
+                </td>            
+                <td className="text-center fw-bold">{totalSacosGlobal.toLocaleString()}</td>
+                <td className="text-end fw-bold">{totalQqGlobal.toFixed(2)} QQ</td>
+              </tr>
+            </tfoot>
+          )}
         </Table>
+
+        {!loading && totalPages > 1 && (
+          <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+            <span className="text-muted small">
+              Página {safePage} de {totalPages} — {filteredRecepciones.length} registros
+            </span>
+            <Pagination size="sm" className="mb-0">
+              <Pagination.First onClick={() => setCurrentPage(1)} disabled={safePage === 1} />
+              <Pagination.Prev onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} />
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push('...');
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === '...'
+                    ? <Pagination.Ellipsis key={`e-${idx}`} disabled />
+                    : <Pagination.Item key={p} active={p === safePage} onClick={() => setCurrentPage(p as number)}>{p}</Pagination.Item>
+                )
+              }
+              <Pagination.Next onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} />
+              <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages} />
+            </Pagination>
+          </div>
+        )}
       </Card>
 
       <Modal show={isModalOpen} onHide={handleCloseModal} size="lg">
@@ -491,95 +548,100 @@ export default function RemisionPage() {
             <Modal.Title>{editingId ? "Editar Remisión" : "Nueva Remisión (Ingreso a Portería)"}</Modal.Title>
           </Modal.Header>
           <Modal.Body className="space-y-6">
-            
+
             {/* Sección 1: Datos del Viaje */}
             <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200">
               <h3 className="font-bold text-neutral-900 mb-4 d-flex align-items-center gap-2 fs-6">
-                <span className="bg-amber-100 text-amber-800 w-6 h-6 rounded-circle d-inline-flex align-items-center justify-center text-xs">1</span>
+                <span className="bg-primary text-white border border-primary rounded-circle d-inline-flex align-items-center justify-content-center fw-bold" style={{ width: '1.5rem', height: '1.5rem', fontSize: '0.75rem' }}>1</span>
                 Datos del Viaje y Transporte
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <Form.Group>
-                  <Form.Label>Cosecha</Form.Label>
-                  <Form.Select value={formData.id_cosecha} onChange={(e) => setFormData({...formData, id_cosecha: e.target.value})} required>
-                    {cosechas.map(c => <option key={c.id_cosecha} value={c.id_cosecha.toString()}>{c.cosecha}</option>)}
-                  </Form.Select>
-                </Form.Group>
-                <Form.Group>
-                  <Form.Label>Municipio de Origen</Form.Label>
-                  <Form.Select value={formData.id_municipio} onChange={(e) => setFormData({...formData, id_municipio: e.target.value})} required>
-                    <option value="">Seleccione un municipio</option>
-                    {municipios.map(m => <option key={m.id_municipio} value={m.id_municipio.toString()}>{`${m.nombre}${((m as any).departamento?.nombre) ? `, ${(m as any).departamento.nombre}` : ''}`}</option>)}
-                  </Form.Select>
-                </Form.Group>
-                
-                <Form.Group>
-                  <Form.Label>Empresa de Transporte</Form.Label>
-                  <Form.Select value={formData.id_transporte} onChange={(e) => setFormData({...formData, id_transporte: e.target.value, id_conductor: ""})} required>
-                    <option value="">Seleccione transporte</option>
-                    {transportes.map(t => <option key={t.id_transporte} value={t.id_transporte.toString()}>{t.nombre}</option>)}
-                  </Form.Select>
-                </Form.Group>
-                
-                <Form.Group>
-                  <Form.Label>Conductor</Form.Label>
-                  <Form.Select value={formData.id_conductor} onChange={(e) => setFormData({...formData, id_conductor: e.target.value})} required disabled={!formData.id_transporte}>
-                    <option value="">Seleccione un conductor</option>
-                    {conductores.filter(c => c.id_transporte.toString() === formData.id_transporte).map(c => <option key={c.id_conductor} value={c.id_conductor.toString()}>{c.nombre}</option>)}
-                  </Form.Select>
-                </Form.Group>
-                
-                <Form.Group>
-                  <Form.Label>Tipo de Vehículo</Form.Label>
-                  <Form.Select 
-                    value={formData.tipo_vehiculo} 
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      tipo_vehiculo: e.target.value,
-                      id_placa_furgon: e.target.value === "Rastra" ? formData.id_placa_furgon : ""
-                    })} 
-                    required 
-                  >
-                    <option value="Camión Rígido">Camión Rígido</option>
-                    <option value="Rastra">Rastra (Cabezal y Furgón)</option>
-                    <option value="Pick-up">Pick-up / Vehículo Liviano</option>
-                  </Form.Select>
-                </Form.Group>
-
-                <Form.Group>
-                  <Form.Label>Placa Cabezal (Tractor o Vehículo)</Form.Label>
-                  <Form.Select value={formData.id_placa_cabezal} onChange={(e) => setFormData({...formData, id_placa_cabezal: e.target.value})} required>
-                    <option value="">Seleccione placa</option>
-                    {placasCabezal.map(p => <option key={p.id_placa_cabezal} value={p.id_placa_cabezal.toString()}>{p.placa}</option>)}
-                  </Form.Select>
-                </Form.Group>
-                
-                <Form.Group>
-                  <Form.Label>Placa Furgón (Tráiler)</Form.Label>
-                  <Form.Select 
-                    value={formData.id_placa_furgon} 
-                    onChange={(e) => setFormData({...formData, id_placa_furgon: e.target.value})} 
-                    disabled={formData.tipo_vehiculo !== "Rastra"}
-                  >
-                    <option value="">Sin furgón</option>
-                    {placasFurgon.map(p => <option key={p.id_placa_furgon} value={p.id_placa_furgon.toString()}>{p.placa}</option>)}
-                  </Form.Select>
-                </Form.Group>
-
-                <Form.Group className="md:col-span-2">
-                  <Form.Label>Número de Marchamo (Opcional)</Form.Label>
-                  <Form.Control value={formData.marchamo} onChange={(e) => setFormData({...formData, marchamo: e.target.value})} placeholder="Si trae sello de seguridad..." />
-                </Form.Group>
-              </div>
+              <Row className="g-3">
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Cosecha</Form.Label>
+                    <Form.Select value={formData.id_cosecha} onChange={(e) => setFormData({ ...formData, id_cosecha: e.target.value })} required>
+                      {cosechas.map(c => <option key={c.id_cosecha} value={c.id_cosecha.toString()}>{c.cosecha}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Municipio de Origen</Form.Label>
+                    <Form.Select value={formData.id_municipio} onChange={(e) => setFormData({ ...formData, id_municipio: e.target.value })} required>
+                      <option value="">Seleccione un municipio</option>
+                      {municipios.map(m => <option key={m.id_municipio} value={m.id_municipio.toString()}>{`${m.nombre}${((m as any).departamento?.nombre) ? `, ${(m as any).departamento.nombre}` : ''}`}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Empresa de Transporte</Form.Label>
+                    <Form.Select value={formData.id_transporte} onChange={(e) => setFormData({ ...formData, id_transporte: e.target.value, id_conductor: "" })} required>
+                      <option value="">Seleccione transporte</option>
+                      {transportes.map(t => <option key={t.id_transporte} value={t.id_transporte.toString()}>{t.nombre}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Conductor</Form.Label>
+                    <Form.Select value={formData.id_conductor} onChange={(e) => setFormData({ ...formData, id_conductor: e.target.value })} required disabled={!formData.id_transporte}>
+                      <option value="">Seleccione un conductor</option>
+                      {conductores.filter(c => c.id_transporte.toString() === formData.id_transporte).map(c => <option key={c.id_conductor} value={c.id_conductor.toString()}>{c.nombre}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Tipo de Vehículo</Form.Label>
+                    <Form.Select
+                      value={formData.tipo_vehiculo}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        tipo_vehiculo: e.target.value,
+                        id_placa_furgon: e.target.value === "Rastra" ? formData.id_placa_furgon : ""
+                      })}
+                      required
+                    >
+                      <option value="Camión Rígido">Camión Rígido</option>
+                      <option value="Rastra">Rastra (Cabezal y Furgón)</option>
+                      <option value="Pick-up">Pick-up / Vehículo Liviano</option>
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Placa Cabezal (Tractor o Vehículo)</Form.Label>
+                    <Form.Select value={formData.id_placa_cabezal} onChange={(e) => setFormData({ ...formData, id_placa_cabezal: e.target.value })} required>
+                      <option value="">Seleccione placa</option>
+                      {placasCabezal.map(p => <option key={p.id_placa_cabezal} value={p.id_placa_cabezal.toString()}>{p.placa}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Placa Furgón (Tráiler)</Form.Label>
+                    <Form.Select
+                      value={formData.id_placa_furgon}
+                      onChange={(e) => setFormData({ ...formData, id_placa_furgon: e.target.value })}
+                      disabled={formData.tipo_vehiculo !== "Rastra"}
+                    >
+                      <option value="">Sin furgón</option>
+                      {placasFurgon.map(p => <option key={p.id_placa_furgon} value={p.id_placa_furgon.toString()}>{p.placa}</option>)}
+                    </Form.Select>
+                  </Form.Group>
+                </Col>
+                <Col md={6}>
+                  <Form.Group>
+                    <Form.Label>Número de Marchamo (Opcional)</Form.Label>
+                    <Form.Control value={formData.marchamo} onChange={(e) => setFormData({ ...formData, marchamo: e.target.value })} placeholder="Si trae sello de seguridad..." />
+                  </Form.Group>
+                </Col>
+              </Row>
             </div>
 
             {/* Sección 2: Datos de la Carga */}
-            <div className="space-y-4">
-              <h3 className="font-bold text-neutral-900 mb-4 d-flex align-items-center gap-2 fs-6">
-                <span className="bg-amber-100 text-amber-800 w-6 h-6 rounded-circle d-inline-flex align-items-center justify-center text-xs">2</span>
-                Datos de la Carga (Café por Proveedor)
-              </h3>
-              
+            <div className="space-y-4 pt-4">
               {formData.detalles.map((detalle, index) => {
                 const isReadOnly = detalle.is_editable === false;
                 return (
@@ -594,34 +656,46 @@ export default function RemisionPage() {
                         <Badge bg="warning" className="text-dark">No editable (En Proceso)</Badge>
                       </div>
                     )}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <Form.Group className="md:col-span-2">
-                        <Form.Label>Proveedor / Finca {index + 1}</Form.Label>
-                        <Form.Select value={detalle.id_proveedor} onChange={(e) => handleDetalleChange(index, "id_proveedor", e.target.value)} required disabled={isReadOnly}>
-                          <option value="">Busque y seleccione al proveedor</option>
-                          {proveedores.map(p => <option key={p.id_proveedor} value={p.id_proveedor.toString()}>{p.nombre}</option>)}
-                        </Form.Select>
-                      </Form.Group>
-                      <Form.Group>
-                        <Form.Label>Documento de Remisión</Form.Label>
-                        <Form.Control value={detalle.remision} onChange={(e) => handleDetalleChange(index, "remision", e.target.value)} placeholder="No. de Guía o Remisión Física" required disabled={isReadOnly} />
-                      </Form.Group>
-                      <div className="d-none d-md-block"></div>
-                      
-                      <Form.Group>
-                        <Form.Label>Cantidad de Sacos (Declarados)</Form.Label>
-                        <Form.Control type="number" value={detalle.cantidad_sacos} onChange={(e) => handleDetalleChange(index, "cantidad_sacos", e.target.value)} placeholder="0" required disabled={isReadOnly} />
-                      </Form.Group>
-                      <Form.Group>
-                        <Form.Label>Peso Estimado (Quintales)</Form.Label>
-                        <Form.Control type="number" step="0.01" value={detalle.cantidad_qq} onChange={(e) => handleDetalleChange(index, "cantidad_qq", e.target.value)} placeholder="0.00" required disabled={isReadOnly} />
-                      </Form.Group>
-                      
-                      <Form.Group className="md:col-span-2">
-                        <Form.Label>Observaciones de esta carga</Form.Label>
-                        <Form.Control value={detalle.observaciones} onChange={(e) => handleDetalleChange(index, "observaciones", e.target.value)} placeholder="Humedad estimada, daños visibles..." disabled={isReadOnly} />
-                      </Form.Group>
-                    </div>
+                    <Row className="g-3">
+                      <h3 className="font-bold text-neutral-900 mb-4 d-flex align-items-center gap-2 fs-6">
+                        <span className="bg-primary text-white border border-primary rounded-circle d-inline-flex align-items-center justify-content-center fw-bold" style={{ width: '1.5rem', height: '1.5rem', fontSize: '0.75rem' }}>2</span>
+                        Datos de la Carga (Café por Proveedor)
+                      </h3>
+
+                      <Col xs={12}>
+                        <Form.Group>
+                          <Form.Label>Proveedor / Finca {index + 1}</Form.Label>
+                          <Form.Select value={detalle.id_proveedor} onChange={(e) => handleDetalleChange(index, "id_proveedor", e.target.value)} required disabled={isReadOnly}>
+                            <option value="">Busque y seleccione al proveedor</option>
+                            {proveedores.map(p => <option key={p.id_proveedor} value={p.id_proveedor.toString()}>{p.nombre}</option>)}
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col xs={12}>
+                        <Form.Group>
+                          <Form.Label>Documento de Remisión</Form.Label>
+                          <Form.Control value={detalle.remision} onChange={(e) => handleDetalleChange(index, "remision", e.target.value)} placeholder="No. de Guía o Remisión Física" required disabled={isReadOnly} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Cantidad de Sacos (Declarados)</Form.Label>
+                          <Form.Control type="number" value={detalle.cantidad_sacos} onChange={(e) => handleDetalleChange(index, "cantidad_sacos", e.target.value)} placeholder="0" required disabled={isReadOnly} />
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group>
+                          <Form.Label>Peso Estimado (Quintales)</Form.Label>
+                          <Form.Control type="number" step="0.01" value={detalle.cantidad_qq} onChange={(e) => handleDetalleChange(index, "cantidad_qq", e.target.value)} placeholder="0.00" required disabled={isReadOnly} />
+                        </Form.Group>
+                      </Col>
+                      <Col xs={12}>
+                        <Form.Group>
+                          <Form.Label>Observaciones de esta carga</Form.Label>
+                          <Form.Control value={detalle.observaciones} onChange={(e) => handleDetalleChange(index, "observaciones", e.target.value)} placeholder="Humedad estimada, daños visibles..." disabled={isReadOnly} />
+                        </Form.Group>
+                      </Col>
+                    </Row>
                   </div>
                 )
               })}
@@ -634,7 +708,7 @@ export default function RemisionPage() {
           <Modal.Footer>
             <Button variant="secondary" onClick={handleCloseModal} disabled={submitting}>Cancelar</Button>
             <Button variant="primary" type="submit" disabled={submitting}>
-              {submitting ? <Loader2 className="w-4 h-4 animate-spin me-2"/> : null}
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin me-2" /> : null}
               {editingId ? "Guardar Cambios" : "Registrar Ingreso"}
             </Button>
           </Modal.Footer>
@@ -647,14 +721,14 @@ export default function RemisionPage() {
         </Modal.Header>
         <Modal.Body>
           <p className="text-neutral-600 mb-0">
-            ¿Está seguro que desea anular el ingreso <span className="fw-bold text-dark">{receptionToDelete?.numero_entrada}</span>? 
+            ¿Está seguro que desea anular el ingreso <span className="fw-bold text-dark">{receptionToDelete?.numero_entrada}</span>?
             Esta acción cancelará permanentemente todas las cargas asociadas a este viaje.
           </p>
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseDeleteModal} disabled={submitting}>Cancelar</Button>
           <Button variant="danger" onClick={confirmDelete} disabled={submitting}>
-            {submitting ? <Loader2 className="w-3 h-3 animate-spin me-2"/> : null} Sí, Anular
+            {submitting ? <Loader2 className="w-3 h-3 animate-spin me-2" /> : null} Sí, Anular
           </Button>
         </Modal.Footer>
       </Modal>
@@ -700,20 +774,20 @@ export default function RemisionPage() {
                 }
               `}</style>
 
-              <div className="bg-amber-50 p-4 rounded-xl border-2 border-dashed border-amber-200 text-neutral-800 mb-4">
-                <p className="text-sm text-amber-700 mb-0 font-medium d-flex align-items-center gap-2">
-                  <Printer className="w-4 h-4" /> 
+              <div className="bg-warning-subtle border border-2 border-warning rounded-3 p-4 mb-4">
+                <p className="text-warning-emphasis mb-0 fw-medium d-flex align-items-center gap-2 small">
+                  <Printer className="w-4 h-4" />
                   Revise los datos. Al imprimir, el sistema usará las coordenadas para el formato preimpreso.
                 </p>
               </div>
-              
+
               <div id="print-area">
                 <div className="print-field coord-numero">N° Ingreso: {receptionToPrint.numero_entrada}</div>
                 <div className="print-field coord-fecha">Fecha: {new Date(receptionToPrint.fecha_entrada).toLocaleString()}</div>
                 {receptionToPrint.cantidad_impresiones > 0 && (
                   <div className="print-field coord-reimpresion">*** REIMPRESIÓN ***</div>
                 )}
-                
+
                 {(() => {
                   const cond = conductores.find(c => c.id_conductor === receptionToPrint.id_conductor);
                   const transp = transportes.find(t => t.id_transporte === cond?.id_transporte);
@@ -722,7 +796,7 @@ export default function RemisionPage() {
                   const muni = municipios.find(m => m.id_municipio === receptionToPrint.id_municipio);
                   const depto = muni ? (muni as any).departamento?.nombre : "";
                   const origen = muni ? (depto ? `${muni.nombre}, ${depto}` : muni.nombre) : "N/A";
-                  
+
                   return (
                     <>
                       <div className="print-field coord-transp">Transporte: {transp?.nombre || "N/A"}</div>
@@ -759,7 +833,7 @@ export default function RemisionPage() {
             <Modal.Footer>
               <Button variant="secondary" onClick={handleClosePrintModal}>Cancelar</Button>
               <Button variant="primary" onClick={confirmPrint} className="d-flex align-items-center gap-2">
-                <Printer className="w-4 h-4"/> Imprimir Formato
+                <Printer className="w-4 h-4" /> Imprimir Formato
               </Button>
             </Modal.Footer>
           </>
