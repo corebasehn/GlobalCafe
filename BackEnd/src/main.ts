@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { AllExceptionsFilter } from './prisma-exception.filter';
 
@@ -8,7 +9,8 @@ async function bootstrap() {
 
   // 1. Configurar prefijo global '/api'
   app.setGlobalPrefix('api');
-  app.useGlobalFilters(new AllExceptionsFilter());  
+  app.useGlobalFilters(new AllExceptionsFilter());
+  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
   // --- CONFIGURACIÓN DE SWAGGER ---
   const config = new DocumentBuilder()
     .setTitle('PSS Global Café API')

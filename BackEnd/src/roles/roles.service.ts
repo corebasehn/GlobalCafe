@@ -106,19 +106,26 @@ export class RolesService {
   async update(id: number, data: UpdateRoleDto, currentUser: any) {
     const oldRole = await this.prisma.rol.findUnique({ where: { id_rol: id } });
     if (!oldRole) throw new NotFoundException('Rol no encontrado');
-    if (oldRole.es_rol_sistema) throw new ConflictException('No se pueden editar los roles críticos del sistema');
+    
+    // Bloqueo de seguridad para roles críticos si fuera necesario
+    // if (oldRole.es_rol_sistema) throw new ConflictException('No se puede editar un rol del sistema');
 
     try {
       return await this.prisma.$transaction(async (tx) => {
+        // Preparar solo los campos que vienen en el DTO
+        const updateData: any = {
+          usuario_actualizacion: currentUser?.id,
+          fecha_actualizacion: new Date(),
+        };
+
+        if (data.codigo) updateData.codigo = data.codigo;
+        if (data.nombre) updateData.nombre = data.nombre;
+        if (data.descripcion !== undefined) updateData.descripcion = data.descripcion;
+        if (data.estado !== undefined) updateData.estado = data.estado;
+
         const updated = await tx.rol.update({
           where: { id_rol: id },
-          data: {
-            codigo: data.codigo,
-            nombre: data.nombre,
-            descripcion: data.descripcion,
-            usuario_actualizacion: currentUser?.id,
-            fecha_actualizacion: new Date(),
-          }
+          data: updateData,
         });
 
         // Reemplazar permisos si el array fue provisto
@@ -128,7 +135,7 @@ export class RolesService {
             await tx.rolPermiso.createMany({
               data: data.permisos.map(id_permiso => ({
                 id_rol: id,
-                id_permiso,
+                id_permiso: Number(id_permiso),
                 usuario_asignacion: currentUser?.id
               }))
             });
@@ -136,9 +143,12 @@ export class RolesService {
         }
         return updated;
       });
-    } catch (error) {
-      console.error(error);
-      throw new InternalServerErrorException('Error al actualizar el rol');
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new ConflictException(`El código '${data.codigo}' ya existe.`);
+      }
+      console.error('RolesService.update Error:', error);
+      throw new InternalServerErrorException('Error al actualizar el rol: ' + (error.message || 'Error desconocido'));
     }
   }
 

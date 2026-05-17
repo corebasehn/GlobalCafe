@@ -2,11 +2,14 @@ import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, Request }
 import { CatalogsService } from './catalogs.service';
 import { CreateSimpleCatalogDto } from './dto/create-simple-catalog.dto';
 import { AuthGuard } from '../auth/auth.guard';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/permissions.decorator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('catalogs')
 @ApiBearerAuth()
-@UseGuards(AuthGuard) // Protegemos todos los catálogos para que requieran token
+@UseGuards(AuthGuard, PermissionsGuard) 
+@RequirePermissions('VER_CATALOGOS')
 @Controller('catalogs')
 export class CatalogsController {
   constructor(private readonly catalogsService: CatalogsService) {}
@@ -134,23 +137,19 @@ export class CatalogsController {
     // ==========================================
   // CATADORES
   // ==========================================
-  @UseGuards(AuthGuard)
   @Get('catadores')
   getCatadores() { return this.catalogsService.getCatadores(); }
 
-  @UseGuards(AuthGuard)
   @Post('catadores')
   createCatador(@Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.createCatador(dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Patch('catadores/:id')
   updateCatador(@Param('id') id: string, @Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.updateCatador(+id, dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Delete('catadores/:id')
   deleteCatador(@Param('id') id: string, @Request() req) { 
     return this.catalogsService.deleteCatador(+id, req.user?.id); 
@@ -159,23 +158,19 @@ export class CatalogsController {
   // ==========================================
   // CALIDAD
   // ==========================================
-  @UseGuards(AuthGuard)
   @Get('calidades')
   getCalidades() { return this.catalogsService.getCalidades(); }
 
-  @UseGuards(AuthGuard)
   @Post('calidades')
   createCalidad(@Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.createCalidad(dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Patch('calidades/:id')
   updateCalidad(@Param('id') id: string, @Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.updateCalidad(+id, dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Delete('calidades/:id')
   deleteCalidad(@Param('id') id: string, @Request() req) { 
     return this.catalogsService.deleteCalidad(+id, req.user?.id); 
@@ -184,23 +179,19 @@ export class CatalogsController {
   // ==========================================
   // DEFECTOS
   // ==========================================
-  @UseGuards(AuthGuard)
   @Get('defectos')
   getDefectos() { return this.catalogsService.getDefectos(); }
 
-  @UseGuards(AuthGuard)
   @Post('defectos')
   createDefecto(@Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.createDefecto(dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Patch('defectos/:id')
   updateDefecto(@Param('id') id: string, @Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.updateDefecto(+id, dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Delete('defectos/:id')
   deleteDefecto(@Param('id') id: string, @Request() req) { 
     return this.catalogsService.deleteDefecto(+id, req.user?.id); 
@@ -209,23 +200,19 @@ export class CatalogsController {
   // ==========================================
   // ZARANDAS
   // ==========================================
-  @UseGuards(AuthGuard)
   @Get('zarandas')
   getZarandas() { return this.catalogsService.getZarandas(); }
 
-  @UseGuards(AuthGuard)
   @Post('zarandas')
   createZaranda(@Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.createZaranda(dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Patch('zarandas/:id')
   updateZaranda(@Param('id') id: string, @Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.updateZaranda(+id, dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Delete('zarandas/:id')
   deleteZaranda(@Param('id') id: string, @Request() req) { 
     return this.catalogsService.deleteZaranda(+id, req.user?.id); 
@@ -234,23 +221,19 @@ export class CatalogsController {
   // ==========================================
   // TAZAS
   // ==========================================
-  @UseGuards(AuthGuard)
   @Get('tazas')
   getTazas() { return this.catalogsService.getTazas(); }
 
-  @UseGuards(AuthGuard)
   @Post('tazas')
   createTaza(@Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.createTaza(dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Patch('tazas/:id')
   updateTaza(@Param('id') id: string, @Body() dto: CreateSimpleCatalogDto, @Request() req) { 
     return this.catalogsService.updateTaza(+id, dto, req.user?.id); 
   }
 
-  @UseGuards(AuthGuard)
   @Delete('tazas/:id')
   deleteTaza(@Param('id') id: string, @Request() req) { 
     return this.catalogsService.deleteTaza(+id, req.user?.id); 

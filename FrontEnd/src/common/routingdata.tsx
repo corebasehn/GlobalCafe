@@ -120,11 +120,11 @@ import RequirePermission from '../auth/RequirePermission';
 // Módulo 1: Recepción
 import RemisionPage from "../pages/recepcion/RemisionPage";
 import MuestreoPage from "../pages/recepcion/MuestreoPage";
-import LaboratorioPage from "../pages/recepcion/LaboratorioPage";
-import BasculaEntradaPage from "../pages/recepcion/BasculaEntradaPage";
+import LaboratorioPage from "../pages/recepcion/laboratorio/Containers/LaboratorioPage";
+import BasculaEntradaPage from "../pages/recepcion/bascula/Containers/BasculaEntradaPage";
 import WMSPatioPage from "../pages/recepcion/WMSPatioPage";
 import NotaPesoPage from "../pages/recepcion/NotaPesoPage";
-import AprobacionGerenciaPage from '../pages/recepcion/AprobacionGerenciaPage';
+import AprobacionGerenciaPage from '../pages/recepcion/aprobacion-gerencia/Containers/AprobacionGerenciaPage';
 // Módulo 2: Comercial
 import ContratosPage from "../pages/comercial/ContratosPage";
 import LabPreembarquePage from "../pages/comercial/LabPreembarquePage";
@@ -293,40 +293,40 @@ export const Routingdata = [
   // --- RUTAS DE GLOBAL CAFE ---
   // Módulo 1: Recepción
   { path: `${import.meta.env.BASE_URL}recepcion/remision`, element: <RequirePermission permission="VER_RECEPCION"><RemisionPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, element: <RequirePermission permission="VER_RECEPCION"><MuestreoPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, element: <RequirePermission permission="VER_RECEPCION"><LaboratorioPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, element: <RequirePermission permission="VER_RECEPCION"><BasculaEntradaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, element: <RequirePermission permission="VER_RECEPCION"><WMSPatioPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, element: <RequirePermission permission="VER_RECEPCION"><NotaPesoPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, element: <RequirePermission permission="VER_RECEPCION"><AprobacionGerenciaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, element: <RequirePermission permission="VER_MUESTREO"><MuestreoPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, element: <RequirePermission permission="VER_MUESTRA"><LaboratorioPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, element: <RequirePermission permission="VER_BASCULA"><BasculaEntradaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, element: <RequirePermission permission="VER_WMS_PATIO"><WMSPatioPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, element: <RequirePermission permission="VER_NOTA_PESO"><NotaPesoPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, element: <RequirePermission permission="VER_APROBACIONES"><AprobacionGerenciaPage /></RequirePermission> },
   // Módulo 2: Comercial
-  { path: `${import.meta.env.BASE_URL}comercial/contratos`, element: <RequirePermission permission="VER_COMERCIAL"><ContratosPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, element: <RequirePermission permission="VER_COMERCIAL"><LabPreembarquePage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}comercial/aprobacion`, element: <RequirePermission permission="VER_COMERCIAL"><AprobacionPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}comercial/lotes`, element: <RequirePermission permission="VER_COMERCIAL"><LotesPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}comercial/instrucciones-embarque`, element: <RequirePermission permission="VER_COMERCIAL"><InstruccionesEmbarquePage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}comercial/inventario-pergamino`, element: <RequirePermission permission="VER_COMERCIAL"><InventarioPergaminoPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}comercial/contratos`, element: <RequirePermission permission="VER_CONTRATOS"><ContratosPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, element: <RequirePermission permission="VER_LAB_PREEMBARQUE"><LabPreembarquePage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}comercial/aprobacion`, element: <RequirePermission permission="VER_APROBACIONES_CLIENTE"><AprobacionPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}comercial/lotes`, element: <RequirePermission permission="VER_LOTES"><LotesPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}comercial/instrucciones-embarque`, element: <RequirePermission permission="VER_SI"><InstruccionesEmbarquePage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}comercial/inventario-pergamino`, element: <RequirePermission permission="VER_INVENTARIO"><InventarioPergaminoPage /></RequirePermission> },
   // Módulo 3: Industrial
-  { path: `${import.meta.env.BASE_URL}industrial/programa`, element: <RequirePermission permission="VER_INDUSTRIAL"><ProgramaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}industrial/orden-sacos`, element: <RequirePermission permission="VER_INDUSTRIAL"><OrdenSacosPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}industrial/trilla`, element: <RequirePermission permission="VER_INDUSTRIAL"><TrillaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}industrial/balance-masas`, element: <RequirePermission permission="VER_INDUSTRIAL"><BalanceMasasPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}industrial/producto-terminado`, element: <RequirePermission permission="VER_INDUSTRIAL"><ProductoTerminadoPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}industrial/merma`, element: <RequirePermission permission="VER_INDUSTRIAL"><MermaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}industrial/programa`, element: <RequirePermission permission="VER_PROGRAMA"><ProgramaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}industrial/orden-sacos`, element: <RequirePermission permission="VER_ORDEN_SACOS"><OrdenSacosPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}industrial/trilla`, element: <RequirePermission permission="VER_TRILLA"><TrillaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}industrial/balance-masas`, element: <RequirePermission permission="VER_BALANCE_MASAS"><BalanceMasasPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}industrial/producto-terminado`, element: <RequirePermission permission="VER_PRODUCTO_TERMINADO"><ProductoTerminadoPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}industrial/merma`, element: <RequirePermission permission="VER_REMANENTE"><MermaPage /></RequirePermission> },
   // Módulo 4: Despacho
-  { path: `${import.meta.env.BASE_URL}despacho/carga`, element: <RequirePermission permission="VER_DESPACHO"><CargaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, element: <RequirePermission permission="VER_DESPACHO"><BasculaSalidaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}despacho/documentacion`, element: <RequirePermission permission="VER_DESPACHO"><DocumentacionPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}despacho/carga`, element: <RequirePermission permission="VER_CARGA"><CargaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, element: <RequirePermission permission="VER_BASCULA_SALIDA"><BasculaSalidaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}despacho/documentacion`, element: <RequirePermission permission="VER_DOCUMENTOS"><DocumentacionPage /></RequirePermission> },
   // Módulo 5: Ventas Locales
-  { path: `${import.meta.env.BASE_URL}ventas/kardex`, element: <RequirePermission permission="VER_VENTAS_LOCALES"><KardexPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, element: <RequirePermission permission="VER_VENTAS_LOCALES"><OrdenVentaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}ventas/bascula`, element: <RequirePermission permission="VER_VENTAS_LOCALES"><BasculaVentaPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}ventas/salida`, element: <RequirePermission permission="VER_VENTAS_LOCALES"><SalidaVentaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}ventas/kardex`, element: <RequirePermission permission="VER_KARDEX"><KardexPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, element: <RequirePermission permission="VER_ORDEN_VENTA"><OrdenVentaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}ventas/bascula`, element: <RequirePermission permission="VER_BASCULA_VENTA"><BasculaVentaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}ventas/salida`, element: <RequirePermission permission="VER_SALIDA"><SalidaVentaPage /></RequirePermission> },
   // Administración
-  { path: `${import.meta.env.BASE_URL}admin/usuarios`, element: <RequirePermission permission="VER_ADMIN"><UsuariosPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}admin/roles`, element: <RequirePermission permission="VER_ADMIN"><RolesPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}admin/configuracion`, element: <RequirePermission permission="VER_ADMIN"><ConfiguracionPage /></RequirePermission> },
-  { path: `${import.meta.env.BASE_URL}admin/catalogos`, element: <RequirePermission permission="VER_ADMIN"><MantenimientoCatalogos /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}admin/usuarios`, element: <RequirePermission permission="VER_USUARIOS"><UsuariosPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}admin/roles`, element: <RequirePermission permission="VER_ROLES"><RolesPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}admin/configuracion`, element: <RequirePermission permission="VER_CONFIGURACION"><ConfiguracionPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}admin/catalogos`, element: <RequirePermission permission="VER_CATALOGOS"><MantenimientoCatalogos /></RequirePermission> },
 ];
 
 export const Sidebarcomponents = [
@@ -540,13 +540,13 @@ export const Sidebarcomponents = [
     type: "sub",
     active: false,
     children: [
-      { path: `${import.meta.env.BASE_URL}recepcion/remision`, type: "link", active: false, label: "Registro de Remisión" },
-      { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, type: "link", active: false, label: "Muestreo en Patio" },
-      { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, type: "link", active: false, label: "Laboratorio" },
-      { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, type: "link", active: false, label: "Báscula de Entrada" },
-      { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, label: "WMS Patio" },
-      { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, label: "Nota de Peso" },
-      { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, label: "Aprobación Gerencia" },
+      { path: `${import.meta.env.BASE_URL}recepcion/remision`, type: "link", active: false, label: "Registro de Remisión", requirePermission: "VER_RECEPCION" },
+      { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, type: "link", active: false, label: "Muestreo en Patio", requirePermission: "VER_MUESTREO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, type: "link", active: false, label: "Laboratorio", requirePermission: "VER_MUESTRA" },
+      { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, type: "link", active: false, label: "Báscula de Entrada", requirePermission: "VER_BASCULA" },
+      { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, label: "WMS Patio", requirePermission: "VER_WMS_PATIO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, label: "Nota de Peso", requirePermission: "VER_NOTA_PESO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, label: "Aprobación Gerencia", requirePermission: "VER_APROBACIONES" },
     ]
   },
   // Módulo 2: Comercial
@@ -556,12 +556,12 @@ export const Sidebarcomponents = [
     type: "sub",
     active: false,
     children: [
-      { path: `${import.meta.env.BASE_URL}comercial/contratos`, type: "link", active: false, label: "Contratos de Venta" },
-      { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, type: "link", active: false, label: "Lab. Pre-Embarque" },
-      { path: `${import.meta.env.BASE_URL}comercial/aprobacion`, type: "link", active: false, label: "Aprobación Cliente" },
-      { path: `${import.meta.env.BASE_URL}comercial/lotes`, type: "link", active: false, label: "Generación de Lotes" },
-      { path: `${import.meta.env.BASE_URL}comercial/instrucciones-embarque`, type: "link", active: false, label: "Inst. de Embarque" },
-      { path: `${import.meta.env.BASE_URL}comercial/inventario-pergamino`, type: "link", active: false, label: "Inventario Pergamino" },
+      { path: `${import.meta.env.BASE_URL}comercial/contratos`, type: "link", active: false, label: "Contratos de Venta", requirePermission: "VER_CONTRATOS" },
+      { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, type: "link", active: false, label: "Lab. Pre-Embarque", requirePermission: "VER_LAB_PREEMBARQUE" },
+      { path: `${import.meta.env.BASE_URL}comercial/aprobacion`, type: "link", active: false, label: "Aprobación Cliente", requirePermission: "VER_APROBACIONES_CLIENTE" },
+      { path: `${import.meta.env.BASE_URL}comercial/lotes`, type: "link", active: false, label: "Generación de Lotes", requirePermission: "VER_LOTES" },
+      { path: `${import.meta.env.BASE_URL}comercial/instrucciones-embarque`, type: "link", active: false, label: "Inst. de Embarque", requirePermission: "VER_SI" },
+      { path: `${import.meta.env.BASE_URL}comercial/inventario-pergamino`, type: "link", active: false, label: "Inventario Pergamino", requirePermission: "VER_INVENTARIO" },
     ]
   },
   // Módulo 3: Industrial
@@ -571,12 +571,12 @@ export const Sidebarcomponents = [
     type: "sub",
     active: false,
     children: [
-      { path: `${import.meta.env.BASE_URL}industrial/programa`, type: "link", active: false, label: "Programa Producción" },
-      { path: `${import.meta.env.BASE_URL}industrial/orden-sacos`, type: "link", active: false, label: "Orden de Sacos" },
-      { path: `${import.meta.env.BASE_URL}industrial/trilla`, type: "link", active: false, label: "Proceso de Trilla" },
-      { path: `${import.meta.env.BASE_URL}industrial/balance-masas`, type: "link", active: false, label: "Balance de Masas" },
-      { path: `${import.meta.env.BASE_URL}industrial/producto-terminado`, type: "link", active: false, label: "Producto Terminado" },
-      { path: `${import.meta.env.BASE_URL}industrial/merma`, type: "link", active: false, label: "Merma / Remanente" },
+      { path: `${import.meta.env.BASE_URL}industrial/programa`, type: "link", active: false, label: "Programa Producción", requirePermission: "VER_PROGRAMA" },
+      { path: `${import.meta.env.BASE_URL}industrial/orden-sacos`, type: "link", active: false, label: "Orden de Sacos", requirePermission: "VER_ORDEN_SACOS" },
+      { path: `${import.meta.env.BASE_URL}industrial/trilla`, type: "link", active: false, label: "Proceso de Trilla", requirePermission: "VER_TRILLA" },
+      { path: `${import.meta.env.BASE_URL}industrial/balance-masas`, type: "link", active: false, label: "Balance de Masas", requirePermission: "VER_BALANCE_MASAS" },
+      { path: `${import.meta.env.BASE_URL}industrial/producto-terminado`, type: "link", active: false, label: "Producto Terminado", requirePermission: "VER_PRODUCTO_TERMINADO" },
+      { path: `${import.meta.env.BASE_URL}industrial/merma`, type: "link", active: false, label: "Merma / Remanente", requirePermission: "VER_REMANENTE" },
     ]
   },
   // Módulo 4: Despacho
@@ -586,9 +586,9 @@ export const Sidebarcomponents = [
     type: "sub",
     active: false,
     children: [
-      { path: `${import.meta.env.BASE_URL}despacho/carga`, type: "link", active: false, label: "Carga de Contenedor" },
-      { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, type: "link", active: false, label: "Báscula de Salida" },
-      { path: `${import.meta.env.BASE_URL}despacho/documentacion`, type: "link", active: false, label: "Documentación Final" },
+      { path: `${import.meta.env.BASE_URL}despacho/carga`, type: "link", active: false, label: "Carga de Contenedor", requirePermission: "VER_CARGA" },
+      { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, type: "link", active: false, label: "Báscula de Salida", requirePermission: "VER_BASCULA_SALIDA" },
+      { path: `${import.meta.env.BASE_URL}despacho/documentacion`, type: "link", active: false, label: "Documentación Final", requirePermission: "VER_DOCUMENTOS" },
     ]
   },
   // Módulo 5: Ventas Locales
@@ -598,10 +598,10 @@ export const Sidebarcomponents = [
     type: "sub",
     active: false,
     children: [
-      { path: `${import.meta.env.BASE_URL}ventas/kardex`, type: "link", active: false, label: "Kardex Subproductos" },
-      { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, type: "link", active: false, label: "Orden de Venta Local" },
-      { path: `${import.meta.env.BASE_URL}ventas/bascula`, type: "link", active: false, label: "Báscula Venta Local" },
-      { path: `${import.meta.env.BASE_URL}ventas/salida`, type: "link", active: false, label: "Salida Venta Local" },
+      { path: `${import.meta.env.BASE_URL}ventas/kardex`, type: "link", active: false, label: "Kardex Subproductos", requirePermission: "VER_KARDEX" },
+      { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, type: "link", active: false, label: "Orden de Venta Local", requirePermission: "VER_ORDEN_VENTA" },
+      { path: `${import.meta.env.BASE_URL}ventas/bascula`, type: "link", active: false, label: "Báscula Venta Local", requirePermission: "VER_BASCULA_VENTA" },
+      { path: `${import.meta.env.BASE_URL}ventas/salida`, type: "link", active: false, label: "Salida Venta Local", requirePermission: "VER_SALIDA" },
     ]
   },
   // Administración
@@ -611,10 +611,10 @@ export const Sidebarcomponents = [
     type: "sub",
     active: false,
     children: [
-      { path: `${import.meta.env.BASE_URL}admin/usuarios`, type: "link", active: false, label: "Gestión de Usuarios" },
-      { path: `${import.meta.env.BASE_URL}admin/roles`, type: "link", active: false, label: "Roles y Permisos" },
-      { path: `${import.meta.env.BASE_URL}admin/configuracion`, type: "link", active: false, label: "Configuración" },
-      { path: `${import.meta.env.BASE_URL}admin/catalogos`, type: "link", active: false, label: "Mantenimiento Catálogos" },
+      { path: `${import.meta.env.BASE_URL}admin/usuarios`, type: "link", active: false, label: "Gestión de Usuarios", requirePermission: "VER_USUARIOS" },
+      { path: `${import.meta.env.BASE_URL}admin/roles`, type: "link", active: false, label: "Roles y Permisos", requirePermission: "VER_ROLES" },
+      { path: `${import.meta.env.BASE_URL}admin/configuracion`, type: "link", active: false, label: "Configuración", requirePermission: "VER_CONFIGURACION" },
+      { path: `${import.meta.env.BASE_URL}admin/catalogos`, type: "link", active: false, label: "Mantenimiento Catálogos", requirePermission: "VER_CATALOGOS" },
     ]
   },
 ];

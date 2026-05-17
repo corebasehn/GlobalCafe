@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Users, Plus, Search, Edit, Trash2, Loader2, RotateCcw } from "lucide-react";
 import PageHeader from "../../components/layout/PageHeader";
-import { Card, Table, Badge, Button, Modal, Form, InputGroup } from 'react-bootstrap';
+import { Card, Table, Badge, Button, Modal, Form, InputGroup, Row, Col } from 'react-bootstrap';
 import { getUsersApi, createUserApi, updateUserApi, deleteUserApi, type User } from "../../api/users.api";
 import { getRolesApi, type Role } from "../../api/roles.api";
 import toast from "react-hot-toast";
@@ -207,23 +207,81 @@ export default function UsuariosPage() {
       </Card>
       <Modal show={isModalOpen} onHide={handleCloseModal} size="lg">
         <Form onSubmit={handleSubmit}>
-          <Modal.Header closeButton><Modal.Title>{editingId ? "Editar Usuario" : "Nuevo Usuario"}</Modal.Title></Modal.Header>
-          <Modal.Body className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Form.Group><Form.Label>Usuario</Form.Label><Form.Control type="text" placeholder="nombre.apellido" value={formData.username} onChange={(e) => setFormData({...formData, username: e.target.value})} required /></Form.Group>
-            <Form.Group><Form.Label>Nombre Completo</Form.Label><Form.Control type="text" placeholder="Nombre y apellido" value={formData.nombre} onChange={(e) => setFormData({...formData, nombre: e.target.value})} required /></Form.Group>
-            <Form.Group>
-              <Form.Label>Rol</Form.Label>
-              <Form.Select value={formData.rol} onChange={(e) => setFormData({...formData, rol: e.target.value})} required>
-                <option value="">Seleccione un rol</option>
-                {roles.map(r => (<option key={r.codigo} value={r.codigo}>{r.nombre}</option>))}
-              </Form.Select>
-            </Form.Group>
-            <Form.Group><Form.Label>Contraseña</Form.Label><Form.Control type="password" placeholder={editingId ? "Dejar en blanco para mantener" : "••••••••"} value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required={!editingId} /></Form.Group>
-            <Form.Group><Form.Label>Confirmar Contraseña</Form.Label><Form.Control type="password" placeholder={editingId ? "Dejar en blanco para mantener" : "••••••••"} value={formData.confirmPassword} onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} required={!editingId} /></Form.Group>
-          </div>
+          <Modal.Header closeButton>
+            <Modal.Title>{editingId ? "Editar Usuario" : "Nuevo Usuario"}</Modal.Title>
+          </Modal.Header>
+          <Modal.Body className="px-4 py-4">
+            <Row>
+              <Col md={6} className="mb-3">
+                <Form.Group>
+                  <Form.Label className="fw-semibold">Usuario</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="nombre.apellido" 
+                    value={formData.username} 
+                    onChange={(e) => setFormData({...formData, username: e.target.value})} 
+                    required 
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6} className="mb-3">
+                <Form.Group>
+                  <Form.Label className="fw-semibold">Nombre Completo</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Nombre y apellido" 
+                    value={formData.nombre} 
+                    onChange={(e) => setFormData({...formData, nombre: e.target.value})} 
+                    required 
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={12} className="mb-4">
+                <Form.Group>
+                  <Form.Label className="fw-semibold">Rol del Usuario</Form.Label>
+                  <Form.Select 
+                    value={formData.rol} 
+                    onChange={(e) => setFormData({...formData, rol: e.target.value})} 
+                    required
+                  >
+                    <option value="">Seleccione un rol de la lista...</option>
+                    {roles.map(r => (<option key={r.codigo} value={r.codigo}>{r.nombre}</option>))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={6} className="mb-3">
+                <Form.Group>
+                  <Form.Label className="fw-semibold">Contraseña</Form.Label>
+                  <Form.Control 
+                    type="password" 
+                    placeholder={editingId ? "Dejar en blanco para mantener" : "••••••••"} 
+                    value={formData.password} 
+                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                    required={!editingId} 
+                  />
+                  {editingId && <Form.Text className="text-muted">Solo llene si desea cambiar la clave actual.</Form.Text>}
+                </Form.Group>
+              </Col>
+              <Col md={6} className="mb-3">
+                <Form.Group>
+                  <Form.Label className="fw-semibold">Confirmar Contraseña</Form.Label>
+                  <Form.Control 
+                    type="password" 
+                    placeholder={editingId ? "Dejar en blanco para mantener" : "••••••••"} 
+                    value={formData.confirmPassword} 
+                    onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})} 
+                    required={!editingId} 
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
           </Modal.Body>
-          <Modal.Footer><Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button><Button variant="primary" type="submit">{editingId ? "Guardar Cambios" : "Crear Usuario"}</Button></Modal.Footer>
+          <Modal.Footer className="bg-light">
+            <Button variant="secondary" onClick={handleCloseModal}>Cancelar</Button>
+            <Button variant="primary" type="submit" className="px-4">
+              {editingId ? "Guardar Cambios" : "Crear Usuario"}
+            </Button>
+          </Modal.Footer>
         </Form>
       </Modal>
 

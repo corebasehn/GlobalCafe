@@ -8,6 +8,7 @@ import { connect } from 'react-redux';
 import { ThemeChanger } from '../../common/redux/action';
 import { MENUITEMS, Menuitemtype } from '../../common/sidemenu';
 import SimpleBar from 'simplebar-react';
+import { useAuth } from '../../auth/useAuth';
 
 export function closeMenuRecursively(items: any) {
   items?.forEach((item: any) => {
@@ -24,12 +25,30 @@ interface actiontype {
 const Sidebar: FC<actiontype> = ({ local_varaiable, ThemeChanger }) => {
 
   const location = useLocation();
+  const { hasPermission } = useAuth();
 
-  const [menuitems, setMenuitems] = useState<Menuitemtype[]>(MENUITEMS);
+  // Filtrar los items del menú según permisos
+  const filterMenuItems = (items: Menuitemtype[]): Menuitemtype[] => {
+    return items
+      .filter(item => !item.requirePermission || hasPermission(item.requirePermission))
+      .map(item => ({
+        ...item,
+        children: item.children ? filterMenuItems(item.children) : undefined
+      }))
+      // Si un item tiene hijos pero después de filtrar se queda sin ninguno, y no es un link, lo quitamos
+      .filter(item => (item.type !== 'sub' || (item.children && item.children.length > 0)));
+  };
+
+  const [menuitems, setMenuitems] = useState<Menuitemtype[]>(filterMenuItems(MENUITEMS));
+
+  useEffect(() => {
+    // Si los permisos cambian, refrescar el menú
+    setMenuitems(filterMenuItems(MENUITEMS));
+  }, [hasPermission]);
 
   function closeMenuFn() {
 
-    closeMenuRecursively(MENUITEMS);
+    closeMenuRecursively(menuitems);
 
     setMenuitems((arr: any) => [...arr]);
   }
@@ -387,7 +406,7 @@ const Sidebar: FC<actiontype> = ({ local_varaiable, ThemeChanger }) => {
         setSubmenuRecursively(item.children);
       });
     };
-    setSubmenuRecursively(MENUITEMS);
+    setSubmenuRecursively(menuitems);
   }
   const [previousUrl, setPreviousUrl] = useState('/')
 
@@ -412,7 +431,7 @@ const Sidebar: FC<actiontype> = ({ local_varaiable, ThemeChanger }) => {
     }
 
     // ... the rest of your useEffect code
-  }, [location]);
+  }, [location, menuitems]);
 
 
   function toggleSidemenu(event: any, targetObject: Menuitemtype, MENUITEMS = menuitems) {
@@ -594,7 +613,7 @@ const Sidebar: FC<actiontype> = ({ local_varaiable, ThemeChanger }) => {
             </div>
 
             <ul className="main-menu" onClick={() => Sideclick()}>
-              {MENUITEMS.map((levelone) => (
+              {menuitems.map((levelone) => (
                 <Fragment key={Math.random()}>
                   <li className={`${levelone.menutitle ? 'slide__category' : ''} 
 									                ${levelone.type === 'link' ? 'slide' : ''}

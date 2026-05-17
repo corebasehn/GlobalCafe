@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Coffee, Eye, EyeOff, Loader2 } from "lucide-react";
 import { useAuth } from "../../auth/useAuth";
 import toast from "react-hot-toast";
-import { Card, Form, InputGroup, Button } from 'react-bootstrap';
+import { Container, Row, Col, Card, Form, InputGroup, Button } from 'react-bootstrap';
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -39,102 +39,159 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'rgb(192, 114, 46)' }}>
+    <div 
+      className="d-flex align-items-center justify-content-center position-relative overflow-hidden" 
+      style={{ 
+        minHeight: '100vh', 
+        // backgroundColor: 'linear-gradient(135deg, #815d3f 0%, #6c3817 100%)',
+        background: 'linear-gradient(135deg, #815d3f 0%, #6c3817 60%)',
+      }}
+    >
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-10">
-        <div 
-          className="absolute inset-0"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.1) 1px, transparent 0)',
-            backgroundSize: '32px 32px'
-          }}
-        />
-      </div>
+      <div 
+        className="position-absolute top-0 start-0 w-100 h-100" 
+        style={{ 
+          opacity: 0.1,
+          backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)',
+          backgroundSize: '32px 32px',
+          pointerEvents: 'none'
+        }}
+      />
 
-      <div className="relative  max-w-sm">
-        {/* Logo & Title */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-white/10 rounded-2xl mb-3 backdrop-blur-sm">
-            <Coffee className="w-7 h-7 text-amber-200" />
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-1">Global Café</h1>
-          <p className="text-amber-100">Sistema Integral de Gestión</p>
-        </div>
+      <Container className="position-relative" style={{ zIndex: 1 }}>
+        <Row className="justify-content-center">
+          <Col xs={12} sm={10} md={8} lg={5} xl={4}>
+            
 
-        {/* Login Card */}
-        <Card className="rounded-3xl shadow-2xl p-6 border-0" style={{ backgroundColor: 'rgb(192, 114, 46)' }}>
-          <h2 className="text-lg font-semibold text-white mb-5 text-center">
-            Iniciar Sesión
-          </h2>
-
-          <Form onSubmit={handleSubmit} className="space-y-4">
-            <Form.Group className="mb-3">
-              <Form.Label className="block text-xs font-medium text-white/80 mb-1.5">
-                Usuario
-              </Form.Label>
-              <Form.Control
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="h-11 px-4 bg-white border border-transparent rounded-xl text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all"
-                placeholder="Ingrese su usuario"
-                autoComplete="username"
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label className="block text-xs font-medium text-white/80 mb-1.5">
-                Contraseña
-              </Form.Label>
-              <InputGroup className="input-group">
-                <Form.Control
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 px-4 bg-white border border-transparent rounded-l-xl text-gray-900 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-600 transition-all border-r-0"
-                  style={{ height: '44px' }}
-                  placeholder="Ingrese su contraseña"
-                  autoComplete="current-password"
-                />
-                <InputGroup.Text
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="h-11 px-4 bg-white border border-transparent rounded-r-xl text-gray-500 cursor-pointer"
-                  style={{ height: '44px', borderLeft: 'none' }}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </InputGroup.Text>
-              </InputGroup>
-            </Form.Group>
-
-            <Button
-              type="submit"
-              disabled={loading}
-              className="h-11 w-full bg-white/20 hover:bg-white/30 text-white font-medium rounded-xl transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed border-0 shadow-lg mt-2"
+            {/* Login Card */}
+            <Card 
+              className="border-0 shadow-lg" 
+              style={{ 
+                borderRadius: '24px',
+                overflow: 'hidden'
+              }}
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  Ingresando...
-                </>
-              ) : (
-                "Ingresar"
-              )}
-            </Button>
-          </Form>
+              <Card.Body className="p-4 p-sm-5">
+                <div className="d-flex align-items-center justify-content-between mb-4">
+                  <h2 className="h4 fw-semibold mb-0" style={{ color: 'rgb(161, 95, 38)' }}>
+                    Iniciar Sesión
+                  </h2>
+                  <img 
+                    src="/src/assets/images/brand-logos/Logo-Global-Coffee-Group.jpeg" 
+                    alt="Global Café Logo" 
+                    style={{ height: '70px', width: 'auto' }}
+                  />
+                </div>
 
-          <p className="text-center text-xs text-white mt-5">
-            ¿Olvidó su contraseña?{" "}
-            <a href="#" className="text-white hover:underline font-medium">
-              Contacte al administrador
-            </a>
-          </p>
-        </Card>
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-medium small">
+                      Usuario
+                    </Form.Label>
+                    <Form.Control
+                      type="text"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="Ingrese su usuario"
+                      autoComplete="username"
+                      className="border-2"
+                      style={{ 
+                        borderRadius: '12px',
+                        borderColor: '#dee2e6'
+                      }}
+                    />
+                  </Form.Group>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-coffee-400 mt-6">
-          © 2026 CoreBase. Todos los derechos reservados.
-        </p>
-      </div>
+                  <Form.Group className="mb-4">
+                    <Form.Label className="fw-medium small">
+                      Contraseña
+                    </Form.Label>
+                    <InputGroup>
+                      <Form.Control
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Ingrese su contraseña"
+                        autoComplete="current-password"
+                        className="border-2"
+                        style={{ 
+                          borderRadius: '12px 0 0 12px',
+                          borderColor: '#dee2e6',
+                          borderRight: 'none'
+                        }}
+                      />
+                      <Button
+                        variant="outline-secondary"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="border-2 border-start-0"
+                        style={{ 
+                          borderRadius: '0 12px 12px 0',
+                          borderColor: '#dee2e6'
+                        }}
+                      >
+                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                      </Button>
+                    </InputGroup>
+                  </Form.Group>
+
+                  <div className="d-grid gap-2">
+                    <Button
+                      type="submit"
+                      size="lg"
+                      disabled={loading}
+                      className="fw-medium border-0 shadow-sm"
+                      style={{ 
+                        backgroundColor: '#6c3817',
+                        borderRadius: '12px',
+                        padding: '12px'
+                      }}
+                    >
+                      {loading ? (
+                        <span className="d-flex align-items-center justify-content-center gap-2">
+                          <Loader2 size={20} className="spinner-border spinner-border-sm" />
+                          Ingresando...
+                        </span>
+                      ) : (
+                        "Ingresar"
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+
+                <div className="text-center mt-4">
+                  <p className="small text-muted mb-0">
+                    ¿Olvidó su contraseña?{" "}
+                    <a 
+                      href="#" 
+                      className="text-decoration-none fw-medium"
+                      style={{ color: 'rgb(192, 114, 46)' }}
+                    >
+                      Contacte al administrador
+                    </a>
+                  </p>
+                </div>
+              </Card.Body>
+            </Card>
+
+            {/* Footer */}
+            <p className="text-center text-white-50 small mt-4 mb-0">
+              © 2026 CoreBase. Todos los derechos reservados.
+            </p>
+          </Col>
+        </Row>
+      </Container>
+      
+      {/* Custom animation for spinner */}
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spinner-border-sm {
+          animation: spin 1s linear infinite;
+          display: inline-block;
+        }
+      `}</style>
     </div>
   );
 }

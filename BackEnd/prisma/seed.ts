@@ -108,50 +108,141 @@ async function main() {
   const rolAdmin = await prisma.rol.upsert({
     where: { codigo: 'ADMIN' },
     update: {},
-    create: {
-      codigo: 'ADMIN',
-      nombre: 'Administrador',
-      descripcion: 'Rol de administrador del sistema',
-      es_rol_sistema: true,
-      prioridad: 1,
-      estado: true,
-    },
+    create: { codigo: 'ADMIN', nombre: 'Administrador', descripcion: 'Rol de administrador del sistema', es_rol_sistema: true, prioridad: 1, estado: true },
   });
 
   const rolOperador = await prisma.rol.upsert({
     where: { codigo: 'OPERADOR' },
     update: {},
-    create: {
-      codigo: 'OPERADOR',
-      nombre: 'Operador de Recepción',
-      descripcion: 'Encargado de registrar entradas y salidas',
-      es_rol_sistema: false,
-      prioridad: 10,
-      estado: true,
-    },
+    create: { codigo: 'OPERADOR', nombre: 'Operador de Recepción', descripcion: 'Encargado de registrar entradas y salidas', es_rol_sistema: false, prioridad: 10, estado: true },
   });
 
-  // 7. Permisos (Ejemplos)
-  const permisoVerUsuarios = await prisma.permiso.upsert({
-    where: { codigo: 'VER_USUARIOS' },
+  const rolBascula = await prisma.rol.upsert({
+    where: { codigo: 'BASCULA' },
     update: {},
-    create: {
-      codigo: 'VER_USUARIOS',
-      modulo: 'SEGURIDAD',
-      accion: 'LEER',
-      descripcion: 'Permite ver la lista de usuarios',
-    },
+    create: { codigo: 'BASCULA', nombre: 'Operador de Bascula', descripcion: 'Personal encargado de operar la bascula', es_rol_sistema: false, prioridad: 100, estado: true },
   });
+
+  const rolMuestreo = await prisma.rol.upsert({
+    where: { codigo: 'MUESTREO' },
+    update: {},
+    create: { codigo: 'MUESTREO', nombre: 'Operador de Muestreo', descripcion: 'Personal encargado de muestrear', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  const rolLaboratorio = await prisma.rol.upsert({
+    where: { codigo: 'LABORATORIO' },
+    update: {},
+    create: { codigo: 'LABORATORIO', nombre: 'Operador de laboratorio', descripcion: 'Personal encargado de ingresar analisis de muestra', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  const rolGerencia = await prisma.rol.upsert({
+    where: { codigo: 'GERENCIA' },
+    update: {},
+    create: { codigo: 'GERENCIA', nombre: 'Aprobaciones', descripcion: 'Personal encargado de aprobar', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  const rolComercial = await prisma.rol.upsert({
+    where: { codigo: 'COMERCIAL' },
+    update: {},
+    create: { codigo: 'COMERCIAL', nombre: 'Modulo Comercial', descripcion: 'Personal de contratos e inventarios', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  const rolIndustrial = await prisma.rol.upsert({
+    where: { codigo: 'INDUSTRIAL' },
+    update: {},
+    create: { codigo: 'INDUSTRIAL', nombre: 'Modulo Industrial', descripcion: 'Personal de trilla y producción', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  const rolDespacho = await prisma.rol.upsert({
+    where: { codigo: 'DESPACHO' },
+    update: {},
+    create: { codigo: 'DESPACHO', nombre: 'Modulo Despacho', descripcion: 'Personal de embarque y exportación', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  const rolVentas = await prisma.rol.upsert({
+    where: { codigo: 'VENTAS' },
+    update: {},
+    create: { codigo: 'VENTAS', nombre: 'Modulo Ventas Locales', descripcion: 'Personal de ventas locales', es_rol_sistema: false, prioridad: 100, estado: true },
+  });
+
+  // 7. Permisos (Según Tabla_Permisos.txt y requerimientos de front-end)
+  const permisosData = [
+    { codigo: 'VER_USUARIOS', modulo: 'Administrador', accion: 'Ver Usuarios', descripcion: 'Permite ver la lista de usuarios' },
+    { codigo: 'VER_RECEPCION', modulo: 'Recepcion', accion: 'Ver Recepciones', descripcion: 'Permiso para poder visualizar las recepciones' },
+    { codigo: 'VER_BASCULA', modulo: 'Bascula', accion: 'Ver Bascula', descripcion: 'Permiso para poder visualizar la bascula' },
+    { codigo: 'VER_MUESTREO', modulo: 'Muestreo', accion: 'Ver Muestreos', descripcion: 'Permite ver la lista de Muestreo' },
+    { codigo: 'VER_ACCIONES_MUESTREO', modulo: 'Muestreo', accion: 'Acciones', descripcion: 'Permite muestrear el vehiculo' },
+    { codigo: 'VER_ACCIONES_RECEPCION', modulo: 'Recepcion', accion: 'Acciones', descripcion: 'Permite ver las acciones del modulo' },
+    { codigo: 'EDITAR_RECEPCION', modulo: 'Recepcion', accion: 'Editar', descripcion: 'Permite editar recepcion' },
+    { codigo: 'IMPRIMIR_RECEPCION', modulo: 'Recepcion', accion: 'Imprimir', descripcion: 'Permite imprimir recepcion' },
+    { codigo: 'ANULAR_RECEPCION', modulo: 'Recepcion', accion: 'Anular', descripcion: 'Permite anular recepcion' },
+    { codigo: 'CREAR_RECEPCION', modulo: 'Recepcion', accion: 'Crear', descripcion: 'Permite crear recepcion' },
+    { codigo: 'VER_MUESTRA', modulo: 'Laboratorio', accion: 'Ver Laboratorio', descripcion: '' },
+    { codigo: 'VER_ACCION_MUESTRA', modulo: 'Laboratorio', accion: 'Acciones', descripcion: '' },
+    { codigo: 'VER_APROBACIONES', modulo: 'Gerencia', accion: 'Ver Aprobaciones', descripcion: '' },
+    { codigo: 'APROBAR_MUESTRA', modulo: 'Gerencia', accion: 'Aprobar', descripcion: '' },
+    { codigo: 'VER_ROLES', modulo: 'Administrador', accion: 'Ver Roles', descripcion: 'Permite ver la lista de roles' },
+    { codigo: 'VER_CONFIGURACION', modulo: 'Administrador', accion: 'Ver Configuraciones', descripcion: 'Permite ver la lista de configuaciones' },
+    { codigo: 'VER_CATALOGOS', modulo: 'Administrador', accion: 'Ver Catalogos', descripcion: 'Permite ver la lista de catalogos' },
+    { codigo: 'IMPRIMIR_MUESTRA', modulo: 'Laboratorio', accion: 'Imprimir Muestra', descripcion: '' },
+    { codigo: 'CREAR_MUESTRA', modulo: 'Laboratorio', accion: 'Crear Analisis', descripcion: '' },
+    { codigo: 'PESAR_EQUIPO', modulo: 'Bascula', accion: 'Pesar', descripcion: '' },
+    { codigo: 'CAMBIO_DE_CABEZAL', modulo: 'Bascula', accion: 'Cambio de cabezal', descripcion: '' },
+    { codigo: 'VER_WMS_PATIO', modulo: 'Nota de Patio', accion: 'Ver Nota de Patio', descripcion: '' },
+    { codigo: 'VER_NOTA_PESO', modulo: 'Nota de Peso', accion: 'Ver Nota de Peso', descripcion: '' },
+    { codigo: 'VER_CONTRATOS', modulo: 'Comercial', accion: 'Ver Contratos', descripcion: '' },
+    { codigo: 'VER_MUESTRA_PREEMBARQUE', modulo: 'Comercial', accion: 'Ver Muestra Preembarque', descripcion: '' },
+    { codigo: 'VER_LAB_PREEMBARQUE', modulo: 'Comercial', accion: 'Ver Lab Preembarque', descripcion: '' },
+    { codigo: 'VER_APROBACIONES_CLIENTE', modulo: 'Comercial', accion: 'Ver Aprobaciones Cliente', descripcion: '' },
+    { codigo: 'VER_LOTES', modulo: 'Comercial', accion: 'Ver Lotes', descripcion: '' },
+    { codigo: 'VER_SI', modulo: 'Comercial', accion: 'Ver Instrucciones Embarque', descripcion: '' },
+    { codigo: 'VER_INVENTARIO', modulo: 'Comercial', accion: 'Ver Inventario Pergamino', descripcion: '' },
+    { codigo: 'VER_PROGRAMA', modulo: 'Industrial', accion: 'Ver Programa', descripcion: '' },
+    { codigo: 'VER_ORDEN_SACOS', modulo: 'Industrial', accion: 'Ver Orden Sacos', descripcion: '' },
+    { codigo: 'VER_TRILLA', modulo: 'Industrial', accion: 'Ver Trilla', descripcion: '' },
+    { codigo: 'VER_BALANCE_MASAS', modulo: 'Industrial', accion: 'Ver Balance Masas', descripcion: '' },
+    { codigo: 'VER_PRODUCTO_TERMINADO', modulo: 'Industrial', accion: 'Ver Producto Terminado', descripcion: '' },
+    { codigo: 'VER_REMANENTE', modulo: 'Industrial', accion: 'Ver Merma / Remanente', descripcion: '' },
+    { codigo: 'VER_CONTENEDORES', modulo: 'Despacho', accion: 'Ver Contenedores', descripcion: '' },
+    { codigo: 'VER_ORDEN_CARGA', modulo: 'Despacho', accion: 'Ver Orden Carga', descripcion: '' },
+    { codigo: 'VER_CARGA', modulo: 'Despacho', accion: 'Ver Carga', descripcion: '' },
+    { codigo: 'VER_BASCULA_SALIDA', modulo: 'Despacho', accion: 'Ver Bascula Salida', descripcion: '' },
+    { codigo: 'VER_DOCUMENTOS', modulo: 'Despacho', accion: 'Ver Documentacion', descripcion: '' },
+    { codigo: 'VER_KARDEX', modulo: 'Ventas Locales', accion: 'Ver Kardex', descripcion: '' },
+    { codigo: 'VER_ORDEN_VENTA', modulo: 'Ventas Locales', accion: 'Ver Orden Venta', descripcion: '' },
+    { codigo: 'VER_BASCULA_VENTA', modulo: 'Ventas Locales', accion: 'Ver Bascula Venta', descripcion: '' },
+    { codigo: 'VER_SALIDA', modulo: 'Ventas Locales', accion: 'Ver Salida', descripcion: '' }
+  ];
+
+  const permisosMap: Record<string, any> = {};
+  for (const p of permisosData) {
+    permisosMap[p.codigo] = await prisma.permiso.upsert({
+      where: { codigo: p.codigo },
+      update: {},
+      create: p,
+    });
+  }
 
   // 8. RolPermiso (Asignar permisos a roles)
-  await prisma.rolPermiso.upsert({
-    where: { id_rol_id_permiso: { id_rol: rolAdmin.id_rol, id_permiso: permisoVerUsuarios.id_permiso } },
-    update: {},
-    create: {
-      id_rol: rolAdmin.id_rol,
-      id_permiso: permisoVerUsuarios.id_permiso,
-    },
-  });
+  const assignPermissions = async (rolId: number, permisosCodigos: string[]) => {
+    for (const code of permisosCodigos) {
+      const permiso = permisosMap[code];
+      if (permiso) {
+        await prisma.rolPermiso.upsert({
+          where: { id_rol_id_permiso: { id_rol: rolId, id_permiso: permiso.id_permiso } },
+          update: {},
+          create: { id_rol: rolId, id_permiso: permiso.id_permiso },
+        });
+      }
+    }
+  };
+
+  await assignPermissions(rolAdmin.id_rol, permisosData.map(p => p.codigo));
+  await assignPermissions(rolOperador.id_rol, ['VER_RECEPCION', 'VER_ACCIONES_RECEPCION', 'EDITAR_RECEPCION', 'IMPRIMIR_RECEPCION', 'ANULAR_RECEPCION', 'CREAR_RECEPCION']);
+  await assignPermissions(rolBascula.id_rol, ['VER_BASCULA', 'PESAR_EQUIPO', 'CAMBIO_DE_CABEZAL']);
+  await assignPermissions(rolMuestreo.id_rol, ['VER_MUESTREO', 'VER_ACCIONES_MUESTREO']);
+  await assignPermissions(rolLaboratorio.id_rol, ['VER_MUESTRA', 'VER_ACCION_MUESTRA', 'IMPRIMIR_MUESTRA', 'CREAR_MUESTRA']);
+  await assignPermissions(rolGerencia.id_rol, ['VER_APROBACIONES', 'APROBAR_MUESTRA']);
 
   // 9. Usuarios (y UsuarioRol implícito)
   const adminUser = await prisma.usuario.upsert({
@@ -165,27 +256,55 @@ async function main() {
       es_administrador: true,
       activo: true,
       roles: {
-        create: {
-          rol: { connect: { id_rol: rolAdmin.id_rol } },
-        },
+        create: { rol: { connect: { id_rol: rolAdmin.id_rol } } },
       },
     },
   });
 
   const operadorUser = await prisma.usuario.upsert({
-    where: { usuario: 'operador' },
+    where: { usuario: 'recepcion' },
     update: {},
     create: {
-      usuario: 'operador',
+      usuario: 'recepcion',
       clave_hash: hashedPassword,
-      nombre_visible: 'Juan Pérez',
-      correo: 'juan.perez@globalcafe.hn',
+      nombre_visible: 'Juan Pérez (Recepción)',
+      correo: 'recepcion@globalcafe.hn',
       es_administrador: false,
       activo: true,
       roles: {
-        create: {
-          rol: { connect: { id_rol: rolOperador.id_rol } },
-        },
+        create: { rol: { connect: { id_rol: rolOperador.id_rol } } },
+      },
+    },
+  });
+
+  const basculaUser = await prisma.usuario.upsert({
+    where: { usuario: 'bascula' },
+    update: {},
+    create: {
+      usuario: 'bascula',
+      clave_hash: hashedPassword,
+      nombre_visible: 'Operador de Báscula',
+      correo: 'bascula@globalcafe.hn',
+      es_administrador: false,
+      activo: true,
+      roles: {
+        create: { rol: { connect: { id_rol: rolBascula.id_rol } } },
+      },
+    },
+  });
+
+  const laboratorioUser = await prisma.usuario.upsert({
+    where: { usuario: 'laboratorio' },
+    update: {},
+    create: {
+      usuario: 'laboratorio',
+      clave_hash: hashedPassword,
+      nombre_visible: 'Analista de Laboratorio',
+      correo: 'laboratorio@globalcafe.hn',
+      es_administrador: false,
+      activo: true,
+      roles: {
+        create: { rol: { connect: { id_rol: rolLaboratorio.id_rol } } },
       },
     },
   });
