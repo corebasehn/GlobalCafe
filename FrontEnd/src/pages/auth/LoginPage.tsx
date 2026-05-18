@@ -120,17 +120,17 @@ export default function LoginPage() {
                           borderRight: 'none'
                         }}
                       />
-                      <Button
-                        variant="outline-secondary"
+                      <InputGroup.Text
                         onClick={() => setShowPassword(!showPassword)}
-                        className="border-2 border-start-0"
+                        className="border-2 border-start-0 bg-white"
                         style={{ 
                           borderRadius: '0 12px 12px 0',
-                          borderColor: '#dee2e6'
+                          borderColor: '#dee2e6',
+                          cursor: 'pointer'
                         }}
                       >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </Button>
+                      </InputGroup.Text>
                     </InputGroup>
                   </Form.Group>
 
@@ -190,6 +190,10 @@ export default function LoginPage() {
         .spinner-border-sm {
           animation: spin 1s linear infinite;
           display: inline-block;
+        }
+        input::-ms-reveal,
+        input::-ms-clear {
+          display: none;
         }
       `}</style>
     </div>

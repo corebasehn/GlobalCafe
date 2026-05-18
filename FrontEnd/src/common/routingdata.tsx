@@ -149,10 +149,10 @@ import OrdenVentaPage from "../pages/ventas/OrdenVentaPage";
 import BasculaVentaPage from "../pages/ventas/BasculaVentaPage";
 import SalidaVentaPage from "../pages/ventas/SalidaVentaPage";
 // Administración
-import UsuariosPage from "../pages/admin/UsuariosPage";
-import RolesPage from "../pages/admin/RolesPage";
-import ConfiguracionPage from "../pages/admin/ConfiguracionPage";
-import MantenimientoCatalogos from "../pages/admin/MantenimientoCatalogos";
+import UsuariosPage from "../pages/admin/usuarios/Containers/UsuariosPage";
+import RolesPage from "../pages/admin/roles/Containers/RolesPage";
+import ConfiguracionPage from "../pages/admin/configuracion/Containers/ConfiguracionPage";
+import MantenimientoCatalogos from "../pages/admin/catalogos/Containers/MantenimientoCatalogos";
 
 
 export const Routingdata = [
