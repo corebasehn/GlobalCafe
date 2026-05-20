@@ -1,8 +1,15 @@
 import React from "react";
 import { CheckCircle, RefreshCcw, XCircle, FileText, Loader2 } from "lucide-react";
 import { Modal, Form, Button, Row, Col, Table, Badge } from "react-bootstrap";
+import Select from "react-select";
 import type { MuestraGerencia } from "../Containers/AprobacionGerenciaPage";
 import type { VeredictoGerenciaRequest } from "../../../../api/analisis.api";
+
+const VEREDICTO_OPTIONS = [
+  { value: "APROBAR",         label: "✅ Aprobar (Autorizar Descarga)" },
+  { value: "SEGUNDA_MUESTRA", label: "🔄 Segunda Muestra (Regresa a Muestreo)" },
+  { value: "DEVOLUCION",      label: "❌ Rechazar (Devolución al Productor)" },
+];
 
 export interface EvaluacionModalProps {
   muestra: MuestraGerencia | null;
@@ -119,16 +126,14 @@ export default function EvaluacionModal({ muestra, formData, submitting, onClose
                   <Col md={5}>
                     <Form.Group>
                       <Form.Label className="fw-medium mb-1" style={{ fontSize: "0.82rem" }}>Decisión</Form.Label>
-                      <Form.Select
-                        size="sm"
-                        value={formData.veredicto}
-                        onChange={(e) => onFormChange({ ...formData, veredicto: e.target.value as VeredictoGerenciaRequest["veredicto"] })}
-                        required
-                      >
-                        <option value="APROBAR">✅ Aprobar (Autorizar Descarga)</option>
-                        <option value="SEGUNDA_MUESTRA">🔄 Segunda Muestra (Regresa a Muestreo)</option>
-                        <option value="DEVOLUCION">❌ Rechazar (Devolución al Productor)</option>
-                      </Form.Select>
+                      <Select
+                        classNamePrefix="Select2"
+                        options={VEREDICTO_OPTIONS}
+                        value={VEREDICTO_OPTIONS.find(o => o.value === formData.veredicto) ?? null}
+                        onChange={(opt) => opt && onFormChange({ ...formData, veredicto: opt.value as VeredictoGerenciaRequest["veredicto"] })}
+                        isSearchable={false}
+                        styles={{ menu: (base) => ({ ...base, zIndex: 9999 }) }}
+                      />
                     </Form.Group>
                   </Col>
                   <Col md={7}>
