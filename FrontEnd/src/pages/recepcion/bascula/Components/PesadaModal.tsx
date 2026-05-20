@@ -1,6 +1,7 @@
 import React from "react";
 import { Loader2, Weight, Save } from "lucide-react";
 import { Modal, Form, Button, InputGroup, Row, Col } from "react-bootstrap";
+import Select from "react-select";
 import type { Bodega, PlacaCabezal } from "../../../../api/catalogs.api";
 import type { ModalMode } from "./BasculaTable";
 
@@ -93,12 +94,15 @@ export default function PesadaModal({
             {modalMode === "ENTRADA" && (
               <Form.Group className="pt-3 border-top">
                 <Form.Label className="fw-bold">Bodega de Descarga</Form.Label>
-                <Form.Select value={bodegaSearch} onChange={(e) => onBodegaChange(e.target.value)} required>
-                  <option value="">Seleccione a qué bodega física debe dirigirse...</option>
-                  {bodegas.map((b) => (
-                    <option key={b.id_bodega} value={b.id_bodega.toString()}>{b.nombre}</option>
-                  ))}
-                </Form.Select>
+                <Select
+                  classNamePrefix="Select2"
+                  placeholder="Seleccione a qué bodega física debe dirigirse..."
+                  options={bodegas.map(b => ({ value: b.id_bodega.toString(), label: b.nombre }))}
+                  value={bodegaSearch ? { value: bodegaSearch, label: bodegas.find(b => b.id_bodega.toString() === bodegaSearch)?.nombre || "" } : null}
+                  onChange={(opt) => onBodegaChange(opt?.value || "")}
+                  menuPlacement="auto"
+                  styles={{ menu: (base) => ({ ...base, zIndex: 9999 }) }}
+                />
               </Form.Group>
             )}
 
