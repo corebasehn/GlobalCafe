@@ -1,6 +1,10 @@
-import { Loader2, Beaker, Printer, MoreVertical } from "lucide-react";
-import { Card, Table, Badge, Button, Dropdown } from "react-bootstrap";
+import { useEffect, useState } from "react";
+import { Loader2, Beaker, Printer, MoreVertical, FileSpreadsheet } from "lucide-react";
+import { Card, Table, Badge, Button, Dropdown, Pagination } from "react-bootstrap";
+import * as XLSX from "xlsx";
 import type { MuestraPendiente } from "../Containers/LaboratorioPage";
+
+const PAGE_SIZE = 15;
 
 interface LabTableProps {
   muestras: MuestraPendiente[];
@@ -12,8 +16,41 @@ interface LabTableProps {
 }
 
 export default function LabTable({ muestras, loading, hasRowActions, hasPermission, onOpenModal, onPrintClick }: LabTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [muestras.length]);
+
+  const totalPages = Math.max(1, Math.ceil(muestras.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = muestras.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const totalQq = muestras.reduce((sum, m) => sum + Number(m.cantidad_qq), 0);
+
+  const exportarExcel = () => {
+    const filas = muestras.map(m => ({
+      "N° Ingreso": m.numero_entrada,
+      "Remisión Física": m.remision,
+      "Proveedor / Finca": m.proveedor_nombre,
+      "Quintales (QQ)": Number(Number(m.cantidad_qq).toFixed(2)),
+      "Estado": m.estado_transaccion?.nombre || "",
+    }));
+    const ws = XLSX.utils.json_to_sheet(filas);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Laboratorio");
+    XLSX.writeFile(wb, `Laboratorio_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   return (
     <Card>
+      {!loading && muestras.length > 0 && (
+        <Card.Header className="d-flex justify-content-end py-2 bg-white border-bottom">
+          <Button variant="outline-success" size="sm" onClick={exportarExcel} className="d-flex align-items-center gap-1">
+            <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
+          </Button>
+        </Card.Header>
+      )}
       <Table responsive hover className="mb-0">
         <thead>
           <tr>
@@ -40,7 +77,7 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
               </td>
             </tr>
           ) : (
-            muestras.map((m) => {
+            paginated.map((m) => {
               const isMuestreado = m.estado_transaccion?.nombre === "Muestreado";
               const isPendienteAprobacion = m.estado_transaccion?.nombre === "Muestra Previa Pendiente de Aprobacion";
 
@@ -96,7 +133,48 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
             })
           )}
         </tbody>
+
+        {!loading && muestras.length > 0 && (
+          <tfoot className="table-light border-top border-2">
+            <tr>
+              <td colSpan={hasRowActions ? 4 : 3} className="text-end fw-bold text-neutral-600 py-2">
+                Total ({muestras.length} {muestras.length === 1 ? "muestra" : "muestras"}):
+              </td>
+              <td className="text-end fw-bold">{totalQq.toFixed(2)} QQ</td>
+              <td />
+            </tr>
+          </tfoot>
+        )}
       </Table>
+
+      {!loading && muestras.length > 0 && (
+        <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span className="text-muted small">
+            {totalPages > 1 ? `Página ${safePage} de ${totalPages} — ` : ""}{muestras.length} {muestras.length === 1 ? "registro" : "registros"}
+          </span>
+
+          {totalPages > 1 && (
+            <Pagination size="sm" className="mb-0">
+              <Pagination.First onClick={() => setCurrentPage(1)} disabled={safePage === 1} />
+              <Pagination.Prev onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} />
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === "..."
+                    ? <Pagination.Ellipsis key={`e-${idx}`} disabled />
+                    : <Pagination.Item key={p} active={p === safePage} onClick={() => setCurrentPage(p as number)}>{p}</Pagination.Item>
+                )}
+              <Pagination.Next onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} />
+              <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages} />
+            </Pagination>
+          )}
+        </div>
+      )}
     </Card>
   );
 }
