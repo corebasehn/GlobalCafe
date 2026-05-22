@@ -106,7 +106,7 @@ export default function GerenciaTable({ muestras, loading, hasRowActions, onOpen
                   </div>
                 </td>
                 <td>{m.proveedor_nombre}</td>
-                <td className="text-center"><Badge bg="info">{m.calidad_nombre}</Badge></td>
+                <td className="text-center"><Badge bg="info-transparent">{m.calidad_nombre}</Badge></td>
                 <td className="text-end font-medium">{m.cantidad_qq.toFixed(2)} QQ</td>
               </tr>
             ))

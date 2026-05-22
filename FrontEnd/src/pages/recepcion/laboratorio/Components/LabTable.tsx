@@ -124,7 +124,7 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
                   <td>{m.proveedor_nombre}</td>
                   <td className="text-end">{Number(m.cantidad_qq).toFixed(2)} QQ</td>
                   <td className="text-center">
-                    <Badge bg={isMuestreado ? "warning" : "info"}>
+                    <Badge bg={isMuestreado ? "warning-transparent" : "info-transparent"}>
                       {isMuestreado ? "EN LABORATORIO" : "ESPERANDO APROBACIÓN"}
                     </Badge>
                   </td>

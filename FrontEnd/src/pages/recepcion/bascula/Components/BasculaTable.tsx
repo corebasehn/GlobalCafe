@@ -16,11 +16,11 @@ export interface BasculaTableProps {
 const PAGE_SIZE = 15;
 
 function getBadgeVariant(estado: string) {
-  if (estado === "Muestra Aprobada" || estado === "Pesada Abierta") return "info";
-  if (estado === "Pesaje Completado" || estado === "En Bodega") return "success";
-  if (estado.includes("Rechazada") || estado === "Devolución") return "danger";
-  if (estado.includes("Pendiente")) return "warning";
-  return "secondary";
+  if (estado === "Muestra Aprobada" || estado === "Pesada Abierta") return "info-transparent";
+  if (estado === "Pesaje Completado" || estado === "En Bodega") return "success-transparent";
+  if (estado.includes("Rechazada") || estado === "Devolución") return "danger-transparent";
+  if (estado.includes("Pendiente")) return "warning-transparent";
+  return "secondary-transparent";
 }
 
 export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal }: BasculaTableProps) {
@@ -235,7 +235,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                           </Dropdown>
                                         ) : (
                                           <div className="text-center">
-                                            {isPendiente && <Badge bg="warning" className="text-dark"><Loader2 className="w-3 h-3 animate-spin me-1" /> Esperando</Badge>}
+                                            {isPendiente && <div  className="spinner-border text-warning" role="status"><span  className="visually-hidden">Loading...</span></div>}
                                             {isRechazada && <Badge bg="danger">Rechazada</Badge>}
                                             {isCompletado && <span className="text-xs text-muted font-bold uppercase">Procesado</span>}
                                             {isBloqueadoPorBascula && <Badge bg="warning" className="text-dark" title="Otra carga de este vehículo está en báscula">En Fila</Badge>}

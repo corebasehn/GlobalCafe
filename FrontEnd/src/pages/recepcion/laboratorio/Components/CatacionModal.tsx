@@ -311,7 +311,7 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
           </Modal.Body>
 
           <Modal.Footer className="border-top">
-            <Button variant="outline-secondary" size="sm" onClick={handleClose} disabled={submitting}>Cancelar</Button>
+            <Button variant="secondary" size="sm" onClick={handleClose} disabled={submitting}>Cancelar</Button>
             <Button variant="primary" size="sm" type="submit" disabled={submitting} className="d-flex align-items-center gap-2">
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Guardar Resultados
             </Button>

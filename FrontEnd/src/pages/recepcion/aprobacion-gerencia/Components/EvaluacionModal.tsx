@@ -52,7 +52,7 @@ export default function EvaluacionModal({ muestra, formData, submitting, onClose
                   </Col>
                   <Col xs={6} md={4}>
                     <p className="text-muted mb-0" style={{ fontSize: "0.72rem" }}>Calidad Perfilada</p>
-                    <Badge bg="info">{muestra.calidad_nombre}</Badge>
+                    <Badge bg="info-transparent">{muestra.calidad_nombre}</Badge>
                   </Col>
                   <Col xs={6} md={4}>
                     <p className="text-muted mb-0" style={{ fontSize: "0.72rem" }}>Humedad</p>
