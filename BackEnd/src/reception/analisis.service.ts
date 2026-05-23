@@ -13,13 +13,18 @@ export class AnalisisService {
   // 1. GUARDAR ANÁLISIS (Desde pantalla de Laboratorio)
   async createAnalisis(dto: CreateAnalisisDto, usuarioId: number) {
     console.log('[createAnalisis] Payload recibido:', JSON.stringify(dto, null, 2));
-    console.log('[createAnalisis] usuarioId:', usuarioId);
+    
+    // Seleccionar el estado de destino según el tipo de análisis (Punto 4 del requerimiento)
+    const nombreEstadoDestino = dto.tipo_analisis === 'Muestra General' 
+      ? 'Muestra General Pendiente de Aprobacion' 
+      : 'Muestra Previa Pendiente de Aprobacion';
+
     const estadoDestino = await this.prisma.estadoTransaccion.findUnique({
-      where: { nombre: 'Muestra Previa Pendiente de Aprobacion' }
+      where: { nombre: nombreEstadoDestino }
     });
 
     if (!estadoDestino) {
-      throw new InternalServerErrorException('El estado "Muestra Previa Pendiente de Aprobacion" no existe en BD');
+      throw new InternalServerErrorException(`El estado "${nombreEstadoDestino}" no existe en BD`);
     }
 
     // Generar correlativo (Ej: AN-2024-0001)
@@ -160,7 +165,16 @@ export class AnalisisService {
   // 3. LISTAR PARA GERENCIA (Extrae solo los que ocupan autorización)
   async findAllPendientes() {
     return this.prisma.analisisCalidad.findMany({
-      where: { estado_transaccion: { nombre: 'Muestra Previa Pendiente de Aprobacion' } },
+      where: { 
+        estado_transaccion: { 
+          nombre: {
+            in: [
+              'Muestra Previa Pendiente de Aprobacion',
+              'Muestra General Pendiente de Aprobacion'
+            ]
+          }
+        } 
+      },
       include: {
         detalle_recepcion: { include: { proveedor: true, recepcion: true, estado_transaccion: true } },
         catador: true, calidad: true, estado_transaccion: true,

@@ -109,4 +109,36 @@ export class ReceptionController {
   registrarPesadaSalida(@Param('id') id: string, @Body('peso') peso: number, @Request() req) {
     return this.receptionService.registrarPesadaSalida(+id, peso, req.user?.id);
   }
+
+  // ==========================================
+  // RUTAS PARA PATIO
+  // ==========================================
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_WMS_PATIO')
+  @Get('patio/pendientes')
+  getRecepcionesParaPatio() {
+    return this.receptionService.getRecepcionesParaPatio();
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_WMS_PATIO')
+  @Post('patio/nota')
+  crearNotaPatio(@Body() body: any, @Request() req) {
+    return this.receptionService.crearNotaPatio(body, req.user?.id);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_APROBACIONES')
+  @Get('patio/pendientes-aprobacion')
+  getPendientesAprobacionFaltos() {
+    return this.receptionService.getPendientesAprobacionFaltos();
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('APROBAR_MUESTRA')
+  @Post('patio/decidir-faltos/:id')
+  decidirFaltos(@Param('id') id: string, @Body() body: any, @Request() req) {
+    return this.receptionService.decidirFaltos(+id, body, req.user?.id);
+  }
 }

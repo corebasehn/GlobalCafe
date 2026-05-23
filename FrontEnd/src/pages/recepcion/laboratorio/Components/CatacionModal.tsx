@@ -74,9 +74,13 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
       return;
     }
 
+    const tipoAnalisis = muestra.estado_transaccion?.nombre === "Muestra General Recibida" 
+      ? "Muestra General" 
+      : "Muestra Previa";
+
     const payload: CreateAnalisisRequest = {
       id_detalle_recepcion: muestra.id_detalle_recepcion,
-      tipo_analisis: "Muestra Previa",
+      tipo_analisis: tipoAnalisis,
       id_catador: Number(formData.id_catador),
       id_calidad: formData.id_calidad ? Number(formData.id_calidad) : undefined,
       humedad: formData.humedad ? Number(formData.humedad) : undefined,
