@@ -33,6 +33,9 @@ export default function LoginForm({
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Ingrese su usuario"
           autoComplete="username"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck="false"
           className="border-2"
           style={{ 
             borderRadius: '12px',

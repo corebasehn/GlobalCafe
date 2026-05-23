@@ -1,0 +1,5 @@
+# Requerimientos para el Agente de Báscula
+pyserial
+flask
+flask-cors
+pyinstaller

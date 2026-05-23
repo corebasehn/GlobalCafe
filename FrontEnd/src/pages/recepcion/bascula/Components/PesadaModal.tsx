@@ -1,5 +1,5 @@
-import React from "react";
-import { Loader2, Weight, Save } from "lucide-react";
+import React, { useState } from "react";
+import { Loader2, Weight, Save, Zap } from "lucide-react";
 import { Modal, Form, Button, InputGroup, Row, Col } from "react-bootstrap";
 import Select from "react-select";
 import type { Bodega, PlacaCabezal } from "../../../../api/catalogs.api";
@@ -29,8 +29,29 @@ export default function PesadaModal({
   bodegas, placasCabezal, submitting,
   onClose, onPesoChange, onBodegaChange, onPlacaChange, onSubmit,
 }: PesadaModalProps) {
+  const [capturingScale, setCapturingScale] = useState(false);
+
+  const handleCapturarBascula = async () => {
+    setCapturingScale(true);
+    try {
+      // 1. Petición al agente local (localhost siempre funciona desde el navegador del usuario)
+      const response = await fetch("http://127.0.0.1:4000/peso");
+      const data = await response.json();
+      
+      if (data.estado === "exito") {
+        onPesoChange(data.peso);
+      } else {
+        alert(`Error de la báscula: ${data.mensaje}`);
+      }
+    } catch (error) {
+      alert("No se pudo conectar con el Agente de Báscula. Verifique que el .exe esté abierto en esta PC.");
+    } finally {
+      setCapturingScale(false);
+    }
+  };
+
   return (
-    <Modal show={show} onHide={onClose}>
+    <Modal show={show} onHide={onClose} backdrop="static">
       {selectedRecepcion && selectedCarga && (
         <Form onSubmit={onSubmit}>
           <Modal.Header closeButton>
@@ -65,7 +86,19 @@ export default function PesadaModal({
 
             {/* Lectura de báscula */}
             <Form.Group className="mb-4">
-              <Form.Label className="fw-bold">Lectura del Indicador de la Báscula</Form.Label>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <Form.Label className="fw-bold mb-0">Lectura del Indicador de la Báscula</Form.Label>
+                <Button 
+                  variant="outline-primary" 
+                  size="sm" 
+                  className="d-flex align-items-center gap-2"
+                  onClick={handleCapturarBascula}
+                  disabled={capturingScale || submitting}
+                >
+                  {capturingScale ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+                  Capturar de Báscula
+                </Button>
+              </div>
               <InputGroup size="lg">
                 <InputGroup.Text>
                   <Weight size={20} />
@@ -88,6 +121,9 @@ export default function PesadaModal({
                 />
                 <InputGroup.Text className="fw-bold">LB</InputGroup.Text>
               </InputGroup>
+              <Form.Text className="text-muted">
+                Presione el botón para capturar automáticamente o escriba el peso manualmente.
+              </Form.Text>
             </Form.Group>
 
             {/* Selector de Bodega (Solo en ENTRADA) */}

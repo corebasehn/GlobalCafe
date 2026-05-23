@@ -16,9 +16,6 @@ type SwitcherProps = {
 const Switcher: FC<SwitcherProps> = ({ local_varaiable, ThemeChanger, show, onClose }) => {
 
     useEffect(() => {
-        if (!localStorage.getItem("darkBgRGB1")) {
-            Switcherdata.backgroundColor5(ThemeChanger);
-        }
         Switcherdata.LocalStorageBackup(ThemeChanger);
     }, []);
 

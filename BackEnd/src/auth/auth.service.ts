@@ -11,7 +11,8 @@ export class AuthService {
   ) {}
 
   async signIn(username: string, pass: string): Promise<any> {
-    const user = await this.usersService.findOne(username);
+    const normalizedUsername = username.trim().toLowerCase();
+    const user = await this.usersService.findOne(normalizedUsername);
 
     if (!user || !(await bcrypt.compare(pass, user.clave_hash))) {
       throw new UnauthorizedException('Credenciales incorrectas');
