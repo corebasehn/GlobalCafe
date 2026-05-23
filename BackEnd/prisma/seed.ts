@@ -362,7 +362,7 @@ async function main() {
     'Pesada Abierta', 'Pesada Cerrada', 'Sin Cabezal', 'Muestra General Recibida',
     'Muestra General Ingresada', 'Muestra General Pendiente de Aprobacion', 
     'Muestra General Aprobada', 'Descuento Por Calidad', 'Descuento Por Peso', 
-    'Descuento Por Daño', 'Descuento Por Humedad'
+    'Descuento Por Daño', 'Descuento Por Humedad', 'Pendiente de Aprobación por Faltos'
   ];
 
   for (const nombre of estados) {

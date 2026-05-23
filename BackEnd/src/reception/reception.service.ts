@@ -327,7 +327,14 @@ export class ReceptionService {
             estado: true,
             estado_transaccion: {
               nombre: {
-                in: ['Muestra Aprobada', 'Pesada Abierta', 'Sin Cabezal']
+                in: [
+                  'Muestra Aprobada', 
+                  'Pesada Abierta', 
+                  'Sin Cabezal', 
+                  'Muestra General Recibida', 
+                  'Pendiente de Aprobación por Faltos',
+                  'Muestra General Pendiente de Aprobacion'
+                ]
               }
             }
           }
@@ -344,6 +351,7 @@ export class ReceptionService {
           include: { 
             proveedor: true, 
             estado_transaccion: true,
+            notas_patio: true, // Incluimos para validar en el front
             cambios_cabezal: { where: { estado: true } }
           },
           orderBy: { id_detalle_recepcion: 'asc' }
@@ -367,6 +375,7 @@ export class ReceptionService {
     });
 
     if (detalleActual) {
+      // 1. Validar que no haya otra carga del mismo viaje actualmente en báscula
       const cargaEnPesaje = detalleActual.recepcion.detalles.find(d => 
         d.id_detalle_recepcion !== idDetalle && 
         d.estado && 
@@ -375,6 +384,25 @@ export class ReceptionService {
 
       if (cargaEnPesaje) {
         throw new InternalServerErrorException(`Operación denegada. El equipo tiene la remisión ${cargaEnPesaje.remision} en proceso de pesaje. Debe cerrar esa pesada antes de iniciar otra.`);
+      }
+
+      // 2. Validar si es un registro de faltos y si la carga principal ya cerró (Punto 3 del requerimiento)
+      if (detalleActual.remision.endsWith('-F')) {
+        const remisionOriginal = detalleActual.remision.replace('-F', '');
+        const originalCerrado = detalleActual.recepcion.detalles.find(d => 
+          d.remision === remisionOriginal && 
+          d.estado_transaccion &&
+          d.estado_transaccion.nombre === 'Pesada Cerrada'
+        );
+
+        if (!originalCerrado) {
+          throw new InternalServerErrorException(`No se puede iniciar el pesaje de los sacos faltos (${detalleActual.remision}) hasta que la carga principal (${remisionOriginal}) haya cerrado su pesada.`);
+        }
+      }
+
+      // 3. Validar si es un registro bloqueado por aprobación de faltos
+      if (detalleActual.recepcion.detalles.find(d => d.estado && d.estado_transaccion?.nombre === 'Pendiente de Aprobación por Faltos')) {
+        throw new InternalServerErrorException('Este registro de sacos faltos requiere aprobación de Gerencia antes de ser pesado.');
       }
     }
 
@@ -506,11 +534,17 @@ export class ReceptionService {
     const detalle = await this.prisma.detalleRecepcion.findUnique({ 
       where: { id_detalle_recepcion: idDetalle },
       include: {
+        notas_patio: true, // Incluimos para validar
         cambios_cabezal: { where: { estado: true, id_placa_cabezal_entrante: { not: null } }, orderBy: { id_cambio_cabezal: 'desc' }, take: 1 }
       }
     });
     
     if (!detalle || !detalle.pesada_entrada) throw new InternalServerErrorException('Falta la pesada de entrada de este registro.');
+
+    // VALIDACIÓN: No se puede pesar salida si no hay Nota de Patio (Punto 3 del requerimiento)
+    if (!detalle.notas_patio || detalle.notas_patio.length === 0) {
+      throw new InternalServerErrorException('Operación denegada. El equipo aún no tiene una Nota de Patio registrada (Descarga pendiente).');
+    }
     
     // Si hay un cambio de cabezal completo, usamos SU peso bruto como real. De lo contrario, usamos la pesada de entrada original.
     const pesoBrutoReal = detalle.cambios_cabezal && detalle.cambios_cabezal.length > 0 
@@ -541,5 +575,178 @@ export class ReceptionService {
     });
 
     return detalleActualizado;
+  }
+
+  // ==========================================
+  // MÓDULO CONTROL DE PATIO (WMS)
+  // ==========================================
+
+  async getRecepcionesParaPatio() {
+    return this.prisma.detalleRecepcion.findMany({
+      where: {
+        estado: true,
+        pesada_entrada: { not: null },
+        pesada_salida: null,
+        notas_patio: { none: {} }
+      },
+      include: {
+        recepcion: {
+          include: {
+            conductor: true,
+            placa_cabezal: true
+          }
+        },
+        proveedor: true,
+        estado_transaccion: true
+      },
+      orderBy: { fecha_entrada_bascula: 'asc' }
+    });
+  }
+
+  async crearNotaPatio(dto: any, usuarioId: number) {
+    const { id_detalle_recepcion, id_estiba, cantidad_sacos_buenos, cantidad_sacos_faltos, observaciones_faltos } = dto;
+
+    const detalleOriginal = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion },
+      include: { recepcion: true }
+    });
+
+    if (!detalleOriginal) throw new NotFoundException('Detalle de recepción no encontrado');
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Si hay faltos, creamos un nuevo detalle bloqueado
+      if (cantidad_sacos_faltos > 0) {
+        const estadoFaltos = await tx.estadoTransaccion.findUnique({
+          where: { nombre: 'Pendiente de Aprobación por Faltos' }
+        });
+        if (!estadoFaltos) throw new InternalServerErrorException('Estado "Pendiente de Aprobación por Faltos" no encontrado');
+
+        // El nuevo registro nace con los sacos faltos y la observación de por qué salieron faltos
+        await tx.detalleRecepcion.create({
+          data: {
+            id_recepcion: detalleOriginal.id_recepcion,
+            id_proveedor: detalleOriginal.id_proveedor,
+            id_estado_transaccion: estadoFaltos.id_estado_transaccion,
+            cantidad_sacos: cantidad_sacos_faltos,
+            cantidad_qq: (Number(detalleOriginal.cantidad_qq) / detalleOriginal.cantidad_sacos) * cantidad_sacos_faltos,
+            remision: `${detalleOriginal.remision}-F`,
+            observaciones: `Sacos Faltos: ${observaciones_faltos}`,
+            estado: true, // Lo dejamos activo pero el estado_transaccion lo bloquea de báscula
+            usuario_creacion: usuarioId
+          }
+        });
+      }
+
+      // 2. Actualizamos el detalle original con los sacos que SÍ se bajaron (buenos)
+      // Al crear nota de patio, el flujo indica que también debe notificarse a Laboratorio
+      const estadoMuestreoGeneral = await tx.estadoTransaccion.findUnique({
+        where: { nombre: 'Muestra General Recibida' }
+      });
+
+      await tx.detalleRecepcion.update({
+        where: { id_detalle_recepcion },
+        data: {
+          cantidad_sacos: cantidad_sacos_buenos,
+          // El peso se mantiene igual (es el peso bruto del equipo)
+          id_estado_transaccion: estadoMuestreoGeneral?.id_estado_transaccion || detalleOriginal.id_estado_transaccion,
+          usuario_modificacion: usuarioId,
+          fecha_modificacion: new Date()
+        }
+      });
+
+      // 3. Crear el registro maestro de la Nota de Patio
+      const count = await tx.notaDePatio.count();
+      const correlativo = `NP-${String(count + 1).padStart(5, '0')}`;
+
+      const notaPatio = await tx.notaDePatio.create({
+        data: {
+          id_detalle_recepcion,
+          numero_nota_patio: correlativo,
+          usuario_creacion: usuarioId,
+          detalles: {
+            create: {
+              id_estibas: id_estiba,
+              cantidad_sacos: cantidad_sacos_buenos,
+              usuario_creacion: usuarioId
+            }
+          }
+        }
+      });
+
+      this.notifications.emitNotification('new_notification', {
+        title: 'Patio: Nota Creada',
+        message: `Se generó la nota ${correlativo} para el ingreso ${detalleOriginal.recepcion.numero_entrada}. Ya puede tomarse la muestra general.`,
+        type: 'success',
+        module: 'RECEPCION'
+      });
+
+      return notaPatio;
+    });
+  }
+
+  async getPendientesAprobacionFaltos() {
+    return this.prisma.detalleRecepcion.findMany({
+      where: {
+        estado: true,
+        estado_transaccion: { nombre: 'Pendiente de Aprobación por Faltos' }
+      },
+      include: {
+        recepcion: { include: { placa_cabezal: true, conductor: true } },
+        proveedor: true,
+        estado_transaccion: true
+      },
+      orderBy: { fecha_creacion: 'asc' }
+    });
+  }
+
+  async decidirFaltos(idDetalle: number, dto: any, usuarioId: number) {
+    const { decision, observaciones } = dto;
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: { recepcion: true }
+    });
+    if (!detalle) throw new NotFoundException('Registro de faltos no encontrado');
+
+    return this.prisma.$transaction(async (tx) => {
+      if (decision === 'APROBAR') {
+        const estadoAprobado = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Muestra Aprobada' } });
+        await tx.detalleRecepcion.update({
+          where: { id_detalle_recepcion: idDetalle },
+          data: {
+            id_estado_transaccion: estadoAprobado?.id_estado_transaccion || detalle.id_estado_transaccion,
+            observaciones: `${detalle.observaciones} | Aprobado por Gerencia: ${observaciones || 'Sin comentarios'}`,
+            usuario_modificacion: usuarioId,
+            fecha_modificacion: new Date()
+          }
+        });
+
+        this.notifications.emitNotification('new_notification', {
+          title: 'Gerencia: Faltos Aprobados',
+          message: `Se aprobó la descarga de los sacos faltos del ingreso ${detalle.recepcion.numero_entrada}. Ya puede pesarse en báscula.`,
+          type: 'success',
+          module: 'RECEPCION'
+        });
+      } else {
+        const estadoDevolucion = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Devolución' } });
+        await tx.detalleRecepcion.update({
+          where: { id_detalle_recepcion: idDetalle },
+          data: {
+            id_estado_transaccion: estadoDevolucion?.id_estado_transaccion || detalle.id_estado_transaccion,
+            estado: false, // Se marca como inactivo porque se devuelve
+            observaciones: `${detalle.observaciones} | DEVUELTO por Gerencia: ${observaciones || 'Sin comentarios'}`,
+            usuario_modificacion: usuarioId,
+            fecha_modificacion: new Date()
+          }
+        });
+
+        this.notifications.emitNotification('new_notification', {
+          title: 'Gerencia: Carga Devuelta',
+          message: `Se ha ordenado la devolución de sacos faltos para el ingreso ${detalle.recepcion.numero_entrada}.`,
+          type: 'danger',
+          module: 'RECEPCION'
+        });
+      }
+      return { success: true };
+    });
   }
 }

@@ -1,5 +1,5 @@
 import React from "react";
-import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck } from "lucide-react";
+import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck } from "lucide-react";
 import { Card, Table, Badge, Button, Dropdown } from "react-bootstrap";
 
 export type ModalMode = "ENTRADA" | "SALIDA" | "SALIDA_CABEZAL" | "ENTRADA_CABEZAL";
@@ -106,15 +106,20 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                   const isMuestraAprobada = estadoNombre === "Muestra Aprobada";
                                   const isEntrada = isMuestraAprobada && !isVehicleOnScale;
                                   const isBloqueadoPorBascula = isMuestraAprobada && isVehicleOnScale;
-                                  const isSalida = estadoNombre === "Pesada Abierta";
+                                  const isSalida = estadoNombre === "Pesada Abierta" || 
+                                                  estadoNombre === "Muestra General Recibida" ||
+                                                  estadoNombre === "Muestra General Pendiente de Aprobacion";
+                                  const hasNotaPatio = carga.notas_patio && carga.notas_patio.length > 0;
+                                  
                                   const isSinCabezal = estadoNombre === "Sin Cabezal";
-                                  const isPendiente = estadoNombre.includes("Pendiente");
+                                  const isPendienteFaltos = estadoNombre === "Pendiente de Aprobación por Faltos";
+                                  const isPendiente = estadoNombre.includes("Pendiente") && !isPendienteFaltos;
                                   const isRechazada = estadoNombre.includes("Rechazada") || estadoNombre === "Devolución";
-                                  const isCompletado = estadoNombre === "Pesaje Completado" || estadoNombre === "En Bodega";
+                                  const isCompletado = estadoNombre === "Pesaje Completado" || estadoNombre === "En Bodega" || estadoNombre === "Pesada Cerrada";
 
                                   let rowClasses = "";
                                   if (isSalida || isSinCabezal) rowClasses = "table-primary bg-opacity-10";
-                                  if (isPendiente) rowClasses = "table-warning bg-opacity-10";
+                                  if (isPendiente || isPendienteFaltos) rowClasses = "table-warning bg-opacity-10";
                                   if (isRechazada) rowClasses = "table-danger bg-opacity-10";
                                   if (isCompletado) rowClasses = "opacity-50";
 
@@ -141,9 +146,15 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                               )}
                                               {isSalida && (
                                                 <>
-                                                  <Dropdown.Item onClick={() => onOpenModal(r, carga, "SALIDA")} className="d-flex align-items-center gap-2">
-                                                    <Scale size={15} className="text-success" /> Pesar Salida (Tara)
-                                                  </Dropdown.Item>
+                                                  {hasNotaPatio ? (
+                                                    <Dropdown.Item onClick={() => onOpenModal(r, carga, "SALIDA")} className="d-flex align-items-center gap-2">
+                                                      <Scale size={15} className="text-success" /> Pesar Salida (Tara)
+                                                    </Dropdown.Item>
+                                                  ) : (
+                                                    <Dropdown.Item className="text-muted d-flex align-items-center gap-2" disabled>
+                                                      <Loader2 size={15} className="animate-spin" /> Esperando Nota de Patio
+                                                    </Dropdown.Item>
+                                                  )}
                                                   <Dropdown.Divider />
                                                   <Dropdown.Item onClick={() => onOpenModal(r, carga, "SALIDA_CABEZAL")} className="d-flex align-items-center gap-2">
                                                     <Truck size={15} className="text-warning" /> Destarse (Salida Cabezal)
@@ -159,6 +170,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                           </Dropdown>
                                         ) : (
                                           <div className="text-center">
+                                            {isPendienteFaltos && <Badge bg="danger" className="flex items-center gap-1 mx-auto w-fit"><ShieldCheck size={12}/> Gerencia</Badge>}
                                             {isPendiente && <Badge bg="warning" className="text-dark"><Loader2 className="w-3 h-3 animate-spin me-1" /> Esperando</Badge>}
                                             {isRechazada && <Badge bg="danger">Rechazada</Badge>}
                                             {isCompletado && <span className="text-xs text-muted font-bold uppercase">Procesado</span>}

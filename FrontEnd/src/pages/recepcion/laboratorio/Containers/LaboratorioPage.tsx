@@ -57,8 +57,11 @@ export default function LaboratorioPage() {
       recepciones.forEach(rec => {
         if (!rec.estado) return;
         rec.detalles.forEach(det => {
-          // Filtramos solo los que están "Muestreado" (La bolsa ya llegó al laboratorio físico)
-          if (det.estado && det.estado_transaccion?.nombre === "Muestreado") {
+          // Filtramos: 
+          // 1. "Muestreado" (Muestra previa tomada en patio antes de descargar)
+          // 2. "Muestra General Recibida" (Muestra general enviada después de la Nota de Patio / Descarga)
+          const nombreEstado = det.estado_transaccion?.nombre || "";
+          if (det.estado && (nombreEstado === "Muestreado" || nombreEstado === "Muestra General Recibida")) {
             pendientes.push({
               ...det,
               numero_entrada: rec.numero_entrada,
@@ -68,10 +71,11 @@ export default function LaboratorioPage() {
         });
       });
 
-      // Añadimos las que están pendientes de aprobación de Gerencia
+      // Añadimos las que están pendientes de aprobación de Gerencia (Previa y General)
       analisisPendientes.forEach(ana => {
         const det = ana.detalle_recepcion;
-        if (det && det.estado_transaccion?.nombre === "Muestra Previa Pendiente de Aprobacion") {
+        const nombreEstado = det?.estado_transaccion?.nombre || "";
+        if (det && (nombreEstado === "Muestra Previa Pendiente de Aprobacion" || nombreEstado === "Muestra General Pendiente de Aprobacion")) {
            pendientes.push({
              ...det,
              numero_entrada: det.recepcion?.numero_entrada || "N/A",

@@ -41,8 +41,15 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
             </tr>
           ) : (
             muestras.map((m) => {
-              const isMuestreado = m.estado_transaccion?.nombre === "Muestreado";
-              const isPendienteAprobacion = m.estado_transaccion?.nombre === "Muestra Previa Pendiente de Aprobacion";
+              const estadoNombre = m.estado_transaccion?.nombre || "";
+              const isMuestreado = estadoNombre === "Muestreado";
+              const isGeneralRecibida = estadoNombre === "Muestra General Recibida";
+              const isPendienteAprobacionPrevia = estadoNombre === "Muestra Previa Pendiente de Aprobacion";
+              const isPendienteAprobacionGeneral = estadoNombre === "Muestra General Pendiente de Aprobacion";
+
+              // Puede crear análisis si es muestra previa (Muestreado) o muestra general (Recibida de Patio)
+              const canCreateAnalysis = isMuestreado || isGeneralRecibida;
+              const isEnRevision = isPendienteAprobacionPrevia || isPendienteAprobacionGeneral;
 
               return (
                 <tr key={m.id_detalle_recepcion}>
@@ -62,7 +69,7 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
                         <Dropdown.Menu renderOnMount popperConfig={{ strategy: "fixed" }}>
                           {hasPermission("CREAR_MUESTRA") && (
                             <Dropdown.Item
-                              disabled={!isMuestreado}
+                              disabled={!canCreateAnalysis}
                               onClick={() => onOpenModal(m)}
                               className="d-flex align-items-center gap-2"
                             >
@@ -71,7 +78,7 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
                           )}
                           {hasPermission("IMPRIMIR_MUESTRA") && (
                             <Dropdown.Item
-                              disabled={!isPendienteAprobacion}
+                              disabled={!isEnRevision}
                               onClick={() => onPrintClick(m)}
                               className="d-flex align-items-center gap-2"
                             >
@@ -87,8 +94,10 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
                   <td>{m.proveedor_nombre}</td>
                   <td className="text-end">{Number(m.cantidad_qq).toFixed(2)} QQ</td>
                   <td className="text-center">
-                    <Badge bg={isMuestreado ? "warning" : "info"}>
-                      {isMuestreado ? "EN LABORATORIO" : "ESPERANDO APROBACIÓN"}
+                    <Badge bg={canCreateAnalysis ? "warning" : "info"}>
+                      {canCreateAnalysis 
+                        ? (isGeneralRecibida ? "MUESTRA GENERAL" : "EN LABORATORIO") 
+                        : "ESPERANDO APROBACIÓN"}
                     </Badge>
                   </td>
                 </tr>

@@ -1,17 +1,23 @@
 import React, { useState, useEffect } from "react";
-import { Search } from "lucide-react";
-import Pageheader from "../../../../layout/layoutcomponent/pageheader";
-import { Card, Form, InputGroup } from "react-bootstrap";
+import { Search, ShieldCheck, Beaker, ClipboardCheck } from "lucide-react";
+import PageHeader from "../../../../components/layout/PageHeader";
+import { moduleColors } from "../../../../config/colors.config";
+import { Card, Form, InputGroup, Tabs, Tab, Badge } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../../auth/useAuth";
 
 // APIs
 import { getAnalisisPendientesApi, veredictoGerenciaApi, VeredictoGerenciaRequest } from "../../../../api/analisis.api";
+import { getPendientesAprobacionGerenciaApi, decidirFaltosApi } from "../../../../api/patio.api";
 
 // Components
 import GerenciaTable from "../Components/GerenciaTable";
 import EvaluacionModal from "../Components/EvaluacionModal";
 import DevolucionModal from "../Components/DevolucionModal";
+import FaltosTable from "../../patio/Components/FaltosTable";
+import DevolucionFaltosModal from "../../patio/Components/DevolucionFaltosModal";
+
+const colors = moduleColors.recepcion;
 
 export interface MuestraGerencia {
   id_analisis_calidad: number;
@@ -41,9 +47,15 @@ export default function AprobacionGerenciaPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Calidad State
   const [muestras, setMuestras] = useState<MuestraGerencia[]>([]);
   const [selectedMuestra, setSelectedMuestra] = useState<MuestraGerencia | null>(null);
   const [printData, setPrintData] = useState<{ muestra: MuestraGerencia; motivo: string } | null>(null);
+  
+  // Faltos State
+  const [pendientesFaltos, setPendientesFaltos] = useState<any[]>([]);
+  const [selectedFalto, setSelectedFalto] = useState<any | null>(null);
+  const [showFaltoModal, setShowFaltoModal] = useState(false);
 
   const [formData, setFormData] = useState<VeredictoGerenciaRequest>({
     veredicto: "APROBAR",
@@ -57,7 +69,10 @@ export default function AprobacionGerenciaPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await getAnalisisPendientesApi();
+      const [data, faltos] = await Promise.all([
+        getAnalisisPendientesApi(),
+        getPendientesAprobacionGerenciaApi()
+      ]);
 
       const mapeadas: MuestraGerencia[] = data.map((ana: any) => ({
         id_analisis_calidad: ana.id_analisis_calidad,
@@ -80,6 +95,7 @@ export default function AprobacionGerenciaPage() {
       }));
 
       setMuestras(mapeadas);
+      setPendientesFaltos(faltos);
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar la bandeja de aprobaciones");
@@ -91,6 +107,11 @@ export default function AprobacionGerenciaPage() {
   const handleOpenEvaluation = (muestra: MuestraGerencia) => {
     setSelectedMuestra(muestra);
     setFormData({ veredicto: "APROBAR", observaciones: "" });
+  };
+
+  const handleDecidirFalto = (falto: any) => {
+    setSelectedFalto(falto);
+    setShowFaltoModal(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,6 +143,23 @@ export default function AprobacionGerenciaPage() {
     }
   };
 
+  const onConfirmFalto = async (decision: "APROBAR" | "DEVOLVER", obs: string) => {
+    try {
+      setSubmitting(true);
+      await decidirFaltosApi(selectedFalto.id_detalle_recepcion, decision, obs);
+      toast.success(decision === "APROBAR" ? "Carga aprobada correctamente" : "Carga devuelta");
+      if (decision === "APROBAR") {
+        setShowFaltoModal(false);
+        loadData();
+      }
+    } catch (error: any) {
+      console.error("Error al procesar decisión:", error);
+      toast.error(error.response?.data?.message || "Error al registrar veredicto");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const filteredMuestras = muestras.filter((m) =>
     m.numero_entrada.toLowerCase().includes(searchTerm.toLowerCase()) ||
     m.remision.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,8 +167,14 @@ export default function AprobacionGerenciaPage() {
   );
 
   return (
-    <div>
-      <Pageheader title="Aprobación de Gerencia" heading="Recepción" active="Aprobación de Gerencia" />
+    <div className="space-y-6">
+      <PageHeader 
+        title="Aprobaciones de Gerencia" 
+        subtitle="Veredicto final sobre calidad de laboratorio y segregación en patio" 
+        icon={ClipboardCheck} 
+        iconBg={colors.bg} 
+        iconColor={colors.icon} 
+      />
 
       <Card className="mb-6">
         <Card.Body className="p-4">
@@ -145,12 +189,47 @@ export default function AprobacionGerenciaPage() {
         </Card.Body>
       </Card>
 
-      <GerenciaTable
-        muestras={filteredMuestras}
-        loading={loading}
-        hasRowActions={hasRowActions}
-        onOpenEvaluation={handleOpenEvaluation}
-      />
+      <Card>
+        <Card.Body className="p-0">
+          <Tabs defaultActiveKey="calidad" className="px-4 pt-3 border-bottom-0">
+            <Tab 
+              eventKey="calidad" 
+              title={
+                <div className="flex items-center gap-2">
+                  <Beaker size={16}/> Calidad (Laboratorio)
+                  {muestras.length > 0 && <Badge bg="danger" pill>{muestras.length}</Badge>}
+                </div>
+              }
+            >
+              <div className="p-4 border-top">
+                <GerenciaTable
+                  muestras={filteredMuestras}
+                  loading={loading}
+                  hasRowActions={hasRowActions}
+                  onOpenEvaluation={handleOpenEvaluation}
+                />
+              </div>
+            </Tab>
+
+            <Tab 
+              eventKey="faltos" 
+              title={
+                <div className="flex items-center gap-2">
+                  <ShieldCheck size={16}/> Segregación (Faltos de Patio)
+                  {pendientesFaltos.length > 0 && <Badge bg="warning" text="dark" pill>{pendientesFaltos.length}</Badge>}
+                </div>
+              }
+            >
+              <div className="p-4 border-top">
+                <FaltosTable 
+                  data={pendientesFaltos} 
+                  onDecide={handleDecidirFalto} 
+                />
+              </div>
+            </Tab>
+          </Tabs>
+        </Card.Body>
+      </Card>
 
       <EvaluacionModal
         muestra={selectedMuestra}
@@ -165,6 +244,15 @@ export default function AprobacionGerenciaPage() {
         printData={printData}
         onClose={() => setPrintData(null)}
       />
+
+      <DevolucionFaltosModal 
+        show={showFaltoModal}
+        item={selectedFalto}
+        submitting={submitting}
+        onClose={() => { setShowFaltoModal(false); loadData(); }}
+        onConfirm={onConfirmFalto}
+      />
     </div>
   );
 }
+
