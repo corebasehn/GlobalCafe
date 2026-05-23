@@ -26,7 +26,7 @@ import Scrolltotop from './Scrolltotop';
 // Lógica de Global Café
 import { AuthProvider } from './auth/AuthProvider';
 import ProtectedRoute from './auth/ProtectedRoute';
-import LoginPage from './pages/auth/LoginPage';
+import LoginPage from './pages/auth/login/Containers/LoginPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import { Toaster } from 'react-hot-toast';
 
