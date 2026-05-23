@@ -1,123 +1,102 @@
 # Global Café - Sistema de Gestión de Recepciones y Control de Café
 
-Este proyecto es una aplicación integral para la gestión de recepciones, análisis de calidad y control operativo de café. Está dividido en dos partes principales: un **BackEnd** construido con NestJS y Prisma, y un **FrontEnd** desarrollado con React, Vite y Tailwind CSS.
+Global Café es una solución integral diseñada para la gestión operativa y administrativa de beneficios y exportadoras de café. El sistema permite el control total desde la recepción del grano, análisis de calidad (catación), gestión de patios, pesaje automatizado y control de despacho.
 
 ---
 
-## 🚀 Requisitos Previos
+## 🌟 Características Principales
 
-Antes de comenzar, asegúrate de tener instalado lo siguiente:
-
-*   **Node.js** (v18.0.0 o superior)
-*   **npm** (incluido con Node.js)
-*   **PostgreSQL** (v14 o superior)
-*   **Git**
-
----
-
-## 🛠️ Instalación y Configuración
-
-Sigue estos pasos detallados para poner en marcha el proyecto en tu entorno local.
-
-### 1. Clonar el Repositorio
-
-```bash
-git clone https://github.com/tu-usuario/GlobalCafe.git
-cd GlobalCafe
-```
-
-### 2. Configuración del BackEnd
-
-El servidor gestiona la lógica de negocio y la conexión con la base de datos (PostgreSQL/Neon).
-
-1.  **Entrar a la carpeta del BackEnd:**
-    ```bash
-    cd BackEnd
-    ```
-
-2.  **Instalar dependencias:**
-    Se recomienda usar `npm install`. El proyecto incluye un archivo `package-lock.json` que asegura que todos los desarrolladores instalen exactamente las mismas versiones de las librerías.
-    ```bash
-    npm install
-    ```
-
-3.  **Configurar Variables de Envorno:**
-    Crea un archivo llamado `.env` en la raíz de la carpeta `BackEnd/` y añade tu cadena de conexión (DATABASE_URL).
-    ```env
-    DATABASE_URL="postgresql://USUARIO:CONTRASEÑA@tu-servidor-neon.tech/global_cafe_db?sslmode=require"
-    ```
-
-4.  **Generar el Cliente de Prisma:**
-    Es necesario generar el cliente para que el código reconozca los modelos de la base de datos:
-    ```bash
-    npx prisma generate
-    ```
-
-5.  **Iniciar el Servidor en modo desarrollo:**
-    ```bash
-    npm run start:dev
-    ```
-    *   **API URL:** `http://localhost:3000/api`
-    *   **Documentación (Swagger):** `http://localhost:3000/api/docs`
+*   **📦 Gestión de Recepciones:** Registro detallado de entradas de café por sucursal, cosecha y tipo de vehículo.
+*   **🔬 Análisis de Calidad:** Módulo completo de catación que incluye rendimiento, humedad, defectos, zarandas y análisis de taza.
+*   **🏗️ Control de Patios y Bodegas:** Seguimiento de estibas y ubicación física del producto (Notas de Patio).
+*   **⚖️ Control de Pesaje (Notas de Peso):** Registro preciso de pesos brutos, tara y cálculos automáticos de peso neto con descuentos por humedad y calidad.
+*   **🔌 Integración con Básculas Industriales:** Soporte para captura automática de peso desde indicadores (ej. Toledo TC420) mediante un agente local.
+*   **🔐 Seguridad y RBAC:** Sistema robusto de Roles y Permisos (RBAC) con optimización para dispositivos móviles (evitando errores de auto-capitalización).
+*   **📡 Conectividad en Red:** Configuración de CORS preparada para demostraciones en red local (IP 192.168.x.x).
+*   **📢 Notificaciones en Tiempo Real:** Actualizaciones instantáneas mediante WebSockets (Socket.io).
+*   **📊 Configuración Visual:** Personalización de colores y logotipos por empresa.
 
 ---
 
-### 3. Configuración del FrontEnd
+## 🛠️ Tecnologías Utilizadas
 
-El cliente web interactúa con el API de NestJS.
+### BackEnd
+*   **Framework:** NestJS (Node.js)
+*   **ORM:** Prisma
+*   **Base de Datos:** PostgreSQL
+*   **Seguridad:** Passport.js, JWT, Bcrypt
+*   **Documentación:** Swagger (OpenAPI)
+*   **Comunicación:** Socket.io (WebSockets)
 
-1.  **Entrar a la carpeta del FrontEnd:**
-    Abre una nueva terminal y navega a la carpeta correspondiente:
-    ```bash
-    cd FrontEnd
-    ```
-
-2.  **Instalar dependencias:**
-    Se recomienda usar `npm install`. El proyecto incluye un archivo `package-lock.json` que asegura que todos los desarrolladores instalen exactamente las mismas versiones de las librerías.
-    ```bash
-    npm install
-    ```
-
-3.  **Configurar Variables de Entorno:**
-    Crea un archivo llamado `.env` en la raíz de la carpeta `FrontEnd/`:
-    ```env
-    VITE_API_URL="http://localhost:3000/api"
-    ```
-
-4.  **Compilar y ejecutar estilos (Sass):**
-    El proyecto utiliza Sass para algunos estilos personalizados:
-    ```bash
-    npm run sass
-    ```
-
-5.  **Iniciar la Aplicación:**
-    ```bash
-    npm run dev
-    ```
-    *   **URL Local:** `http://localhost:5173`
+### FrontEnd
+*   **Framework:** React (Vite)
+*   **Lenguaje:** TypeScript
+*   **Estilos:** Tailwind CSS, Sass, Bootstrap
+*   **Componentes UI:** Material UI (MUI), React Bootstrap
+*   **Estado:** Redux Toolkit
+*   **Gráficos:** ApexCharts, Chart.js, ECharts
+*   **Mapas:** Leaflet
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-*   `BackEnd/`: Servidor NestJS.
-    *   `src/`: Código fuente del API.
-    *   `prisma/`: Esquema de base de datos y scripts de seed.
-*   `FrontEnd/`: Cliente React.
-    *   `src/api/`: Servicios de conexión con el API.
-    *   `src/pages/`: Vistas de la aplicación organizadas por módulo.
-    *   `src/components/`: Componentes reutilizables.
+```text
+GlobalCafe/
+├── BackEnd/              # Servidor NestJS
+│   ├── prisma/           # Esquema de DB y Seeds
+│   └── src/              # Lógica de negocio (auth, catalogs, reception, etc.)
+└── FrontEnd/             # Cliente React
+    ├── src/api/          # Servicios de comunicación con el API
+    ├── src/components/   # Componentes reutilizables y modulares
+    └── src/pages/        # Vistas organizadas por módulo operativo
+```
+
+---
+
+## 🚀 Instalación y Configuración
+
+### 1. Requisitos Previos
+*   Node.js v18+
+*   PostgreSQL v14+
+*   npm
+
+### 2. Configuración del BackEnd
+1.  `cd BackEnd`
+2.  `npm install`
+3.  Configura el `.env` con tu `DATABASE_URL`.
+4.  `npx prisma generate`
+5.  `npx prisma migrate dev` (para base de datos nueva) o `npx prisma db pull` (si ya existe).
+6.  `npm run start:dev`
+
+*   **API URL:** `http://localhost:3000/api`
+*   **Swagger Docs:** `http://localhost:3000/api/docs`
+
+### 3. Configuración del FrontEnd
+1.  `cd FrontEnd`
+2.  `npm install`
+3.  Configura el `.env` con `VITE_API_URL="http://localhost:3000/api"`.
+4.  `npm run sass` (para compilar estilos iniciales).
+5.  `npm run dev`
+
+---
+
+## ⚖️ Integración con Básculas (Agente de Pesaje)
+
+Para la captura automática de peso, el sistema utiliza un **Agente Local** (Python/Node.js) que se comunica con el indicador de la báscula vía RS-232 y expone un endpoint local (`http://127.0.0.1:4000/peso`).
+
+*   **Opción Recomendada:** Ejecutable (.exe) invisible que arranca con Windows.
+*   **Protocolo:** El frontend solicita el peso al agente local mediante `fetch` al momento de presionar "Capturar Peso".
 
 ---
 
 ## 🔑 Acceso al Sistema
 
-Para ingresar al sistema, utiliza las credenciales de usuario proporcionadas por el administrador o las que ya estén configuradas en la base de datos de Neon. 
-
-Si necesitas crear un usuario inicial en una base de datos nueva, puedes revisar el archivo `BackEnd/prisma/seed.ts` para ver el formato de los datos.
+El sistema utiliza credenciales gestionadas en el módulo de Seguridad. Para una instalación nueva, revisa `BackEnd/prisma/seed.ts` para las credenciales por defecto o utiliza el script `check-users.ts` para verificar usuarios existentes.
 
 ---
 
-## 🛡️ Licencia
+## 🛡️ Licencia y Copyright
 
-Este proyecto está bajo una licencia privada. Consulta el archivo `Legal Agreement & Copyright Notice.txt` en la carpeta FrontEnd para más detalles.
+Este proyecto es de carácter **privado**. Consulta `FrontEnd/Legal Agreement & Copyright Notice.txt` para términos de uso y derechos de autor.
+
