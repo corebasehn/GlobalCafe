@@ -13,9 +13,10 @@ interface LabTableProps {
   hasPermission: (permission: string) => boolean;
   onOpenModal: (m: MuestraPendiente) => void;
   onPrintClick: (m: MuestraPendiente) => void;
+  searchTerm: string;
 }
 
-export default function LabTable({ muestras, loading, hasRowActions, hasPermission, onOpenModal, onPrintClick }: LabTableProps) {
+export default function LabTable({ muestras, loading, hasRowActions, hasPermission, onOpenModal, onPrintClick, searchTerm }: LabTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -73,7 +74,9 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
           ) : muestras.length === 0 ? (
             <tr>
               <td colSpan={hasRowActions ? 6 : 5} className="text-center py-8 text-neutral-500">
-                Laboratorio limpio. No hay muestras en espera de catación.
+                {searchTerm.trim().length === 0
+                  ? "Ingrese un No. Ingreso o Remisi\u00f3n F\u00edsica para buscar."
+                  : "No se encontraron resultados para la b\u00fasqueda."}
               </td>
             </tr>
           ) : (

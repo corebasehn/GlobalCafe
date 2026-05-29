@@ -23,15 +23,15 @@ import downloadsvg from '../assets/images/backgrounds/download.svg';
 
 //Brandlogos
 
-import desktopdark from '../assets/images/brand-logos/desktop-dark.png';
+import desktopdark from '../assets/images/brand-logos/LogoGlobalCoffeeBlancoNegro.png';
 // import desktoplogo from '../assets/images/brand-logos/desktop-logo.png';
 import desktoplogo from '../assets/images/brand-logos/Logo-Global-Coffee-Group.jpeg';
 // import desktopwhite from '../assets/images/brand-logos/desktop-white.png';
-import desktopwhite from '../assets/images/brand-logos/Logo-Global-Coffee-Group.jpeg';
+import desktopwhite from '../assets/images/brand-logos/LogoGlobalCoffeeBlancoNegro.png';
 import favicon from '../assets/images/brand-logos/favicon.ico';
-import toggledark from '../assets/images/brand-logos/toggle-dark.png';
-import togglelogo from '../assets/images/brand-logos/toggle-logo.png';
-import togglewhite from '../assets/images/brand-logos/toggle-white.png';
+import toggledark from '../assets/images/brand-logos/LogoGlobalCoffeeBlancoNegro.png';
+import togglelogo from '../assets/images/brand-logos/Logo-Global-Coffee-Group.jpeg';
+import togglewhite from '../assets/images/brand-logos/LogoGlobalCoffeeBlancoNegro.png';
 import react from '../assets/images/brand-logos/react.png';
 import firebase from '../assets/images/brand-logos/firebase.png';
 

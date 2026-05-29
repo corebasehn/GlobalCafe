@@ -574,7 +574,72 @@ export class ReceptionService {
       module: 'RECEPCION'
     });
 
-    return detalleActualizado;
+    // Verificar si TODOS los detalles del viaje están ya en 'Pesada Cerrada'
+    const todosDetallesViaje = await this.prisma.detalleRecepcion.findMany({
+      where: { id_recepcion: detalleActualizado.recepcion.id_recepcion, estado: true },
+      select: { id_estado_transaccion: true }
+    });
+    const allClosed = todosDetallesViaje.every(d => d.id_estado_transaccion === estadoCompletado.id_estado_transaccion);
+
+    return { ...detalleActualizado, allClosed };
+  }
+
+  // ==========================================
+  // BOLETAS DE IMPRESIÓN (BÁSCULA)
+  // ==========================================
+
+  async getBoletaPesada(idDetalle: number) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: {
+        proveedor: true,
+        estado_transaccion: true,
+        cambios_cabezal: {
+          where: { estado: true },
+          orderBy: { id_cambio_cabezal: 'asc' },
+        },
+        recepcion: {
+          include: {
+            cosecha: true,
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: true,
+          }
+        }
+      }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle de recepción #${idDetalle} no encontrado`);
+
+    // Buscar remisión de devolución (-F) del mismo ingreso para esta remisión
+    const devolucion = await this.prisma.detalleRecepcion.findFirst({
+      where: {
+        id_recepcion: detalle.id_recepcion,
+        remision: detalle.remision + '-F',
+        estado: true,
+      },
+      select: {
+        id_detalle_recepcion: true,
+        remision: true,
+        cantidad_sacos: true,
+        pesada_salida: true,
+        fecha_salida_bascula: true,
+      }
+    });
+
+    // Verificar si todos los detalles del viaje están en 'Pesada Cerrada'
+    const estadoCerrada = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Cerrada' }
+    });
+    const todosDetalles = await this.prisma.detalleRecepcion.findMany({
+      where: { id_recepcion: detalle.id_recepcion, estado: true },
+      select: { id_estado_transaccion: true }
+    });
+    const allClosed = estadoCerrada
+      ? todosDetalles.every(d => d.id_estado_transaccion === estadoCerrada.id_estado_transaccion)
+      : false;
+
+    return { detalle, devolucion, allClosed };
   }
 
   // ==========================================

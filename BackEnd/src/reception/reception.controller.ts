@@ -83,6 +83,13 @@ export class ReceptionController {
   }
 
   @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_BASCULA')
+  @Get('bascula/boleta-pesada/:id')
+  getBoletaPesada(@Param('id') id: string) {
+    return this.receptionService.getBoletaPesada(+id);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('PESAR_EQUIPO')
   @Put('bascula/entrada/:id')
   registrarPesadaEntrada(@Param('id') id: string, @Body('peso') peso: number, @Body('id_bodega') idBodega: number, @Request() req) {

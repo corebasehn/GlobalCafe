@@ -10,6 +10,7 @@ export interface BasculaTableProps {
   expandedRows: number[];
   onToggleRow: (id: number) => void;
   onOpenModal: (recepcion: any, carga: any, mode: ModalMode) => void;
+  searchTerm: string;
 }
 
 const PAGE_SIZE = 15;
@@ -22,7 +23,7 @@ function getBadgeVariant(estado: string) {
   return "secondary-transparent";
 }
 
-export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal }: BasculaTableProps) {
+export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal, searchTerm }: BasculaTableProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -113,7 +114,9 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
           ) : recepciones.length === 0 ? (
             <tr>
               <td colSpan={6} className="text-center py-8 text-neutral-500">
-                No hay vehículos en patio en espera de pesaje.
+                {searchTerm.trim().length === 0
+                  ? "Ingrese un No. Ingreso, Remisión o Placa para buscar."
+                  : "No se encontraron resultados para la búsqueda."}
               </td>
             </tr>
           ) : (
@@ -126,7 +129,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
               const detalles: any[] = r.detalles || [];
 
               const isVehicleOnScale = detalles.some((d: any) =>
-                ["Pesada Abierta", "Sin Cabezal"].includes(d.estado_transaccion?.nombre || "")
+                ["Pesada Abierta", "Sin Cabezal", "Muestra General Recibida"].includes(d.estado_transaccion?.nombre || "")
               );
 
               const sumSacos = detalles.reduce((s, d) => s + (d.cantidad_sacos || 0), 0);

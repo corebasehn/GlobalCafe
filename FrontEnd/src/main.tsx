@@ -30,6 +30,10 @@ import LoginPage from './pages/auth/login/Containers/LoginPage';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import { Toaster } from 'react-hot-toast';
 
+// Páginas de Impresión (sin layout, sin ProtectedRoute)
+import BoletaPesadaPage from './pages/recepcion/bascula/print/BoletaPesadaPage';
+import PaseSalidaPage from './pages/recepcion/bascula/print/PaseSalidaPage';
+
 //Form
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <Fragment>
@@ -50,7 +54,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           {/* Tu Ruta de Login */}
           <Route path={`${import.meta.env.BASE_URL}login`} element={<LoginPage />} />
 
-
+          {/* Rutas de impresión (sin sidebar/navbar, usan token de localStorage) */}
+          <Route path={`${import.meta.env.BASE_URL}print/boleta-pesada/:idDetalle/:tipo`} element={<BoletaPesadaPage />} />
+          <Route path={`${import.meta.env.BASE_URL}print/pase-salida/:idDetalle`} element={<PaseSalidaPage />} />
 
         </Routes>
       </BrowserRouter>

@@ -16,6 +16,7 @@ import EvaluacionModal from "../Components/EvaluacionModal";
 import DevolucionModal from "../Components/DevolucionModal";
 import FaltosTable from "../../patio/Components/FaltosTable";
 import DevolucionFaltosModal from "../../patio/Components/DevolucionFaltosModal";
+import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 
 const colors = moduleColors.recepcion;
 
@@ -168,13 +169,15 @@ export default function AprobacionGerenciaPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader 
+      {/* <PageHeader 
         title="Aprobaciones de Gerencia" 
         subtitle="Veredicto final sobre calidad de laboratorio y segregación en patio" 
         icon={ClipboardCheck} 
         iconBg={colors.bg} 
         iconColor={colors.icon} 
-      />
+      /> */}
+
+<Pageheader title="Aprobaciones de Gerencia" heading="Recepción" active="Aprobación Gerencia" />
 
       <Card className="mb-6">
         <Card.Body className="p-4">

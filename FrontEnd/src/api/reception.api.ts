@@ -115,18 +115,27 @@ export async function getPendientesBasculaApi(): Promise<any[]> {
   return data;
 }
 
-export async function registrarPesadaEntradaApi(id: number, peso: number, id_bodega: number): Promise<void> {
-  await http.put(`/reception/bascula/entrada/${id}`, { peso, id_bodega });
+export async function registrarPesadaEntradaApi(id: number, peso: number, id_bodega: number): Promise<any> {
+  const { data } = await http.put<any>(`/reception/bascula/entrada/${id}`, { peso, id_bodega });
+  return data;
 }
 
-export async function registrarSalidaCabezalApi(id: number, id_placa_saliente: number, peso_saliente: number): Promise<void> {
-  await http.put(`/reception/bascula/cambio-cabezal/salida/${id}`, { id_placa_saliente, peso_saliente });
+export async function registrarSalidaCabezalApi(id: number, id_placa_saliente: number, peso_saliente: number): Promise<any> {
+  const { data } = await http.put<any>(`/reception/bascula/cambio-cabezal/salida/${id}`, { id_placa_saliente, peso_saliente });
+  return data;
 }
 
-export async function registrarEntradaCabezalApi(id: number, id_placa_entrante: number, peso_entrante: number): Promise<void> {
-  await http.put(`/reception/bascula/cambio-cabezal/entrada/${id}`, { id_placa_entrante, peso_entrante });
+export async function registrarEntradaCabezalApi(id: number, id_placa_entrante: number, peso_entrante: number): Promise<any> {
+  const { data } = await http.put<any>(`/reception/bascula/cambio-cabezal/entrada/${id}`, { id_placa_entrante, peso_entrante });
+  return data;
 }
 
-export async function registrarPesadaSalidaApi(id: number, peso: number): Promise<void> {
-  await http.put(`/reception/bascula/salida/${id}`, { peso });
+export async function registrarPesadaSalidaApi(id: number, peso: number): Promise<any> {
+  const { data } = await http.put<any>(`/reception/bascula/salida/${id}`, { peso });
+  return data;
+}
+
+export async function getBoletaPesadaApi(idDetalle: number): Promise<any> {
+  const { data } = await http.get<any>(`/reception/bascula/boleta-pesada/${idDetalle}`);
+  return data;
 }
