@@ -21,6 +21,18 @@ Este es el servidor central del sistema Global Café, construido con [NestJS](ht
 
 ---
 
+## 🗄️ Gestión de Base de Datos (Prisma)
+
+El proyecto utiliza **Prisma ORM** para una gestión de datos robusta y segura:
+
+1.  **Modelado:** Definido en `prisma/schema.prisma`, cubriendo módulos Administrativos, RBAC y Operativos.
+2.  **Type Safety:** Generación automática de tipos para TypeScript, minimizando errores en tiempo de ejecución.
+3.  **PrismaService:** Centralizado en `src/prisma.service.ts` para inyectar el cliente en todos los módulos de NestJS.
+4.  **Migraciones:** Control de versiones de la estructura de la base de datos mediante `npx prisma migrate`.
+5.  **Seeds:** Datos maestros (Departamentos, Municipios, Roles base) gestionados vía `prisma/seed.ts`.
+
+---
+
 ## 📁 Módulos Principales
 
 El backend está organizado de forma modular para facilitar su escalabilidad:

@@ -161,22 +161,26 @@ export class UsersService {
     });
 
     // Log
-    await this.prisma.logSistema.create({
-      data: {
-        usuario_id: currentUser?.id,
-        usuario_login: currentUser?.username,
-        nombre_usuario: currentUser?.nombre,
-        id_accion: 2, // 2: EDITAR
-        accion_nombre: 'EDITAR',
-        tabla_nombre: 'usuario',
-        modulo: 'USUARIOS',
-        entidad: 'Usuario',
-        id_entidad: updatedUser.id.toString(),
-        datos_antes: oldData as any,
-        datos_despues: updatedUser as any,
-        origen: 'BACKEND',
-      },
-    });
+    try {
+      await this.prisma.logSistema.create({
+        data: {
+          usuario_id: currentUser?.id,
+          usuario_login: currentUser?.username,
+          nombre_usuario: currentUser?.nombre,
+          id_accion: 2, // 2: EDITAR
+          accion_nombre: 'EDITAR',
+          tabla_nombre: 'usuario',
+          modulo: 'USUARIOS',
+          entidad: 'Usuario',
+          id_entidad: updatedUser.id.toString(),
+          datos_antes: oldData as any,
+          datos_despues: updatedUser as any,
+          origen: 'BACKEND',
+        },
+      });
+    } catch (logError) {
+      console.error('Error al crear log de sistema (update):', logError);
+    }
 
     return updatedUser;
   }
@@ -198,22 +202,26 @@ export class UsersService {
       });
   
       // Log
-      await this.prisma.logSistema.create({
-        data: {
-          usuario_id: currentUser?.id,
-          usuario_login: currentUser?.username,
-          nombre_usuario: currentUser?.nombre,
-          id_accion: idAccion,
-          accion_nombre: accion,
-          tabla_nombre: 'usuario',
-          modulo: 'USUARIOS',
-          entidad: 'Usuario',
-          id_entidad: deletedUser.id.toString(),
-          datos_antes: oldData as any,
-          datos_despues: deletedUser as any,
-          origen: 'BACKEND',
-        },
-      });
+      try {
+        await this.prisma.logSistema.create({
+          data: {
+            usuario_id: currentUser?.id,
+            usuario_login: currentUser?.username,
+            nombre_usuario: currentUser?.nombre,
+            id_accion: idAccion,
+            accion_nombre: accion,
+            tabla_nombre: 'usuario',
+            modulo: 'USUARIOS',
+            entidad: 'Usuario',
+            id_entidad: deletedUser.id.toString(),
+            datos_antes: oldData as any,
+            datos_despues: deletedUser as any,
+            origen: 'BACKEND',
+          },
+        });
+      } catch (logError) {
+        console.error('Error al crear log de sistema (remove):', logError);
+      }
   
       return deletedUser;
     } catch (error) {
