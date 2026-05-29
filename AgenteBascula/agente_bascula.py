@@ -7,7 +7,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
-PUERTO_COM = 'COM3' # <-- Asegúrate de que este sea el puerto correcto en la PC de la caseta
+PUERTO_COM = 'COM1' # <-- Asegúrate de que este sea el puerto correcto en la PC de la caseta
 
 def limpiar_datos_toledo(raw_data):
     try:

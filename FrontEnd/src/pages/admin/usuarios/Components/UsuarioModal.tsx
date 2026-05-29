@@ -52,6 +52,18 @@ export default function UsuarioModal({
                 />
               </Form.Group>
             </Col>
+            <Col md={12} className="mb-3">
+              <Form.Group>
+                <Form.Label className="fw-semibold">Correo Electrónico</Form.Label>
+                <Form.Control 
+                  type="email" 
+                  placeholder="ejemplo@globalcafe.hn" 
+                  value={formData.email} 
+                  onChange={(e) => onChange({...formData, email: e.target.value})} 
+                />
+                <Form.Text className="text-muted">Opcional. Si se deja vacío, el sistema generará uno automático.</Form.Text>
+              </Form.Group>
+            </Col>
             <Col md={12} className="mb-4">
               <Form.Group>
                 <Form.Label className="fw-semibold">Rol del Usuario</Form.Label>

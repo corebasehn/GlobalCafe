@@ -70,7 +70,7 @@ export default function UsuariosPage() {
     setFormData({
       username: user.username,
       nombre: user.nombre,
-      email: "",
+      email: user.email || "",
       rol: user.rolCodigo || "",
       password: "",
       confirmPassword: ""

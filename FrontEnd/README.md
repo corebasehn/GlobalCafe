@@ -22,6 +22,17 @@ Este es el cliente web del sistema Global Café, desarrollado con [React](https:
 
 ---
 
+## 🔐 Seguridad y Acceso (RBAC)
+
+El frontend implementa un control de acceso basado en roles (RBAC) altamente granular:
+
+*   **`AuthProvider`:** Gestiona el estado global de autenticación y persistencia de sesión.
+*   **`ProtectedRoute`:** Componente de alto orden para restringir el acceso a rutas según el estado de login.
+*   **`RequirePermission`:** Componente que oculta o muestra elementos de la interfaz (botones, secciones) basándose en los permisos específicos del usuario (ej. `RECEPTION_CREATE`, `QUALITY_ADMIN`).
+*   **`useAuth`:** Hook personalizado para acceder fácilmente a la información del usuario y sus capacidades.
+
+---
+
 ## 📁 Estructura de Directorios
 
 El proyecto sigue una organización modular por responsabilidades:

@@ -11,6 +11,7 @@ async function main() {
     { table: 'analisis_calidad',   seq: 'analisis_calidad_id_analisis_calidad_seq',      pk: 'id_analisis_calidad' },
     { table: 'detalle_recepcion',  seq: 'detalle_recepcion_id_detalle_recepcion_seq',    pk: 'id_detalle_recepcion' },
     { table: 'recepcion',          seq: 'recepcion_id_recepcion_seq',                   pk: 'id_recepcion' },
+    { table: 'log_sistema',        seq: 'log_sistema_id_log_seq',                       pk: 'id_log' },
   ];
 
   for (const { table, seq, pk } of tables) {

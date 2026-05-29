@@ -18,24 +18,13 @@ Global Café es una solución integral diseñada para la gestión operativa y ad
 
 ---
 
-## 🛠️ Tecnologías Utilizadas
+## 🛠️ Tecnologías y Arquitectura
 
-### BackEnd
-*   **Framework:** NestJS (Node.js)
-*   **ORM:** Prisma
-*   **Base de Datos:** PostgreSQL
-*   **Seguridad:** Passport.js, JWT, Bcrypt
-*   **Documentación:** Swagger (OpenAPI)
-*   **Comunicación:** Socket.io (WebSockets)
+El sistema sigue una arquitectura de cliente-servidor con un componente periférico para hardware industrial:
 
-### FrontEnd
-*   **Framework:** React (Vite)
-*   **Lenguaje:** TypeScript
-*   **Estilos:** Tailwind CSS, Sass, Bootstrap
-*   **Componentes UI:** Material UI (MUI), React Bootstrap
-*   **Estado:** Redux Toolkit
-*   **Gráficos:** ApexCharts, Chart.js, ECharts
-*   **Mapas:** Leaflet
+*   **BackEnd (API REST):** Construido con **NestJS**, utiliza **Prisma ORM** como motor de persistencia sobre **PostgreSQL**. Esta capa garantiza la integridad referencial y proporciona un tipado fuerte para toda la lógica de negocio.
+*   **FrontEnd (SPA):** Una aplicación moderna en **React** (Vite + TypeScript) que implementa un sistema de diseño híbrido (Tailwind + Bootstrap/MUI) para máxima flexibilidad operativa.
+*   **Agente de Báscula:** Un servicio especializado en **Python** que resuelve el puente entre el navegador y el hardware serie (RS-232), permitiendo la captura de peso en tiempo real sin intervención manual.
 
 ---
 
@@ -43,13 +32,15 @@ Global Café es una solución integral diseñada para la gestión operativa y ad
 
 ```text
 GlobalCafe/
-├── BackEnd/              # Servidor NestJS
-│   ├── prisma/           # Esquema de DB y Seeds
-│   └── src/              # Lógica de negocio (auth, catalogs, reception, etc.)
-└── FrontEnd/             # Cliente React
-    ├── src/api/          # Servicios de comunicación con el API
-    ├── src/components/   # Componentes reutilizables y modulares
-    └── src/pages/        # Vistas organizadas por módulo operativo
+├── BackEnd/              # API NestJS (Lógica, Seguridad, DB)
+│   ├── prisma/           # Modelado de datos (schema.prisma) y seeds
+│   └── src/              # Módulos operativos (reception, analisis, etc.)
+├── FrontEnd/             # Cliente React (Interfaz, Dashboards)
+│   ├── src/api/          # Integración con el API y WebSockets
+│   ├── src/auth/         # Gestión de RBAC y Sesiones
+│   └── src/pages/        # Vistas por rol de usuario
+└── AgenteBascula/        # Puente de hardware (Python)
+    └── agente_bascula.py # Lector de puerto serial
 ```
 
 ---
