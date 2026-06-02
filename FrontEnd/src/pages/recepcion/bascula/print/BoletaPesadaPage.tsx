@@ -72,35 +72,39 @@ export default function BoletaPesadaPage() {
 
   const filas: FilaPeso[] = [];
 
+  // Si hay sacos faltos (-F), el total original es la suma de ambos registros
+  const sacosIniciales = (detalle.cantidad_sacos ?? 0) + (devolucion?.cantidad_sacos ?? 0);
+
   filas.push({
     concepto: "PESO INICIAL",
     signo: "+",
-    sacos: detalle.cantidad_sacos ?? 0,
+    sacos: sacosIniciales,
     peso: detalle.pesada_entrada != null ? Number(detalle.pesada_entrada) : null,
     fecha: detalle.fecha_entrada_bascula ? new Date(detalle.fecha_entrada_bascula) : null,
   });
 
-  if (!esPrimera) {
-    const cambiosCompletos = (detalle.cambios_cabezal ?? []).filter(
-      (c: any) => c.peso_cabezal_entrante != null
-    );
-    for (const cambio of cambiosCompletos) {
-      filas.push({
-        concepto: "CABEZAL INICIAL",
-        signo: "-",
-        sacos: 0,
-        peso: Number(cambio.peso_cabezal_saliente),
-        fecha: cambio.fecha_creacion ? new Date(cambio.fecha_creacion) : null,
-      });
-      filas.push({
-        concepto: "CABEZAL FINAL",
-        signo: "+",
-        sacos: 0,
-        peso: Number(cambio.peso_cabezal_entrante),
-        fecha: cambio.fecha_modificacion ? new Date(cambio.fecha_modificacion) : null,
-      });
-    }
+  // Siempre mostrar cambios de cabezal completos (aplica tanto a primera como segunda pesada)
+  const cambiosCompletos = (detalle.cambios_cabezal ?? []).filter(
+    (c: any) => c.peso_cabezal_entrante != null
+  );
+  for (const cambio of cambiosCompletos) {
+    filas.push({
+      concepto: "CABEZAL INICIAL",
+      signo: "-",
+      sacos: 0,
+      peso: Number(cambio.peso_cabezal_saliente),
+      fecha: cambio.fecha_creacion ? new Date(cambio.fecha_creacion) : null,
+    });
+    filas.push({
+      concepto: "CABEZAL FINAL",
+      signo: "+",
+      sacos: 0,
+      peso: Number(cambio.peso_cabezal_entrante),
+      fecha: cambio.fecha_modificacion ? new Date(cambio.fecha_modificacion) : null,
+    });
+  }
 
+  if (!esPrimera) {
     filas.push({
       concepto: "PESO FINAL",
       signo: "-",
@@ -132,7 +136,7 @@ export default function BoletaPesadaPage() {
 
         @page {
           size: ${PAGE_W} ${PAGE_H};
-          margin: 3cm 1.5cm 2cm 1.5cm;
+          margin: 0;
         }
 
         body {
@@ -174,7 +178,7 @@ export default function BoletaPesadaPage() {
         }
 
         @media print {
-          .boleta-paper { padding: 0; }
+          .boleta-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
           .no-print { display: none !important; }
         }
 
@@ -304,7 +308,7 @@ export default function BoletaPesadaPage() {
                 <td className="tr">
                   {fila.peso != null ? `${fila.signo}${fmt(fila.peso)}` : "—"}
                 </td>
-                <td className="tr">{`${fila.signo}${fila.sacos}`}</td>
+                <td className="tr">{fila.sacos === 0 ? "0" : `${fila.signo}${fila.sacos}`}</td>
                 <td>{fmtFecha(fila.fecha)}</td>
               </tr>
             ))}

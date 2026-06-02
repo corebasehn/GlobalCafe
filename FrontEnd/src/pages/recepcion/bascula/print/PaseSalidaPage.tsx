@@ -57,6 +57,9 @@ export default function PaseSalidaPage() {
   const recepcion = data.detalle?.recepcion;
   const ahora = new Date();
 
+  // Detectar si es destarse (cabezal saliente): estado = "Sin Cabezal"
+  const esDestarse = data.detalle?.estado_transaccion?.nombre === "Sin Cabezal";
+
   return (
     <>
       <style>{`
@@ -64,7 +67,7 @@ export default function PaseSalidaPage() {
 
         @page {
           size: ${PAGE_W} ${PAGE_H};
-          margin: 3cm 1.5cm 2cm 1.5cm;
+          margin: 0;
         }
 
         body {
@@ -106,7 +109,7 @@ export default function PaseSalidaPage() {
         }
 
         @media print {
-          .pase-paper { padding: 0; }
+          .pase-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
           .no-print { display: none !important; }
         }
 
@@ -170,7 +173,7 @@ export default function PaseSalidaPage() {
         .ps-firmas {
           display: flex;
           justify-content: space-between;
-          margin-top: 20px;
+          margin-top: 50px;
           font-size: 8pt;
         }
         .ps-firma {
@@ -215,10 +218,12 @@ export default function PaseSalidaPage() {
             <span className="ps-lbl">PLACA CABEZAL:</span>
             <span className="ps-val">{recepcion?.placa_cabezal?.placa ?? "—"}</span>
           </div>
-          <div className="ps-row">
-            <span className="ps-lbl">PLACA FURGÓN:</span>
-            <span className="ps-val">{recepcion?.placa_furgon?.placa ?? "—"}</span>
-          </div>
+          {!esDestarse && (
+            <div className="ps-row">
+              <span className="ps-lbl">PLACA FURGÓN:</span>
+              <span className="ps-val">{recepcion?.placa_furgon?.placa ?? "—"}</span>
+            </div>
+          )}
           <div className="ps-row">
             <span className="ps-lbl">CONDUCTOR:</span>
             <span className="ps-val">{recepcion?.conductor?.nombre ?? "—"}</span>
@@ -232,7 +237,7 @@ export default function PaseSalidaPage() {
         {/* Observaciones */}
         <div className="ps-obs">
           <div className="ps-obs-lbl">OBSERVACIONES:</div>
-          <div>{recepcion?.observaciones || "Sin observaciones."}</div>
+          <div>{esDestarse ? "SALE POR DESACOPLO DEL FURGON" : (recepcion?.observaciones || "Sin observaciones.")}</div>
         </div>
 
         {/* Firmas */}

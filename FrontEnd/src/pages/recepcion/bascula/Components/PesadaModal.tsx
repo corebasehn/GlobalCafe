@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Loader2, Weight, Save, Zap } from "lucide-react";
 import { Modal, Form, Button, InputGroup, Row, Col } from "react-bootstrap";
 import Select from "react-select";
-import type { Bodega, PlacaCabezal } from "../../../../api/catalogs.api";
+import type { Bodega, PlacaCabezal, Conductor } from "../../../../api/catalogs.api";
 import type { ModalMode } from "./BasculaTable";
 
 export interface PesadaModalProps {
@@ -13,21 +13,26 @@ export interface PesadaModalProps {
   pesoInput: string;
   bodegaSearch: string;
   placaInput: string;
+  conductorInput: string;
   bodegas: Bodega[];
   placasCabezal: PlacaCabezal[];
+  conductores: Conductor[];
   submitting: boolean;
   onClose: () => void;
   onPesoChange: (val: string) => void;
   onBodegaChange: (val: string) => void;
   onPlacaChange: (val: string) => void;
+  observaciones: string;
+  onConductorChange: (val: string) => void;
+  onObservacionesChange: (val: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
 export default function PesadaModal({
   show, modalMode, selectedRecepcion, selectedCarga,
-  pesoInput, bodegaSearch, placaInput,
-  bodegas, placasCabezal, submitting,
-  onClose, onPesoChange, onBodegaChange, onPlacaChange, onSubmit,
+  pesoInput, bodegaSearch, placaInput, conductorInput, observaciones,
+  bodegas, placasCabezal, conductores, submitting,
+  onClose, onPesoChange, onBodegaChange, onPlacaChange, onConductorChange, onObservacionesChange, onSubmit,
 }: PesadaModalProps) {
   const [capturingScale, setCapturingScale] = useState(false);
 
@@ -126,6 +131,24 @@ export default function PesadaModal({
               </Form.Text>
             </Form.Group>
 
+            {/* Observaciones (Solo en SALIDA) */}
+            {modalMode === "SALIDA" && (
+              <Form.Group className="pt-3 border-top">
+                <Form.Label className="fw-bold">Observaciones</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={3}
+                  placeholder="Ingrese observaciones sobre la salida del vehículo..."
+                  value={observaciones}
+                  onChange={(e) => onObservacionesChange(e.target.value)}
+                  maxLength={500}
+                />
+                <Form.Text className="text-muted">
+                  {observaciones.length}/500 caracteres
+                </Form.Text>
+              </Form.Group>
+            )}
+
             {/* Selector de Bodega (Solo en ENTRADA) */}
             {modalMode === "ENTRADA" && (
               <Form.Group className="pt-3 border-top">
@@ -159,6 +182,35 @@ export default function PesadaModal({
                     <option key={p.id_placa_cabezal} value={p.id_placa_cabezal.toString()}>{p.placa}</option>
                   ))}
                 </Form.Select>
+              </Form.Group>
+            )}
+
+            {/* Selector de Conductor (Solo en ENTRADA_CABEZAL) */}
+            {modalMode === "ENTRADA_CABEZAL" && (
+              <Form.Group className="pt-3 border-top">
+                <Form.Label className="fw-bold">Conductor del Nuevo Cabezal</Form.Label>
+                <Select
+                  classNamePrefix="Select2"
+                  placeholder="Seleccione el conductor..."
+                  options={conductores
+                    .filter(c => c.estado)
+                    .map(c => ({
+                      value: c.id_conductor.toString(),
+                      label: `${c.nombre}${ (c as any).transporte?.nombre ? ` — ${(c as any).transporte.nombre}` : ""}`,
+                    }))}
+                  value={conductorInput
+                    ? {
+                        value: conductorInput,
+                        label: (() => {
+                          const c = conductores.find(x => x.id_conductor.toString() === conductorInput);
+                          return c ? `${c.nombre}${ (c as any).transporte?.nombre ? ` — ${(c as any).transporte.nombre}` : ""}` : "";
+                        })(),
+                      }
+                    : null}
+                  onChange={(opt) => onConductorChange(opt?.value || "")}
+                  menuPlacement="auto"
+                  styles={{ menu: (base) => ({ ...base, zIndex: 9999 }) }}
+                />
               </Form.Group>
             )}
 

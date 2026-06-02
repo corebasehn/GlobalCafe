@@ -59,7 +59,10 @@ export class CatalogsService {
   }
 
   async getConductores() {
-    return this.prisma.conductor.findMany({ where: { estado: true } });
+    return this.prisma.conductor.findMany({
+      where: { estado: true },
+      include: { transporte: { select: { nombre: true } } },
+    });
   }
 
   async createConductor(data: any, userId: number) {
