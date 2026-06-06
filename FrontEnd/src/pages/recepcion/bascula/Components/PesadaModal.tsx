@@ -5,6 +5,8 @@ import Select from "react-select";
 import type { Bodega, PlacaCabezal, Conductor } from "../../../../api/catalogs.api";
 import type { ModalMode } from "./BasculaTable";
 
+const AGENT_URL = "http://127.0.0.1:4000";
+
 export interface PesadaModalProps {
   show: boolean;
   modalMode: ModalMode;
@@ -38,18 +40,25 @@ export default function PesadaModal({
 
   const handleCapturarBascula = async () => {
     setCapturingScale(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
     try {
-      // 1. Petición al agente local (localhost siempre funciona desde el navegador del usuario)
-      const response = await fetch("http://127.0.0.1:4000/peso");
+      const response = await fetch(`${AGENT_URL}/peso`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       const data = await response.json();
-      
+
       if (data.estado === "exito") {
         onPesoChange(data.peso);
       } else {
         alert(`Error de la báscula: ${data.mensaje}`);
       }
-    } catch (error) {
-      alert("No se pudo conectar con el Agente de Báscula. Verifique que el .exe esté abierto en esta PC.");
+    } catch (error: any) {
+      clearTimeout(timeoutId);
+      if (error.name === "AbortError") {
+        alert("La báscula tardó demasiado en responder (8s). Verifique que el .exe esté abierto y la báscula conectada.");
+      } else {
+        alert("No se pudo conectar con el Agente de Báscula. Verifique que el .exe esté abierto en esta PC.");
+      }
     } finally {
       setCapturingScale(false);
     }
@@ -93,9 +102,9 @@ export default function PesadaModal({
             <Form.Group className="mb-4">
               <div className="d-flex justify-content-between align-items-center mb-2">
                 <Form.Label className="fw-bold mb-0">Lectura del Indicador de la Báscula</Form.Label>
-                <Button 
-                  variant="outline-primary" 
-                  size="sm" 
+                <Button
+                  variant="outline-primary"
+                  size="sm"
                   className="d-flex align-items-center gap-2"
                   onClick={handleCapturarBascula}
                   disabled={capturingScale || submitting}
