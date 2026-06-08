@@ -1,5 +1,5 @@
-import { Printer, CheckCircle, XCircle } from "lucide-react";
-import { Modal, Button, Form, Alert } from "react-bootstrap";
+import { Printer, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
 import { useState } from "react";
 
 export interface DevolucionFaltosModalProps {
@@ -25,13 +25,20 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
     }
   };
 
+  const resetAndClose = () => {
+    setObs("");
+    setDecision(null);
+    setShowPrint(false);
+    onClose();
+  };
+
   if (showPrint && decision === "DEVOLVER") {
     return (
-      <Modal show={show} onHide={onClose} size="lg">
+      <Modal show={show} onHide={resetAndClose} size="lg" centered>
         <Modal.Header closeButton>
-          <Modal.Title>Boleta de Devolución</Modal.Title>
+          <Modal.Title className="fs-18 text-danger fw-bold">Boleta de Devolución</Modal.Title>
         </Modal.Header>
-        <Modal.Body>
+        <Modal.Body className="p-4">
           <style>{`
             @media print {
               @page { margin: 0; size: letter portrait; }
@@ -48,52 +55,54 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
             }
           `}</style>
 
-          <div id="print-boleta" className="p-8 border-2 border-black bg-white text-black">
-            <div className="text-center mb-6 border-bottom border-dark pb-3">
-              <h1 className="h3 fw-bold mb-0">GLOBAL COFFEE GROUP</h1>
-              <h2 className="h5 text-danger fw-bold mt-2">BOLETA DE DEVOLUCIÓN DE CARGA (FALTOS)</h2>
+          <div id="print-boleta" className="p-5 border border-dark rounded bg-white text-dark shadow-sm">
+            <div className="text-center mb-4 border-bottom border-dark pb-3">
+              <h4 className="fw-bold mb-1">GLOBAL COFFEE GROUP</h4>
+              <h6 className="text-danger fw-bold mb-0">BOLETA DE DEVOLUCIÓN DE CARGA (FALTOS)</h6>
             </div>
 
-            <div className="row g-3 mb-4">
-              <div className="col-6">
+            <Row className="g-3 mb-4 fs-13">
+              <Col xs={6}>
                 <p className="mb-1"><strong>N° Ingreso:</strong> {item.recepcion.numero_entrada}</p>
                 <p className="mb-1"><strong>Remisión:</strong> {item.remision}</p>
                 <p className="mb-1"><strong>Fecha:</strong> {new Date().toLocaleString()}</p>
-              </div>
-              <div className="col-6">
+              </Col>
+              <Col xs={6}>
                 <p className="mb-1"><strong>Proveedor:</strong> {item.proveedor.nombre}</p>
                 <p className="mb-1"><strong>Sacos Devueltos:</strong> {item.cantidad_sacos}</p>
                 <p className="mb-1"><strong>Transporte:</strong> {item.recepcion.placa_cabezal.placa}</p>
-              </div>
-            </div>
+              </Col>
+            </Row>
 
-            <div className="mb-5">
-              <h3 className="h6 fw-bold border-bottom border-dark pb-1">Motivo de Devolución</h3>
-              <div className="p-3 bg-light border border-dark rounded">
-                <p className="mb-1"><strong>Reporte Patio:</strong> {item.observaciones}</p>
+            <div className="mb-4">
+              <h6 className="fw-bold border-bottom border-dark pb-2 mb-3 fs-13 text-uppercase">Motivo de Devolución</h6>
+              <div className="p-3 bg-light border border-dark rounded fs-13">
+                <p className="mb-1 text-muted"><strong>Reporte Patio:</strong></p>
+                <p className="mb-3 italic">"{item.observaciones}"</p>
                 <hr className="my-2 border-dark" />
-                <p className="mb-0"><strong>Veredicto Gerencia:</strong> {obs || "No se especificaron detalles adicionales"}</p>
+                <p className="mb-1 text-muted mt-2"><strong>Veredicto Gerencia:</strong></p>
+                <p className="mb-0">{obs || "No se especificaron detalles adicionales"}</p>
               </div>
             </div>
 
-            <div className="row mt-5 pt-5 text-center">
-              <div className="col-6">
-                <div className="border-top border-dark pt-2 mx-4">
+            <Row className="mt-5 pt-5 text-center fs-12">
+              <Col xs={6}>
+                <div className="border-top border-dark pt-2 mx-4 fw-semibold text-uppercase">
                   Firma Autorizada (Gerencia)
                 </div>
-              </div>
-              <div className="col-6">
-                <div className="border-top border-dark pt-2 mx-4">
+              </Col>
+              <Col xs={6}>
+                <div className="border-top border-dark pt-2 mx-4 fw-semibold text-uppercase">
                   Firma Transportista / Motorista
                 </div>
-              </div>
-            </div>
+              </Col>
+            </Row>
           </div>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={onClose}>Cerrar</Button>
-          <Button variant="primary" onClick={() => window.print()}>
-            <Printer size={16} className="me-2" /> Imprimir Boleta
+          <Button variant="secondary" className="btn-wave" onClick={resetAndClose}>Cerrar</Button>
+          <Button variant="primary" className="btn-wave d-flex align-items-center gap-2" onClick={() => window.print()}>
+            <Printer size={16} /> Imprimir Boleta
           </Button>
         </Modal.Footer>
       </Modal>
@@ -101,70 +110,74 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
   }
 
   return (
-    <Modal show={show} onHide={onClose} backdrop="static">
+    <Modal show={show} onHide={resetAndClose} backdrop="static" centered>
       <Modal.Header closeButton>
-        <Modal.Title className="text-coffee-800">Decisión de Gerencia: Sacos Faltos</Modal.Title>
+        <Modal.Title className="fs-18">Decisión de Gerencia: <span className="text-primary">Sacos Faltos</span></Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <Alert variant="secondary">
-          <div className="flex justify-between font-bold">
-            <span>{item.recepcion.numero_entrada}</span>
-            <span className="text-danger">{item.cantidad_sacos} Sacos</span>
+      <Modal.Body className="p-4">
+        <Alert variant="secondary" className="border-0 shadow-none bg-primary-transparent">
+          <div className="d-flex justify-content-between align-items-center mb-1">
+            <span className="fw-bold fs-14 text-primary">{item.recepcion.numero_entrada}</span>
+            <Badge bg="danger-transparent" className="rounded-pill px-3 fs-12">{item.cantidad_sacos} Sacos Faltos</Badge>
           </div>
-          <p className="text-xs mb-0 mt-1">{item.proveedor.nombre}</p>
+          <p className="fs-12 text-muted mb-0">{item.proveedor.nombre}</p>
         </Alert>
 
         <div className="mb-4">
-          <label className="form-label font-bold small text-neutral-500 uppercase">Reporte de Patio:</label>
-          <div className="p-3 bg-neutral-100 rounded italic text-sm">
+          <label className="fw-semibold text-muted fs-11 text-uppercase mb-2 d-block">Reporte de Patio:</label>
+          <div className="p-3 bg-light rounded border fs-12 text-muted fst-italic">
             "{item.observaciones}"
           </div>
         </div>
 
-        <div className="row g-2 mb-4">
-          <div className="col-6">
+        <Row className="g-3 mb-4">
+          <Col xs={6}>
             <Button 
               variant={decision === "APROBAR" ? "success" : "outline-success"} 
-              className="w-100 py-3 flex flex-col items-center gap-2"
+              className={`w-100 py-3 btn-wave d-flex flex-column align-items-center gap-2 border-2 ${decision === 'APROBAR' ? '' : 'border-dashed'}`}
               onClick={() => setDecision("APROBAR")}
             >
-              <CheckCircle size={24} />
-              <span className="font-bold">Aprobar Descarga</span>
+              <CheckCircle size={28} />
+              <span className="fw-bold fs-13">Aprobar Descarga</span>
             </Button>
-          </div>
-          <div className="col-6">
+          </Col>
+          <Col xs={6}>
             <Button 
               variant={decision === "DEVOLVER" ? "danger" : "outline-danger"} 
-              className="w-100 py-3 flex flex-col items-center gap-2"
+              className={`w-100 py-3 btn-wave d-flex flex-column align-items-center gap-2 border-2 ${decision === 'DEVOLVER' ? '' : 'border-dashed'}`}
               onClick={() => setDecision("DEVOLVER")}
             >
-              <XCircle size={24} />
-              <span className="font-bold">Devolver Carga</span>
+              <XCircle size={28} />
+              <span className="fw-bold fs-13">Devolver Carga</span>
             </Button>
-          </div>
-        </div>
+          </Col>
+        </Row>
 
         <Form.Group>
-          <Form.Label className="font-bold small text-neutral-500 uppercase">Observaciones / Instrucciones:</Form.Label>
+          <Form.Label className="fw-semibold text-muted fs-11 text-uppercase mb-1">Observaciones / Instrucciones:</Form.Label>
           <Form.Control 
             as="textarea" 
             rows={3} 
-            placeholder="Ingrese el detalle de su decisión..."
+            placeholder="Ingrese el detalle de su veredicto..."
+            className="fs-13 bg-light"
             value={obs}
             onChange={(e) => setObs(e.target.value)}
           />
         </Form.Group>
       </Modal.Body>
       <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>Cancelar</Button>
+        <Button variant="secondary" className="btn-wave" onClick={resetAndClose}>Cancelar</Button>
         <Button 
           variant="primary" 
+          className="btn-wave px-4 d-flex align-items-center gap-2"
           disabled={!decision || submitting} 
           onClick={handleConfirm}
         >
-          {submitting ? "Procesando..." : "Confirmar Decisión"}
+          {submitting ? <Loader2 size={16} className="animate-spin" /> : <i className="fe fe-check-circle"></i>}
+          <span>{submitting ? "Procesando..." : "Confirmar Decisión"}</span>
         </Button>
       </Modal.Footer>
     </Modal>
   );
 }
+

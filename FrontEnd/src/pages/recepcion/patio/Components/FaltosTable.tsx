@@ -1,5 +1,5 @@
 import { Table, Badge, Button } from 'react-bootstrap';
-import { ShieldCheck, Truck, AlertTriangle } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 interface FaltosTableProps {
   data: any[];
@@ -8,62 +8,66 @@ interface FaltosTableProps {
 
 export default function FaltosTable({ data, onDecide }: FaltosTableProps) {
   return (
-    <Table responsive hover className="mb-0">
-      <thead>
-        <tr>
-          <th>Ingreso / Fecha</th>
-          <th>Proveedor / Remisión</th>
-          <th className="text-center">Sacos Faltos</th>
-          <th>Motivo Reportado</th>
-          <th className="text-center">Acción</th>
-        </tr>
-      </thead>
-      <tbody>
-        {data.length === 0 ? (
+    <div className="table-responsive">
+      <Table hover className="table text-nowrap table-bordered mb-0">
+        <thead>
           <tr>
-            <td colSpan={5} className="text-center py-4 text-neutral-500">
-              No hay reportes de sacos faltos pendientes de decisión
-            </td>
+            <th scope="col" className="text-center">Acción</th>
+            <th scope="col">Ingreso / Fecha</th>
+            <th scope="col">Proveedor / Remisión</th>
+            <th scope="col" className="text-center">Sacos Faltos</th>
+            <th scope="col">Motivo Reportado</th>
           </tr>
-        ) : (
-          data.map((item) => (
-            <tr key={item.id_detalle_recepcion}>
-              <td>
-                <div className="flex flex-col">
-                  <span className="font-bold text-coffee-700">{item.recepcion.numero_entrada}</span>
-                  <span className="text-xs text-neutral-500">
-                    {new Date(item.fecha_creacion).toLocaleString()}
-                  </span>
-                </div>
-              </td>
-              <td>
-                <div className="flex flex-col">
-                  <span className="font-medium">{item.proveedor.nombre}</span>
-                  <Badge bg="warning" className="w-fit text-black mt-1">
-                    {item.remision}
-                  </Badge>
-                </div>
-              </td>
-              <td className="text-center">
-                <span className="text-lg font-bold text-danger-700">{item.cantidad_sacos}</span>
-              </td>
-              <td style={{ maxWidth: '250px' }}>
-                <p className="text-xs mb-0 italic">"{item.observaciones}"</p>
-              </td>
-              <td className="text-center">
-                <Button 
-                  variant="outline-primary" 
-                  size="sm" 
-                  className="flex items-center gap-2 mx-auto"
-                  onClick={() => onDecide(item)}
-                >
-                  <ShieldCheck size={16} /> Decidir
-                </Button>
+        </thead>
+        <tbody>
+          {data.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="text-center py-5 text-muted">
+                No hay reportes de sacos faltos pendientes de decisión
               </td>
             </tr>
-          ))
-        )}
-      </tbody>
-    </Table>
+          ) : (
+            data.map((item) => (
+              <tr key={item.id_detalle_recepcion}>
+                <td className="text-center">
+                  <Button 
+                    variant="primary-light" 
+                    size="sm" 
+                    className="btn-wave d-inline-flex align-items-center gap-2"
+                    onClick={() => onDecide(item)}
+                  >
+                    <ShieldCheck size={14} /> Decidir
+                  </Button>
+                </td>
+                <td>
+                  <div className="d-flex flex-column">
+                    <span className="fw-bold text-primary">{item.recepcion.numero_entrada}</span>
+                    <span className="fs-11 text-muted">
+                      {new Date(item.fecha_creacion).toLocaleString()}
+                    </span>
+                  </div>
+                </td>
+                <td>
+                  <div className="d-flex flex-column">
+                    <span className="fw-semibold text-dark">{item.proveedor.nombre}</span>
+                    <Badge bg="warning-transparent" className="rounded-pill mt-1 w-fit">
+                      {item.remision}
+                    </Badge>
+                  </div>
+                </td>
+                <td className="text-center">
+                  <span className="fs-15 fw-bold text-danger">{item.cantidad_sacos}</span>
+                  <span className="fs-11 text-muted ms-1">sacos</span>
+                </td>
+                <td style={{ maxWidth: '300px' }} className="text-wrap">
+                  <p className="fs-12 mb-0 italic text-muted">"{item.observaciones}"</p>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </Table>
+    </div>
   );
 }
+

@@ -1,5 +1,6 @@
-import { Settings } from "lucide-react";
-import PageHeader from "../../../../components/layout/PageHeader";
+import { Fragment } from "react";
+import Pageheader from "../../../../layout/layoutcomponent/pageheader";
+import { Row, Col } from 'react-bootstrap';
 
 // Components
 import EmpresaConfig from "../Components/EmpresaConfig";
@@ -9,15 +10,27 @@ import ConsecutivosConfig from "../Components/ConsecutivosConfig";
 
 export default function ConfiguracionPage() {
   return (
-    <div className="space-y-6">
-      <PageHeader title="Configuración" subtitle="Parámetros del sistema" icon={Settings} />
+    <Fragment>
+      <Pageheader title="CONFIGURACIÓN" heading="Administración" active="Parámetros del sistema" />
       
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <EmpresaConfig />
-        <OperacionConfig />
-        <NotificacionesConfig />
-        <ConsecutivosConfig />
-      </div>
-    </div>
+      <Row>
+        <Col xl={12}>
+          <EmpresaConfig />
+        </Col>
+        {/* El resto de configuraciones se habilitarán cuando las tablas de DB estén listas
+        <Col xl={6}>
+          <OperacionConfig />
+        </Col>
+        <Col xl={6}>
+          <NotificacionesConfig />
+        </Col>
+        <Col xl={6}>
+          <ConsecutivosConfig />
+        </Col>
+        */}
+      </Row>
+    </Fragment>
   );
 }
+
+

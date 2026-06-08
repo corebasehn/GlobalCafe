@@ -129,10 +129,10 @@ export class ReceptionService {
           some: {
             estado: true,
             estado_transaccion: {
-              nombre: { notIn: ['Pesada Cerrada', 'Pesada Abierta', 'Muestra Rechazada', 'Devolución'] }
-            }
-          }
-        }
+              nombre: { notIn: ['Pesada Cerrada', 'Pesada Abierta', 'Muestra Rechazada', 'Devolucion'] }
+              }
+              }
+              },
       }
     });
 
@@ -727,7 +727,7 @@ export class ReceptionService {
           module: 'RECEPCION'
         });
       } else {
-        const estadoDevolucion = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Devolución' } });
+        const estadoDevolucion = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Devolucion' } });
         await tx.detalleRecepcion.update({
           where: { id_detalle_recepcion: idDetalle },
           data: {

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { Search, ShieldCheck, Beaker, ClipboardCheck } from "lucide-react";
-import PageHeader from "../../../../components/layout/PageHeader";
-import { moduleColors } from "../../../../config/colors.config";
-import { Card, Form, InputGroup, Tabs, Tab, Badge } from "react-bootstrap";
+import { useState, useEffect, Fragment } from "react";
+import { Search, Beaker, ClipboardCheck, ShieldAlert } from "lucide-react";
+import Pageheader from "../../../../layout/layoutcomponent/pageheader";
+import { Card, Form, InputGroup, Tabs, Tab, Badge, Row, Col } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../../auth/useAuth";
 
@@ -16,8 +15,6 @@ import EvaluacionModal from "../Components/EvaluacionModal";
 import DevolucionModal from "../Components/DevolucionModal";
 import FaltosTable from "../../patio/Components/FaltosTable";
 import DevolucionFaltosModal from "../../patio/Components/DevolucionFaltosModal";
-
-const colors = moduleColors.recepcion;
 
 export interface MuestraGerencia {
   id_analisis_calidad: number;
@@ -148,7 +145,7 @@ export default function AprobacionGerenciaPage() {
       setSubmitting(true);
       await decidirFaltosApi(selectedFalto.id_detalle_recepcion, decision, obs);
       toast.success(decision === "APROBAR" ? "Carga aprobada correctamente" : "Carga devuelta");
-      if (decision === "APROBAR") {
+      if (decision === "APROBAR" || decision === "DEVOLVER") {
         setShowFaltoModal(false);
         loadData();
       }
@@ -167,69 +164,74 @@ export default function AprobacionGerenciaPage() {
   );
 
   return (
-    <div className="space-y-6">
-      <PageHeader 
-        title="Aprobaciones de Gerencia" 
-        subtitle="Veredicto final sobre calidad de laboratorio y segregación en patio" 
-        icon={ClipboardCheck} 
-        iconBg={colors.bg} 
-        iconColor={colors.icon} 
-      />
+    <Fragment>
+      <Pageheader title="APROBACIONES DE GERENCIA" heading="Recepción" active="Bandeja de Veredictos" />
 
-      <Card className="mb-6">
-        <Card.Body className="p-4">
-          <InputGroup>
-            <InputGroup.Text><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
-            <Form.Control
-              placeholder="Buscar por ingreso, remisión o proveedor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </InputGroup>
-        </Card.Body>
-      </Card>
-
-      <Card>
-        <Card.Body className="p-0">
-          <Tabs defaultActiveKey="calidad" className="px-4 pt-3 border-bottom-0">
-            <Tab 
-              eventKey="calidad" 
-              title={
-                <div className="flex items-center gap-2">
-                  <Beaker size={16}/> Calidad (Laboratorio)
-                  {muestras.length > 0 && <Badge bg="danger" pill>{muestras.length}</Badge>}
-                </div>
-              }
-            >
-              <div className="p-4 border-top">
-                <GerenciaTable
-                  muestras={filteredMuestras}
-                  loading={loading}
-                  hasRowActions={hasRowActions}
-                  onOpenEvaluation={handleOpenEvaluation}
+      <Row>
+        <Col xl={12}>
+          <Card className="custom-card mb-4">
+            <Card.Body>
+              <InputGroup style={{ maxWidth: '500px' }}>
+                <InputGroup.Text className="bg-light border-end-0 text-muted">
+                  <Search className="w-4 h-4" />
+                </InputGroup.Text>
+                <Form.Control
+                  placeholder="Buscar por ingreso, remisión o proveedor..."
+                  className="bg-light border-start-0 ps-0"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
                 />
-              </div>
-            </Tab>
+              </InputGroup>
+            </Card.Body>
+          </Card>
+        </Col>
 
-            <Tab 
-              eventKey="faltos" 
-              title={
-                <div className="flex items-center gap-2">
-                  <ShieldCheck size={16}/> Segregación (Faltos de Patio)
-                  {pendientesFaltos.length > 0 && <Badge bg="warning" text="dark" pill>{pendientesFaltos.length}</Badge>}
-                </div>
-              }
-            >
-              <div className="p-4 border-top">
-                <FaltosTable 
-                  data={pendientesFaltos} 
-                  onDecide={handleDecidirFalto} 
-                />
-              </div>
-            </Tab>
-          </Tabs>
-        </Card.Body>
-      </Card>
+        <Col xl={12}>
+          <Card className="custom-card">
+            <Card.Body className="p-0">
+              <Tabs defaultActiveKey="calidad" className="px-4 pt-3 border-bottom-0 custom-tabs-container">
+                <Tab 
+                  eventKey="calidad" 
+                  title={
+                    <div className="d-flex align-items-center gap-2">
+                      <Beaker className="w-4 h-4 text-primary" /> 
+                      <span>Calidad (Laboratorio)</span>
+                      {muestras.length > 0 && <Badge bg="danger-transparent" className="rounded-pill">{muestras.length}</Badge>}
+                    </div>
+                  }
+                >
+                  <div className="p-4 border-top">
+                    <GerenciaTable
+                      muestras={filteredMuestras}
+                      loading={loading}
+                      hasRowActions={hasRowActions}
+                      onOpenEvaluation={handleOpenEvaluation}
+                    />
+                  </div>
+                </Tab>
+
+                <Tab 
+                  eventKey="faltos" 
+                  title={
+                    <div className="d-flex align-items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-warning" /> 
+                      <span>Segregación (Faltos de Patio)</span>
+                      {pendientesFaltos.length > 0 && <Badge bg="warning-transparent" className="rounded-pill text-dark">{pendientesFaltos.length}</Badge>}
+                    </div>
+                  }
+                >
+                  <div className="p-4 border-top">
+                    <FaltosTable 
+                      data={pendientesFaltos} 
+                      onDecide={handleDecidirFalto} 
+                    />
+                  </div>
+                </Tab>
+              </Tabs>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <EvaluacionModal
         muestra={selectedMuestra}
@@ -252,7 +254,8 @@ export default function AprobacionGerenciaPage() {
         onClose={() => { setShowFaltoModal(false); loadData(); }}
         onConfirm={onConfirmFalto}
       />
-    </div>
+    </Fragment>
   );
 }
+
 

@@ -190,6 +190,7 @@ async function main() {
     { codigo: 'CAMBIO_DE_CABEZAL', modulo: 'Bascula', accion: 'Cambio de cabezal', descripcion: '' },
     { codigo: 'VER_WMS_PATIO', modulo: 'Nota de Patio', accion: 'Ver Nota de Patio', descripcion: '' },
     { codigo: 'VER_NOTA_PESO', modulo: 'Nota de Peso', accion: 'Ver Nota de Peso', descripcion: '' },
+    { codigo: 'CREAR_NOTA_PESO', modulo: 'Nota de Peso', accion: 'Crear Nota de Peso', descripcion: '' },
     { codigo: 'VER_CONTRATOS', modulo: 'Comercial', accion: 'Ver Contratos', descripcion: '' },
     { codigo: 'VER_MUESTRA_PREEMBARQUE', modulo: 'Comercial', accion: 'Ver Muestra Preembarque', descripcion: '' },
     { codigo: 'VER_LAB_PREEMBARQUE', modulo: 'Comercial', accion: 'Ver Lab Preembarque', descripcion: '' },

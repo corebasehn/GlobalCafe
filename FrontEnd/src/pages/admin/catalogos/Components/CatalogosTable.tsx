@@ -1,5 +1,5 @@
-import { Edit, Loader2 } from "lucide-react";
-import { Table, Badge } from 'react-bootstrap';
+import { Edit, Loader2, MoreVertical } from "lucide-react";
+import { Table, Badge, Dropdown } from 'react-bootstrap';
 
 interface CatalogosTableProps {
   activeTab: string;
@@ -17,12 +17,37 @@ export default function CatalogosTable({
   onEdit
 }: CatalogosTableProps) {
   
+  const renderActions = (item: any, idField: string) => (
+    <td className="text-center">
+      <Dropdown className="dropdown-center">
+        <Dropdown.Toggle 
+          variant="" 
+          className="btn btn-icon btn-sm btn-light btn-wave no-caret"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </Dropdown.Toggle>
+        <Dropdown.Menu 
+          className="dropdown-menu-end shadow-sm border-0"
+          popperConfig={{ strategy: 'fixed' }}
+        >
+          <Dropdown.Item 
+            onClick={() => onEdit(item, idField)}
+            className="d-flex align-items-center gap-2 py-2"
+          >
+            <Edit className="w-4 h-4 text-info" /> 
+            <span>Editar Registro</span>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    </td>
+  );
+
   const renderTableContent = () => {
     if (loading) {
       return (
         <tr>
-          <td colSpan={10} className="text-center py-8 text-neutral-500">
-            <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> Cargando datos...
+          <td colSpan={10} className="text-center py-5 text-muted">
+            <Loader2 className="w-6 h-6 animate-spin d-inline-block me-2" /> Cargando datos...
           </td>
         </tr>
       );
@@ -44,7 +69,7 @@ export default function CatalogosTable({
     if (filteredData.length === 0) {
       return (
         <tr>
-          <td colSpan={10} className="text-center py-8 text-neutral-500">
+          <td colSpan={10} className="text-center py-5 text-muted">
             No se encontraron registros
           </td>
         </tr>
@@ -55,112 +80,92 @@ export default function CatalogosTable({
       case "proveedores":
         return filteredData.map((p) => (
           <tr key={p.id_proveedor}>
-            <td className="font-medium">{p.nombre}</td>
-            <td>{p.rtn || "N/A"}</td>
-            <td>{p.telefono || "N/A"}</td>
-            <td className="text-center"><Badge bg={p.estado ? "success" : "danger"}>{p.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(p, "id_proveedor")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(p, "id_proveedor")}
+            <td className="fw-semibold">{p.nombre}</td>
+            <td className="text-muted">{p.rtn || "N/A"}</td>
+            <td className="text-muted">{p.telefono || "N/A"}</td>
+            <td className="text-center"><Badge bg={p.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{p.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "transportes":
         return filteredData.map((t) => (
           <tr key={t.id_transporte}>
-            <td className="font-medium">{t.nombre}</td>
-            <td>{t.rtn || "N/A"}</td>
-            <td>{t.telefono || "N/A"}</td>
-            <td className="text-center"><Badge bg={t.estado ? "success" : "danger"}>{t.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(t, "id_transporte")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(t, "id_transporte")}
+            <td className="fw-semibold">{t.nombre}</td>
+            <td className="text-muted">{t.rtn || "N/A"}</td>
+            <td className="text-muted">{t.telefono || "N/A"}</td>
+            <td className="text-center"><Badge bg={t.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{t.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "conductores":
         return filteredData.map((c) => (
           <tr key={c.id_conductor}>
-            <td className="font-medium">{c.nombre}</td>
-            <td>{c.dni || "N/A"}</td>
-            <td>{c.licencia || "N/A"}</td>
-            <td>{c.telefono || "N/A"}</td>
-            <td className="text-center"><Badge bg={c.estado ? "success" : "danger"}>{c.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(c, "id_conductor")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(c, "id_conductor")}
+            <td className="fw-semibold">{c.nombre}</td>
+            <td className="text-muted">{c.dni || "N/A"}</td>
+            <td className="text-muted">{c.licencia || "N/A"}</td>
+            <td className="text-muted">{c.telefono || "N/A"}</td>
+            <td className="text-center"><Badge bg={c.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{c.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "placas-cabezal":
         return filteredData.map((p) => (
           <tr key={p.id_placa_cabezal}>
-            <td className="font-medium">{p.placa}</td>
-            <td className="text-center"><Badge bg={p.estado ? "success" : "danger"}>{p.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(p, "id_placa_cabezal")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(p, "id_placa_cabezal")}
+            <td className="fw-semibold">{p.placa}</td>
+            <td className="text-center"><Badge bg={p.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{p.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "placas-furgon":
         return filteredData.map((p) => (
           <tr key={p.id_placa_furgon}>
-            <td className="font-medium">{p.placa}</td>
-            <td className="text-center"><Badge bg={p.estado ? "success" : "danger"}>{p.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(p, "id_placa_furgon")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(p, "id_placa_furgon")}
+            <td className="fw-semibold">{p.placa}</td>
+            <td className="text-center"><Badge bg={p.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{p.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "cosechas":
         return filteredData.map((c) => (
           <tr key={c.id_cosecha}>
-            <td className="font-medium">{c.cosecha}</td>
-            <td className="text-center">{c.cosecha_actual ? <Badge bg="info">Cosecha Actual</Badge> : ""}</td>
-            <td className="text-center"><Badge bg={c.estado ? "success" : "danger"}>{c.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(c, "id_cosecha")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(c, "id_cosecha")}
+            <td className="fw-semibold">{c.cosecha}</td>
+            <td className="text-center">{c.cosecha_actual ? <Badge bg="info-transparent" className="rounded-pill">Cosecha Actual</Badge> : ""}</td>
+            <td className="text-center"><Badge bg={c.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{c.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "departamentos":
         return filteredData.map((d) => (
           <tr key={d.id_departamento}>
-            <td className="font-medium">{d.nombre}</td>
-            <td className="text-center"><Badge bg={d.estado ? "success" : "danger"}>{d.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(d, "id_departamento")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(d, "id_departamento")}
+            <td className="fw-semibold">{d.nombre}</td>
+            <td className="text-center"><Badge bg={d.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{d.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "municipios":
         return filteredData.map((m) => (
           <tr key={m.id_municipio}>
-            <td className="font-medium">{m.nombre}</td>
-            <td>{m.departamento?.nombre || "N/A"}</td>
-            <td className="text-center"><Badge bg={m.estado ? "success" : "danger"}>{m.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(m, "id_municipio")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(m, "id_municipio")}
+            <td className="fw-semibold">{m.nombre}</td>
+            <td className="text-muted">{m.departamento?.nombre || "N/A"}</td>
+            <td className="text-center"><Badge bg={m.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{m.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "bodegas":
         return filteredData.map((b) => (
           <tr key={b.id_bodega}>
-            <td className="font-medium">{b.nombre}</td>
-            <td className="text-center"><Badge bg={b.externa ? "warning" : "info"}>{b.externa ? "Externa" : "Interna"}</Badge></td>
-            <td className="text-center"><Badge bg={b.estado ? "success" : "danger"}>{b.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(b, "id_bodega")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(b, "id_bodega")}
+            <td className="fw-semibold">{b.nombre}</td>
+            <td className="text-center"><Badge bg={b.externa ? "warning-transparent" : "info-transparent"} className="rounded-pill">{b.externa ? "Externa" : "Interna"}</Badge></td>
+            <td className="text-center"><Badge bg={b.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{b.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       case "estibas":
         return filteredData.map((e) => (
           <tr key={e.id_estibas}>
-            <td className="font-medium">{e.nombre}</td>
-            <td>{e.bodega?.nombre || "N/A"}</td>
-            <td className="text-center"><Badge bg={e.estado ? "success" : "danger"}>{e.estado ? "Activo" : "Inactivo"}</Badge></td>
-            <td className="text-center">
-              <button onClick={() => onEdit(e, "id_estibas")} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-            </td>
+            {renderActions(e, "id_estibas")}
+            <td className="fw-semibold">{e.nombre}</td>
+            <td className="text-muted">{e.bodega?.nombre || "N/A"}</td>
+            <td className="text-center"><Badge bg={e.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{e.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
       default: // Catálogos simples (Catadores, Calidades, Defectos, Zarandas, Tazas)
@@ -168,11 +173,9 @@ export default function CatalogosTable({
           const idField = Object.keys(item).find(key => key.startsWith('id_')) || 'id';
           return (
             <tr key={item[idField]}>
-              <td className="font-medium">{item.nombre}</td>
-              <td className="text-center"><Badge bg={item.estado ? "success" : "danger"}>{item.estado ? "Activo" : "Inactivo"}</Badge></td>
-              <td className="text-center">
-                <button onClick={() => onEdit(item, idField)} className="p-1.5 rounded-lg hover:bg-neutral-100" title="Editar"><Edit className="w-4 h-4 text-neutral-600" /></button>
-              </td>
+              {renderActions(item, idField)}
+              <td className="fw-semibold">{item.nombre}</td>
+              <td className="text-center"><Badge bg={item.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{item.estado ? "Activo" : "Inactivo"}</Badge></td>
             </tr>
           );
         });
@@ -180,23 +183,26 @@ export default function CatalogosTable({
   };
 
   return (
-    <Table responsive hover className="mb-0">
-      <thead>
-        <tr>
-          <th>Descripción principal</th>
-          {(activeTab === "proveedores" || activeTab === "transportes") && <th>RTN</th>}
-          {activeTab === "conductores" && <th>DNI</th>}
-          {activeTab === "conductores" && <th>Licencia</th>}
-          {["proveedores", "conductores", "transportes"].includes(activeTab) && <th>Teléfono</th>}
-          {activeTab === "municipios" && <th>Departamento</th>}
-          {activeTab === "cosechas" && <th className="text-center">Status</th>}
-          {activeTab === "bodegas" && <th className="text-center">Tipo</th>}
-          {activeTab === "estibas" && <th>Bodega</th>}
-          <th className="text-center">Estado</th>
-          <th className="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>{renderTableContent()}</tbody>
-    </Table>
+    <div className="table-responsive">
+      <Table hover className="table text-nowrap table-bordered mb-0">
+        <thead>
+          <tr>
+            <th scope="col" className="text-center">Acciones</th>
+            <th scope="col">Descripción principal</th>
+            {(activeTab === "proveedores" || activeTab === "transportes") && <th>RTN</th>}
+            {activeTab === "conductores" && <th>DNI</th>}
+            {activeTab === "conductores" && <th>Licencia</th>}
+            {["proveedores", "conductores", "transportes"].includes(activeTab) && <th>Teléfono</th>}
+            {activeTab === "municipios" && <th>Departamento</th>}
+            {activeTab === "cosechas" && <th className="text-center">Status</th>}
+            {activeTab === "bodegas" && <th className="text-center">Tipo</th>}
+            {activeTab === "estibas" && <th>Bodega</th>}
+            <th scope="col" className="text-center">Estado</th>
+          </tr>
+        </thead>
+        <tbody>{renderTableContent()}</tbody>
+      </Table>
+    </div>
   );
 }
+

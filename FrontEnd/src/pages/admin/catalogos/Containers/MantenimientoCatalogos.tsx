@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Card } from 'react-bootstrap';
+import { useState, useEffect, Fragment } from "react";
+import { Card, Row, Col } from 'react-bootstrap';
 import toast from "react-hot-toast";
 
 // APIs
@@ -223,7 +223,7 @@ export default function MantenimientoCatalogos() {
   };
 
   return (
-    <div className="space-y-6">
+    <Fragment>
       <CatalogosHeader 
         activeTab={activeTab}
         tabs={tabs}
@@ -233,20 +233,27 @@ export default function MantenimientoCatalogos() {
         onAdd={() => { setEditingId(null); setFormData({}); setIsModalOpen(true); }}
       />
 
-      <Card>
-        <Card.Header className="px-4 pt-4">
-          <Card.Title as="h3" className="text-lg font-semibold text-neutral-900">
-            {tabs.find(t => t.id === activeTab)?.label}
-          </Card.Title>
-        </Card.Header>
-        <CatalogosTable 
-          activeTab={activeTab}
-          loading={loading}
-          data={getActiveData()}
-          searchTerm={searchTerm}
-          onEdit={handleEdit}
-        />
-      </Card>
+      <Row>
+        <Col xl={12}>
+          <Card className="custom-card">
+            <Card.Header>
+              <Card.Title>
+                <span className="border-start border-3 border-success me-2"></span>
+                {tabs.find(t => t.id === activeTab)?.label.toUpperCase()}
+              </Card.Title>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <CatalogosTable 
+                activeTab={activeTab}
+                loading={loading}
+                data={getActiveData()}
+                searchTerm={searchTerm}
+                onEdit={handleEdit}
+              />
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <CatalogosModal 
         show={isModalOpen}
@@ -263,6 +270,7 @@ export default function MantenimientoCatalogos() {
         onChange={setFormData}
         onSubmit={handleSubmit}
       />
-    </div>
+    </Fragment>
   );
 }
+

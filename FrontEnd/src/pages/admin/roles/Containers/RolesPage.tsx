@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Shield, Plus } from "lucide-react";
-import PageHeader from "../../../../components/layout/PageHeader";
-import { Card } from 'react-bootstrap';
+import Pageheader from "../../../../layout/layoutcomponent/pageheader";
+import { Card, Row, Col, Button } from 'react-bootstrap';
 import toast from "react-hot-toast";
 
 // APIs
@@ -173,39 +173,46 @@ export default function RolesPage() {
   };
 
   return (
-    <div>
-      <PageHeader 
-        title="Roles y Permisos" 
-        subtitle="Configuración de accesos" 
-        icon={Shield} 
-        actions={[{ 
-          label: "Nuevo Rol", 
-          onClick: () => { setEditingId(null); setFormData({ codigo: "", nombre: "", descripcion: "", permisos: [] }); setIsModalOpen(true); }, 
-          icon: Plus 
-        }]} 
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card>
-            <Card.Header className="px-4 pt-4">
-              <Card.Title as="h3" className="text-lg font-semibold text-neutral-900">Roles del Sistema</Card.Title>
-            </Card.Header>
-            <RolesTable 
-              roles={roles}
-              loading={loading}
-              onEdit={handleEditRole}
-            />
-          </Card>
+    <Fragment>
+      <div className="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <Pageheader title="Roles y Permisos" heading="Administración" active="Roles y Permisos" />
+        <div className="ms-md-1 ms-0">
+          <Button 
+            variant="primary" 
+            className="btn-wave"
+            onClick={() => { setEditingId(null); setFormData({ codigo: "", nombre: "", descripcion: "", permisos: [] }); setIsModalOpen(true); }}
+          >
+            <Plus className="w-4 h-4 me-1 inline-block" /> Nuevo Rol
+          </Button>
         </div>
-        <div>
+      </div>
+
+      <Row>
+        <Col xl={8}>
+          <Card className="custom-card">
+            <Card.Header>
+              <Card.Title>
+                <span className="border-start border-3 border-success me-2"></span>
+                Roles del Sistema
+              </Card.Title>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <RolesTable 
+                roles={roles}
+                loading={loading}
+                onEdit={handleEditRole}
+              />
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col xl={4}>
           <PermisosCard 
             permissions={permissions}
             onAddPermission={() => setIsPermissionModalOpen(true)}
             onEditPermission={handleEditPermission}
           />
-        </div>
-      </div>
+        </Col>
+      </Row>
 
       <RoleModal 
         show={isModalOpen}
@@ -227,6 +234,7 @@ export default function RolesPage() {
         onDelete={handleDeletePermission}
         onSubmit={handlePermissionSubmit}
       />
-    </div>
+    </Fragment>
   );
 }
+

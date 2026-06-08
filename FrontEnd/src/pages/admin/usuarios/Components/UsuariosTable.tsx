@@ -1,5 +1,5 @@
-import { Edit, Trash2, RotateCcw, Loader2 } from "lucide-react";
-import { Table, Badge } from 'react-bootstrap';
+import { Edit, Trash2, RotateCcw, Loader2, MoreVertical } from "lucide-react";
+import { Table, Badge, Dropdown } from 'react-bootstrap';
 import type { User } from "../../../../api/users.api";
 
 interface UsuariosTableProps {
@@ -25,74 +25,89 @@ export default function UsuariosTable({
   );
 
   return (
-    <Table responsive hover className="mb-0">
-      <thead>
-        <tr>
-          <th>Usuario</th>
-          <th>Nombre</th>
-          <th>Rol</th>
-          <th className="text-center">Estado</th>
-          <th className="text-center">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        {loading ? (
+    <div className="table-responsive">
+      <Table hover className="table text-nowrap table-bordered mb-0">
+        <thead>
           <tr>
-            <td colSpan={5} className="text-center py-8 text-neutral-500">
-              <Loader2 className="w-6 h-6 animate-spin inline-block mr-2" /> Cargando usuarios...
-            </td>
+            <th scope="col" className="text-center">Acciones</th>
+            <th scope="col">Usuario</th>
+            <th scope="col">Nombre</th>
+            <th scope="col">Rol</th>
+            <th scope="col" className="text-center">Estado</th>
           </tr>
-        ) : filteredUsers.length === 0 ? (
-          <tr>
-            <td colSpan={5} className="text-center py-8 text-neutral-500">
-              No se encontraron usuarios
-            </td>
-          </tr>
-        ) : (
-          filteredUsers.map((u) => (
-            <tr key={u.id}>
-              <td className="font-medium">{u.username}</td>
-              <td>{u.nombre || "-"}</td>
-              <td><Badge bg="info">{u.rol}</Badge></td>
-              <td className="text-center">
-                <Badge bg={u.estado ? "success" : "secondary"}>
-                  {u.estado ? "Activo" : "Inactivo"}
-                </Badge>
-              </td>
-              <td className="text-center">
-                <div className="flex items-center justify-center gap-1">
-                  {u.estado ? (
-                    <>
-                      <button 
-                        onClick={() => onEdit(u)} 
-                        className="p-1.5 rounded-lg hover:bg-neutral-100"
-                        title="Editar Usuario"
-                      >
-                        <Edit className="w-4 h-4 text-neutral-600" />
-                      </button>
-                      <button 
-                        onClick={() => onDelete(u)} 
-                        className="p-1.5 rounded-lg hover:bg-red-50"
-                        title="Desactivar Usuario"
-                      >
-                        <Trash2 className="w-4 h-4 text-red-600" />
-                      </button>
-                    </>
-                  ) : (
-                    <button 
-                      onClick={() => onReactivate(u)} 
-                      className="p-1.5 rounded-lg hover:bg-green-50" 
-                      title="Reactivar Usuario"
-                    >
-                      <RotateCcw className="w-4 h-4 text-green-600" />
-                    </button>
-                  )}
-                </div>
+        </thead>
+        <tbody>
+          {loading ? (
+            <tr>
+              <td colSpan={5} className="text-center py-5 text-muted">
+                <Loader2 className="w-6 h-6 animate-spin d-inline-block me-2" /> Cargando usuarios...
               </td>
             </tr>
-          ))
-        )}
-      </tbody>
-    </Table>
+          ) : filteredUsers.length === 0 ? (
+            <tr>
+              <td colSpan={5} className="text-center py-5 text-muted">
+                No se encontraron usuarios
+              </td>
+            </tr>
+          ) : (
+            filteredUsers.map((u) => (
+              <tr key={u.id}>
+                <td className="text-center">
+                  <Dropdown className="dropdown-center">
+                    <Dropdown.Toggle 
+                      variant="" 
+                      className="btn btn-icon btn-sm btn-light btn-wave no-caret"
+                    >
+                      <MoreVertical className="w-4 h-4" />
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu 
+                      className="dropdown-menu-end shadow-sm border-0"
+                      popperConfig={{ strategy: 'fixed' }}
+                    >
+                      {u.estado ? (
+                        <>
+                          <Dropdown.Item 
+                            onClick={() => onEdit(u)}
+                            className="d-flex align-items-center gap-2 py-2"
+                          >
+                            <Edit className="w-4 h-4 text-info" /> 
+                            <span>Editar Usuario</span>
+                          </Dropdown.Item>
+                          <Dropdown.Item 
+                            onClick={() => onDelete(u)}
+                            className="d-flex align-items-center gap-2 py-2 text-danger"
+                          >
+                            <Trash2 className="w-4 h-4" /> 
+                            <span>Desactivar</span>
+                          </Dropdown.Item>
+                        </>
+                      ) : (
+                        <Dropdown.Item 
+                          onClick={() => onReactivate(u)}
+                          className="d-flex align-items-center gap-2 py-2 text-success"
+                        >
+                          <RotateCcw className="w-4 h-4" /> 
+                          <span>Reactivar</span>
+                        </Dropdown.Item>
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </td>
+                <td className="fw-semibold">{u.username}</td>
+                <td className="text-muted">{u.nombre || "-"}</td>
+                <td><Badge bg="info-transparent" className="rounded-pill">{u.rol}</Badge></td>
+                <td className="text-center">
+                  <Badge bg={u.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">
+                    {u.estado ? "Activo" : "Inactivo"}
+                  </Badge>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </Table>
+    </div>
   );
 }
+
+

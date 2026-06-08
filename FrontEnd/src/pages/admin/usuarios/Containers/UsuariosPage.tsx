@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { Users, Plus, Search } from "lucide-react";
-import PageHeader from "../../../../components/layout/PageHeader";
-import { Card, Form, InputGroup } from 'react-bootstrap';
+import Pageheader from "../../../../layout/layoutcomponent/pageheader";
+import { Card, Form, InputGroup, Row, Col, Button } from 'react-bootstrap';
 import toast from "react-hot-toast";
 
 // APIs
@@ -165,38 +165,61 @@ export default function UsuariosPage() {
   };
 
   return (
-    <div>
-      <PageHeader 
-        title="Gestión de Usuarios" 
-        subtitle="Administración de usuarios del sistema" 
-        icon={Users} 
-        actions={[{ label: "Nuevo Usuario", onClick: () => { setEditingId(null); setIsModalOpen(true); }, icon: Plus }]} 
-      />
-      
-      <Card className="mb-6">
-        <Card.Body className="p-4">
-          <InputGroup>
-            <InputGroup.Text><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
-            <Form.Control 
-              type="text" 
-              placeholder="Buscar usuario..." 
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)} 
-            />
-          </InputGroup>
-        </Card.Body>
-      </Card>
+    <Fragment>
+      <div className="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
+        <Pageheader title="Gestión de Usuarios" heading="Administración" active="Usuarios" />
+        <div className="ms-md-1 ms-0">
+          <Button 
+            variant="primary" 
+            className="btn-wave"
+            onClick={() => { setEditingId(null); setIsModalOpen(true); }}
+          >
+            <Plus className="w-4 h-4 me-1 inline-block" /> Nuevo Usuario
+          </Button>
+        </div>
+      </div>
 
-      <Card>
-        <UsuariosTable 
-          usuarios={usuarios}
-          loading={loading}
-          searchTerm={searchTerm}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onReactivate={handleReactivate}
-        />
-      </Card>
+      <Row>
+        <Col xl={12}>
+          <Card className="custom-card mb-4">
+            <Card.Body>
+              <InputGroup style={{ maxWidth: '400px' }}>
+                <InputGroup.Text className="bg-light border-end-0">
+                  <Search className="w-4 h-4 text-muted" />
+                </InputGroup.Text>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Buscar usuario..." 
+                  className="bg-light border-start-0 ps-0"
+                  value={searchTerm} 
+                  onChange={(e) => setSearchTerm(e.target.value)} 
+                />
+              </InputGroup>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        <Col xl={12}>
+          <Card className="custom-card">
+            <Card.Header>
+              <Card.Title>
+                <span className="border-start border-3 border-success me-2"></span>
+                Lista de Usuarios
+              </Card.Title>
+            </Card.Header>
+            <Card.Body className="p-0">
+              <UsuariosTable 
+                usuarios={usuarios}
+                loading={loading}
+                searchTerm={searchTerm}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onReactivate={handleReactivate}
+              />
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
 
       <UsuarioModal 
         show={isModalOpen}
@@ -211,7 +234,7 @@ export default function UsuariosPage() {
       <ConfirmActionModal 
         show={isDeleteModalOpen}
         title="Confirmar Acción"
-        message={<p className="mb-0">¿Está seguro que desea desactivar al usuario <span className="font-bold text-neutral-900">{userToDelete?.username}</span>?</p>}
+        message={<p className="mb-0">¿Está seguro que desea desactivar al usuario <span className="fw-bold text-dark">{userToDelete?.username}</span>?</p>}
         variant="danger"
         actionLabel="Desactivar"
         onClose={() => setIsDeleteModalOpen(false)}
@@ -221,12 +244,13 @@ export default function UsuariosPage() {
       <ConfirmActionModal 
         show={isReactivateModalOpen}
         title="Confirmar Reactivación"
-        message={<p className="mb-0">¿Está seguro que desea reactivar al usuario <span className="font-bold text-neutral-900">{userToReactivate?.username}</span>?</p>}
+        message={<p className="mb-0">¿Está seguro que desea reactivar al usuario <span className="fw-bold text-dark">{userToReactivate?.username}</span>?</p>}
         variant="success"
         actionLabel="Reactivar"
         onClose={() => setIsReactivateModalOpen(false)}
         onConfirm={confirmReactivate}
       />
-    </div>
+    </Fragment>
   );
 }
+
