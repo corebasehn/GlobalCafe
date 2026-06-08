@@ -5,8 +5,8 @@ import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 
 // APIs
-import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi } from "../../../../api/reception.api";
-import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal } from "../../../../api/catalogs.api";
+import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi } from "../../../../api/reception.api";
+import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal, getConductoresApi, Conductor } from "../../../../api/catalogs.api";
 
 // Estado IDs (según catálogo de base de datos)
 const ESTADO_PESADA_ABIERTA = 7;  // "Pesada Abierta"
@@ -26,6 +26,7 @@ export default function BasculaEntradaPage() {
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [placasCabezal, setPlacasCabezal] = useState<PlacaCabezal[]>([]);
+  const [conductores, setConductores] = useState<Conductor[]>([]);
 
   // Estado del Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -35,6 +36,8 @@ export default function BasculaEntradaPage() {
   const [pesoInput, setPesoInput] = useState("");
   const [bodegaSearch, setBodegaSearch] = useState("");
   const [placaInput, setPlacaInput] = useState("");
+  const [conductorInput, setConductorInput] = useState("");
+  const [observacionesInput, setObservacionesInput] = useState("");
 
   useEffect(() => {
     loadData();
@@ -43,14 +46,16 @@ export default function BasculaEntradaPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, bods, placas] = await Promise.all([
+      const [data, bods, placas, conds] = await Promise.all([
         getPendientesBasculaApi(),
         getBodegasApi(),
         getPlacasCabezalApi(),
+        getConductoresApi(),
       ]);
       setRecepciones(data);
       setBodegas(bods);
       setPlacasCabezal(placas);
+      setConductores(conds);
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar los vehículos en báscula");
@@ -69,6 +74,8 @@ export default function BasculaEntradaPage() {
     setModalMode(mode);
     setPesoInput("");
     setBodegaSearch("");
+    setConductorInput("");
+    setObservacionesInput("");
     if (mode === "SALIDA_CABEZAL") {
       let currentCabezal = recepcion.id_placa_cabezal?.toString() || "";
       if (carga?.cambios_cabezal && carga.cambios_cabezal.length > 0) {
@@ -104,6 +111,11 @@ export default function BasculaEntradaPage() {
       return;
     }
 
+    if (modalMode === "ENTRADA_CABEZAL" && !conductorInput) {
+      toast.error("Por favor, seleccione el conductor del nuevo cabezal.");
+      return;
+    }
+
     try {
       setSubmitting(true);
       let resultado: any = null;
@@ -118,12 +130,29 @@ export default function BasculaEntradaPage() {
         toast.success("Peso Bruto registrado. El vehículo puede ir a descargar a bodega.");
       } else if (modalMode === "SALIDA_CABEZAL") {
         await registrarSalidaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
+        // Actualizar observaciones al desacoplar el furgón
+        await updateReceptionApi(selectedRecepcion.id_recepcion, {
+          observaciones: "SALE POR DESACOPLO DEL FURGON",
+        });
         toast.success("Destarse de cabezal registrado. La carga queda 'Sin Cabezal'.");
+        // Imprimir Pase de Salida para el cabezal que sale
+        const base = import.meta.env.BASE_URL;
+        window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
       } else if (modalMode === "ENTRADA_CABEZAL") {
         resultado = await registrarEntradaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
+        // Actualizar cabezal y conductor en la recepción
+        await updateReceptionApi(selectedRecepcion.id_recepcion, {
+          id_placa_cabezal: Number(placaInput),
+          id_conductor: Number(conductorInput),
+        });
         toast.success("Nuevo cabezal enganchado. Peso Bruto corregido automáticamente.");
       } else {
         resultado = await registrarPesadaSalidaApi(selectedCarga.id_detalle_recepcion, peso);
+        if (observacionesInput.trim()) {
+          await updateReceptionApi(selectedRecepcion.id_recepcion, {
+            observaciones: observacionesInput.trim(),
+          });
+        }
         toast.success("Tara registrada. Pesaje completado correctamente.");
       }
 
@@ -249,13 +278,18 @@ export default function BasculaEntradaPage() {
         pesoInput={pesoInput}
         bodegaSearch={bodegaSearch}
         placaInput={placaInput}
+        conductorInput={conductorInput}
+        observaciones={observacionesInput}
         bodegas={bodegas}
         placasCabezal={placasCabezal}
+        conductores={conductores}
         submitting={submitting}
         onClose={() => setIsModalOpen(false)}
         onPesoChange={setPesoInput}
         onBodegaChange={setBodegaSearch}
         onPlacaChange={setPlacaInput}
+        onConductorChange={setConductorInput}
+        onObservacionesChange={setObservacionesInput}
         onSubmit={handleSubmitPeso}
       />
     </div>
