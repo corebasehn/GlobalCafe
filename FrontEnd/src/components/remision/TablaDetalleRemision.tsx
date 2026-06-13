@@ -30,9 +30,9 @@ export default function TablaDetalleRemision({ detalles, proveedores }: Readonly
                 <td className="text-end">{Number(d.cantidad_qq).toFixed(2)} QQ</td>
                 <td className="text-center">
                   {d.estado_transaccion?.nombre === "Muestreado" ? (
-                    <Badge bg="success">{d.estado_transaccion.nombre}</Badge>
+                    <Badge bg="success-transparent" className="rounded-pill">{d.estado_transaccion.nombre}</Badge>
                   ) : (
-                    <Badge bg="warning" className="text-dark">{d.estado_transaccion?.nombre}</Badge>
+                    <Badge bg="warning-transparent" className="rounded-pill">{d.estado_transaccion?.nombre}</Badge>
                   )}
                 </td>
               </tr>

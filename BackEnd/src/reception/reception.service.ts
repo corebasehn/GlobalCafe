@@ -43,10 +43,13 @@ export class ReceptionService {
         detalles: {
           create: dto.detalles?.map(det => ({
             id_proveedor: det.id_proveedor,
-            id_estado_transaccion: estadoInicial.id_estado_transaccion, // Asignado por el sistema
+            id_estado_transaccion: estadoInicial.id_estado_transaccion,
             cantidad_sacos: det.cantidad_sacos,
             cantidad_qq: det.cantidad_qq,
             remision: det.remision,
+            id_tipo_remision: det.id_tipo_remision ?? null,
+            id_tipo_cafe: det.id_tipo_cafe ?? null,
+            id_tipo_empaque: det.id_tipo_empaque ?? null,
             observaciones: det.observaciones,
             usuario_creacion: usuarioId,
           })),

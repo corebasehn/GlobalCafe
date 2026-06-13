@@ -21,6 +21,9 @@ export interface DetalleRecepcion {
   peso_bruto?: number;
   tara?: number;
   peso_neto?: number;
+  id_tipo_remision?: number;
+  id_tipo_cafe?: number;
+  id_tipo_empaque?: number;
   estado: boolean;
   observaciones?: string;
   estado_transaccion?: {
@@ -49,12 +52,14 @@ export interface Recepcion {
 
 // Tipos para Crear / Editar (Payloads)
 export interface CreateReceptionDetalleRequest {
-  id_detalle_recepcion?: number; // Opcional, solo viene si estamos editando un detalle existente
+  id_detalle_recepcion?: number;
   id_proveedor: number;
-  // No enviamos id_estado_transaccion porque el backend lo asigna como "Pendiente de Muestrear"
   cantidad_sacos: number;
   cantidad_qq: number;
   remision: string;
+  id_tipo_remision?: number;
+  id_tipo_cafe?: number;
+  id_tipo_empaque?: number;
   observaciones?: string;
 }
 

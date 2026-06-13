@@ -8,7 +8,9 @@ import toast from "react-hot-toast";
 import {
   getCosechasApi, getPlacasCabezalApi, getPlacasFurgonApi, getTransportesApi,
   getConductoresApi, getMunicipiosApi, getProveedoresApi,
+  getTiposCafeApi, getTiposRemisionApi, getTiposEmpaqueApi,
   Cosecha, PlacaCabezal, PlacaFurgon, Conductor, Municipio, Proveedor, Transporte,
+  TipoCafe, TipoRemision, TipoEmpaque,
 } from "../../api/catalogs.api";
 import {
   getReceptionsApi, createReceptionApi, updateReceptionApi, deleteReceptionApi,
@@ -44,6 +46,9 @@ export default function RemisionPage() {
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [transportes, setTransportes] = useState<Transporte[]>([]);
+  const [tiposCafe, setTiposCafe] = useState<TipoCafe[]>([]);
+  const [tiposRemision, setTiposRemision] = useState<TipoRemision[]>([]);
+  const [tiposEmpaque, setTiposEmpaque] = useState<TipoEmpaque[]>([]);
   const [recepciones, setRecepciones] = useState<Recepcion[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -61,10 +66,11 @@ export default function RemisionPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [cos, pc, pf, cond, mun, prov, trans, recs] = await Promise.all([
+      const [cos, pc, pf, cond, mun, prov, trans, recs, tc, tr, te] = await Promise.all([
         getCosechasApi(), getPlacasCabezalApi(), getPlacasFurgonApi(),
         getConductoresApi(), getMunicipiosApi(), getProveedoresApi(),
         getTransportesApi(), getReceptionsApi(),
+        getTiposCafeApi(), getTiposRemisionApi(), getTiposEmpaqueApi(),
       ]);
       setCosechas(cos);
       setPlacasCabezal(pc);
@@ -74,6 +80,9 @@ export default function RemisionPage() {
       setProveedores(prov);
       setTransportes(trans);
       setRecepciones(recs);
+      setTiposCafe(tc);
+      setTiposRemision(tr);
+      setTiposEmpaque(te);
 
       const cosechaActual = cos.find(c => c.cosecha_actual);
       if (cosechaActual) {
@@ -116,6 +125,9 @@ export default function RemisionPage() {
         cantidad_sacos: d.cantidad_sacos.toString(),
         cantidad_qq: d.cantidad_qq.toString(),
         remision: d.remision,
+        id_tipo_remision: d.id_tipo_remision ? d.id_tipo_remision.toString() : "",
+        id_tipo_cafe: d.id_tipo_cafe ? d.id_tipo_cafe.toString() : "",
+        id_tipo_empaque: d.id_tipo_empaque ? d.id_tipo_empaque.toString() : "",
         observaciones: d.observaciones || "",
         is_editable: d.estado_transaccion?.nombre === "Pendiente de Muestrear",
       })),
@@ -142,6 +154,9 @@ export default function RemisionPage() {
           cantidad_sacos: Number(d.cantidad_sacos),
           cantidad_qq: Number(d.cantidad_qq),
           remision: d.remision,
+          id_tipo_remision: d.id_tipo_remision ? Number(d.id_tipo_remision) : undefined,
+          id_tipo_cafe: d.id_tipo_cafe ? Number(d.id_tipo_cafe) : undefined,
+          id_tipo_empaque: d.id_tipo_empaque ? Number(d.id_tipo_empaque) : undefined,
           observaciones: d.observaciones || undefined,
         })),
       };
@@ -175,7 +190,8 @@ export default function RemisionPage() {
       ...formData,
       detalles: [...formData.detalles, {
         id_proveedor: "", cantidad_sacos: "", cantidad_qq: "",
-        remision: "", observaciones: "", is_editable: true,
+        remision: "", id_tipo_remision: "", id_tipo_cafe: "", id_tipo_empaque: "",
+        observaciones: "", is_editable: true,
       }],
     });
   };
@@ -285,6 +301,9 @@ export default function RemisionPage() {
         placasCabezal={placasCabezal}
         placasFurgon={placasFurgon}
         proveedores={proveedores}
+        tiposCafe={tiposCafe}
+        tiposRemision={tiposRemision}
+        tiposEmpaque={tiposEmpaque}
         onHide={() => setIsModalOpen(false)}
         onSubmit={handleSubmit}
         onFormChange={setFormData}

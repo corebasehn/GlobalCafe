@@ -383,3 +383,45 @@ export async function updateEstibaApi(id: number, payload: Partial<Estiba>): Pro
   const { data } = await http.patch<Estiba>(`/catalogs/estibas/${id}`, payload);
   return data;
 }
+
+// ==========================================
+// TIPO CAFÉ
+// ==========================================
+export interface TipoCafe {
+  id_tipo_cafe: number;
+  tipo_cafe: string;
+  estado: boolean;
+}
+
+export async function getTiposCafeApi(): Promise<TipoCafe[]> {
+  const { data } = await http.get<TipoCafe[]>("/catalogs/tipos-cafe");
+  return data;
+}
+
+// ==========================================
+// TIPO REMISIÓN
+// ==========================================
+export interface TipoRemision {
+  id_tipo_remision: number;
+  tipo_remision: string;
+  estado: boolean;
+}
+
+export async function getTiposRemisionApi(): Promise<TipoRemision[]> {
+  const { data } = await http.get<TipoRemision[]>("/catalogs/tipos-remision");
+  return data;
+}
+
+// ==========================================
+// TIPO EMPAQUE
+// ==========================================
+export interface TipoEmpaque {
+  id_tipo_empaque: number;
+  tipo_empaque: string;
+  estado: boolean;
+}
+
+export async function getTiposEmpaqueApi(): Promise<TipoEmpaque[]> {
+  const { data } = await http.get<TipoEmpaque[]>("/catalogs/tipos-empaque");
+  return data;
+}
