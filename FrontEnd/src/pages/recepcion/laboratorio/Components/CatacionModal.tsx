@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { Modal, Form, Button, Row, Col } from "react-bootstrap";
+import Select from "react-select";
 import toast from "react-hot-toast";
 import type { MuestraPendiente } from "../Containers/LaboratorioPage";
 import type { CreateAnalisisRequest } from "../../../../api/analisis.api";
@@ -114,7 +115,7 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
             </div>
           </Modal.Header>
 
-          <Modal.Body className="p-4" style={{ backgroundColor: "#f8f9fa", maxHeight: "70vh", overflowY: "auto" }}>
+          <Modal.Body className="p-4" style={{ maxHeight: "70vh" , overflowY: "auto" }}>
 
             {/* 1. Datos Generales */}
             <div className="bg-white rounded border p-3 mb-3">
@@ -123,33 +124,35 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
                 <Col md={2}>
                   <Form.Group>
                     <Form.Label className="small fw-medium">Catador Respons. <span className="text-danger">*</span></Form.Label>
-                    <Form.Select
-                      size="sm"
-                      value={formData.id_catador}
-                      isInvalid={!!fieldErrors._catador}
-                      onChange={(e) => { setFormData({ ...formData, id_catador: e.target.value }); setFieldErrors((fe) => ({ ...fe, _catador: "" })); }}
-                      required
-                    >
-                      <option value="">Seleccione...</option>
-                      {catadores.map((c) => <option key={c.id_catador} value={c.id_catador.toString()}>{c.nombre}</option>)}
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid" style={{ fontSize: "0.7rem" }}>Seleccione un catador</Form.Control.Feedback>
+                    <Select
+                      classNamePrefix="Select2"
+                      placeholder="Seleccione..."
+                      options={catadores.map(c => ({ value: c.id_catador.toString(), label: c.nombre }))}
+                      value={formData.id_catador ? { value: formData.id_catador, label: catadores.find(c => c.id_catador.toString() === formData.id_catador)?.nombre || "" } : null}
+                      onChange={(opt) => { setFormData(prev => ({ ...prev, id_catador: opt?.value || "" })); setFieldErrors(fe => ({ ...fe, _catador: "" })); }}
+                      styles={{
+                        control: (base) => ({ ...base, borderColor: fieldErrors._catador ? "#dc3545" : base.borderColor }),
+                        menu: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
+                    />
+                    {fieldErrors._catador && <div className="text-danger" style={{ fontSize: "0.7rem" }}>Seleccione un catador</div>}
                   </Form.Group>
                 </Col>
                 <Col md={2}>
                   <Form.Group>
                     <Form.Label className="small fw-medium">Grado de Calidad <span className="text-danger">*</span></Form.Label>
-                    <Form.Select
-                      size="sm"
-                      value={formData.id_calidad}
-                      isInvalid={!!fieldErrors._calidad}
-                      onChange={(e) => { setFormData({ ...formData, id_calidad: e.target.value }); setFieldErrors((fe) => ({ ...fe, _calidad: "" })); }}
-                      required
-                    >
-                      <option value="">Seleccione...</option>
-                      {calidades.map((c) => <option key={c.id_calidad} value={c.id_calidad.toString()}>{c.nombre}</option>)}
-                    </Form.Select>
-                    <Form.Control.Feedback type="invalid" style={{ fontSize: "0.7rem" }}>Seleccione un grado</Form.Control.Feedback>
+                    <Select
+                      classNamePrefix="Select2"
+                      placeholder="Seleccione..."
+                      options={calidades.map(c => ({ value: c.id_calidad.toString(), label: c.nombre }))}
+                      value={formData.id_calidad ? { value: formData.id_calidad, label: calidades.find(c => c.id_calidad.toString() === formData.id_calidad)?.nombre || "" } : null}
+                      onChange={(opt) => { setFormData(prev => ({ ...prev, id_calidad: opt?.value || "" })); setFieldErrors(fe => ({ ...fe, _calidad: "" })); }}
+                      styles={{
+                        control: (base) => ({ ...base, borderColor: fieldErrors._calidad ? "#dc3545" : base.borderColor }),
+                        menu: (base) => ({ ...base, zIndex: 9999 }),
+                      }}
+                    />
+                    {fieldErrors._calidad && <div className="text-danger" style={{ fontSize: "0.7rem" }}>Seleccione un grado</div>}
                   </Form.Group>
                 </Col>
                 <Col md={2}>
@@ -312,7 +315,7 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
           </Modal.Body>
 
           <Modal.Footer className="border-top">
-            <Button variant="outline-secondary" size="sm" onClick={handleClose} disabled={submitting}>Cancelar</Button>
+            <Button variant="secondary" size="sm" onClick={handleClose} disabled={submitting}>Cancelar</Button>
             <Button variant="primary" size="sm" type="submit" disabled={submitting} className="d-flex align-items-center gap-2">
               {submitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Guardar Resultados
             </Button>

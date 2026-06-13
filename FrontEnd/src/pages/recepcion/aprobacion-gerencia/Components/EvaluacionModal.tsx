@@ -1,8 +1,15 @@
 import React from "react";
 import { CheckCircle, RefreshCcw, XCircle, FileText, Loader2 } from "lucide-react";
 import { Modal, Form, Button, Row, Col, Table, Badge } from "react-bootstrap";
+import Select from "react-select";
 import type { MuestraGerencia } from "../Containers/AprobacionGerenciaPage";
 import type { VeredictoGerenciaRequest } from "../../../../api/analisis.api";
+
+const VEREDICTO_OPTIONS = [
+  { value: "APROBAR",         label: "✅ Aprobar (Autorizar Descarga)" },
+  { value: "SEGUNDA_MUESTRA", label: "🔄 Segunda Muestra (Regresa a Muestreo)" },
+  { value: "DEVOLUCION",      label: "❌ Rechazar (Devolución al Productor)" },
+];
 
 export interface EvaluacionModalProps {
   muestra: MuestraGerencia | null;
@@ -46,8 +53,8 @@ export default function EvaluacionModal({ muestra, formData, submitting, onClose
                     <span className="fw-bold text-dark fs-13">{muestra.catador_nombre}</span>
                   </Col>
                   <Col xs={6} md={4}>
-                    <label className="fw-semibold text-muted fs-11 d-block mb-1">Calidad Perfilada</label>
-                    <Badge bg="info-transparent" className="rounded-pill px-3">{muestra.calidad_nombre}</Badge>
+                    <p className="text-muted mb-0" style={{ fontSize: "0.72rem" }}>Calidad Perfilada</p>
+                    <Badge bg="info-transparent">{muestra.calidad_nombre}</Badge>
                   </Col>
                   <Col xs={6} md={4}>
                     <label className="fw-semibold text-muted fs-11 d-block mb-1">Humedad</label>
@@ -122,19 +129,17 @@ export default function EvaluacionModal({ muestra, formData, submitting, onClose
               </div>
               <div className="card-body p-3">
                 <Row className="g-3">
-                  <Col md={12}>
-                    <Form.Group className="mb-3">
-                      <Form.Label className="fw-semibold text-muted fs-11 mb-1">Decisión del Gerente</Form.Label>
-                      <Form.Select
-                        value={formData.veredicto}
-                        className="bg-light"
-                        onChange={(e) => onFormChange({ ...formData, veredicto: e.target.value as VeredictoGerenciaRequest["veredicto"] })}
-                        required
-                      >
-                        <option value="APROBAR">✅ Aprobar (Autorizar Descarga)</option>
-                        <option value="SEGUNDA_MUESTRA">🔄 Segunda Muestra (Regresa a Muestreo)</option>
-                        <option value="DEVOLUCION">❌ Rechazar (Devolución al Productor)</option>
-                      </Form.Select>
+                  <Col md={5}>
+                    <Form.Group>
+                      <Form.Label className="fw-medium mb-1" style={{ fontSize: "0.82rem" }}>Decisión</Form.Label>
+                      <Select
+                        classNamePrefix="Select2"
+                        options={VEREDICTO_OPTIONS}
+                        value={VEREDICTO_OPTIONS.find(o => o.value === formData.veredicto) ?? null}
+                        onChange={(opt) => opt && onFormChange({ ...formData, veredicto: opt.value as VeredictoGerenciaRequest["veredicto"] })}
+                        isSearchable={false}
+                        styles={{ menu: (base) => ({ ...base, zIndex: 9999 }) }}
+                      />
                     </Form.Group>
                   </Col>
                   <Col md={12}>

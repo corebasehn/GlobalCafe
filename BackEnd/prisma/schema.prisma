@@ -199,6 +199,9 @@ model Empleado {
   fecha_eliminacion          DateTime? @db.Timestamptz(6)
   area                       Area      @relation(fields: [id_area], references: [id_area])
   usuario                    Usuario?  @relation("EmpleadoUsuario", fields: [id_usuario], references: [id])
+  fecha_eliminacion          DateTime? @db.Timestamptz(6)
+  area                       Area      @relation(fields: [id_area], references: [id_area])
+  usuario                    Usuario?  @relation("EmpleadoUsuario", fields: [id_usuario], references: [id])
 
   @@index([id_area, estado_laboral])
   @@map("empleado")
@@ -346,6 +349,9 @@ model LogSistema {
   user_agent      String?  @db.VarChar(250)
   exito           Boolean  @default(true)
   error_mensaje   String?  @db.VarChar(250)
+  error_detalle   String?
+  fecha_evento    DateTime @default(now()) @db.Timestamptz(6)
+  usuario         Usuario? @relation(fields: [usuario_id], references: [id])
   error_detalle   String?
   fecha_evento    DateTime @default(now()) @db.Timestamptz(6)
   usuario         Usuario? @relation(fields: [usuario_id], references: [id])
@@ -658,9 +664,9 @@ model DetalleRecepcion {
   estado_transaccion         EstadoTransaccion @relation(fields: [id_estado_transaccion], references: [id_estado_transaccion])
   proveedor                  Proveedor         @relation(fields: [id_proveedor], references: [id_proveedor])
   recepcion                  Recepcion         @relation(fields: [id_recepcion], references: [id_recepcion], onDelete: Cascade)
-  tipo_empaque               tipo_empaque?     @relation(fields: [id_tipo_empaque], references: [id_tipo_empaque], onDelete: NoAction, onUpdate: NoAction)
-  tipo_cafe                  tipo_cafe?        @relation(fields: [id_tipo_cafe], references: [id_tipo_cafe], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_cafe")
-  tipo_remision              tipo_remision?    @relation(fields: [id_tipo_remision], references: [id_tipo_remision], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_remision")
+  tipo_empaque               TipoEmpaque?      @relation(fields: [id_tipo_empaque], references: [id_tipo_empaque], onDelete: NoAction, onUpdate: NoAction)
+  tipo_cafe                  TipoCafe?         @relation(fields: [id_tipo_cafe], references: [id_tipo_cafe], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_cafe")
+  tipo_remision              TipoRemision?     @relation(fields: [id_tipo_remision], references: [id_tipo_remision], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_remision")
   notas_patio                NotaDePatio[]
   notas_peso                 NotaDePeso[]
 
@@ -832,7 +838,7 @@ model NotaPesoDetalle {
   @@map("nota_peso_detalle")
 }
 
-model tipo_cafe {
+model TipoCafe {
   id_tipo_cafe         Int                @id
   tipo_cafe            String             @db.VarChar(100)
   estado               Boolean            @default(true)
@@ -840,10 +846,25 @@ model tipo_cafe {
   fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
   fecha_modificacion   DateTime?          @db.Timestamptz(6)
-  detalle_recepcion    DetalleRecepcion[]
+  detalles_recepcion   DetalleRecepcion[]
+
+  @@map("tipo_cafe")
 }
 
-model tipo_empaque {
+model TipoRemision {
+  id_tipo_remision     Int                @id
+  tipo_remision        String             @db.VarChar(100)
+  estado               Boolean            @default(true)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
+  detalles_recepcion   DetalleRecepcion[]
+
+  @@map("tipo_remision")
+}
+
+model TipoEmpaque {
   id_tipo_empaque      Int                @id
   tipo_empaque         String             @db.VarChar(100)
   tara                 Decimal            @default(0) @db.Decimal(10, 4)
@@ -852,16 +873,7 @@ model tipo_empaque {
   fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
   fecha_modificacion   DateTime?          @db.Timestamptz(6)
-  detalle_recepcion    DetalleRecepcion[]
-}
+  detalles_recepcion   DetalleRecepcion[]
 
-model tipo_remision {
-  id_tipo_remision     Int                @id
-  tipo_remision        String             @db.VarChar(100)
-  estado               Boolean            @default(true)
-  usuario_creacion     Int?
-  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
-  usuario_modificacion Int?
-  fecha_modificacion   DateTime?          @db.Timestamptz(6)
-  detalle_recepcion    DetalleRecepcion[]
+  @@map("tipo_empaque")
 }

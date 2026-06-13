@@ -274,4 +274,22 @@ export class CatalogsController {
   updateEstiba(@Param('id') id: string, @Body() payload: any, @Request() req) {
     return this.catalogsService.updateEstiba(+id, payload, req.user?.id);
   }
+
+  // ==========================================
+  // TIPO CAFÉ
+  // ==========================================
+  @Get('tipos-cafe')
+  getTiposCafe() { return this.catalogsService.getTiposCafe(); }
+
+  // ==========================================
+  // TIPO REMISIÓN
+  // ==========================================
+  @Get('tipos-remision')
+  getTiposRemision() { return this.catalogsService.getTiposRemision(); }
+
+  // ==========================================
+  // TIPO EMPAQUE
+  // ==========================================
+  @Get('tipos-empaque')
+  getTiposEmpaque() { return this.catalogsService.getTiposEmpaque(); }
 }

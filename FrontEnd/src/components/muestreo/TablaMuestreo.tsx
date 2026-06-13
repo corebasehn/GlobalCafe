@@ -94,8 +94,8 @@ export default function TablaMuestreo({
         <td className="text-center">{carga.cantidad_sacos}</td>
         <td className="text-center">
           <Badge
-            bg="warning"
-            className="text-dark d-flex align-items-center gap-1 justify-content-center mx-auto"
+            pill
+            bg="warning-transparent" className="rounded-pill"
             style={{ width: "fit-content" }}
           >
             <Clock className="w-3 h-3" /> ESPERANDO MUESTRA

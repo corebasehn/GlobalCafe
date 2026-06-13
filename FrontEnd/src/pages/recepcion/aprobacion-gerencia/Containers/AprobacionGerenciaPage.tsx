@@ -15,6 +15,9 @@ import EvaluacionModal from "../Components/EvaluacionModal";
 import DevolucionModal from "../Components/DevolucionModal";
 import FaltosTable from "../../patio/Components/FaltosTable";
 import DevolucionFaltosModal from "../../patio/Components/DevolucionFaltosModal";
+import Pageheader from "../../../../layout/layoutcomponent/pageheader";
+
+const colors = moduleColors.recepcion;
 
 export interface MuestraGerencia {
   id_analisis_calidad: number;

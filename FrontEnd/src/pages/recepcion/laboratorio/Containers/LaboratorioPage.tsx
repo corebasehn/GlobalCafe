@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, KeyboardEvent } from "react";
 import { Search } from "lucide-react";
-import { Card, Form, InputGroup } from "react-bootstrap";
+import { Badge, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../../auth/useAuth";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
@@ -25,6 +25,7 @@ export default function LaboratorioPage() {
   const { hasPermission } = useAuth();
   const hasRowActions = hasPermission("CREAR_MUESTRA") || hasPermission("IMPRIMIR_MUESTRA");
 
+  const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -115,26 +116,76 @@ export default function LaboratorioPage() {
     }
   };
 
-  const filteredMuestras = muestras.filter(m => 
-    m.numero_entrada.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.remision.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    m.proveedor_nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const trimmed = searchTerm.trim().toLowerCase();
+  const filteredMuestras = trimmed.length === 0
+    ? []
+    : muestras.filter(m =>
+        m.numero_entrada.toLowerCase().includes(trimmed) ||
+        m.remision.toLowerCase().includes(trimmed)
+      );
+
+  const countByStatus = (name: string) =>
+    muestras.filter(m => m.estado_transaccion?.nombre === name).length;
+  const cntMuestreado       = countByStatus("Muestreado");
+  const cntGeneralRecibida  = countByStatus("Muestra General Recibida");
+  const cntPendPrevia       = countByStatus("Muestra Previa Pendiente de Aprobacion");
+  const cntPendGeneral      = countByStatus("Muestra General Pendiente de Aprobacion");
+
+  const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") setSearchTerm(inputValue);
+  };
 
   return (
     <div>
       <Pageheader title="Laboratorio" heading="Recepción" active="Laboratorio" />
 
       <Card className="mb-6">
-        <Card.Body className="p-4">
-          <InputGroup>
-            <InputGroup.Text><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
-            <Form.Control
-              placeholder="Buscar por ingreso, remisión o proveedor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </InputGroup>
+        <Card.Body className="p-3">
+          <div className="d-flex align-items-center gap-4 flex-wrap">
+            {/* Buscador */}
+            <div style={{ flex: 1, minWidth: "240px" }}>
+              <InputGroup size="sm">
+                <InputGroup.Text><Search className="w-3 h-3 text-neutral-400" /></InputGroup.Text>
+                <Form.Control
+                  size="sm"
+                  placeholder="Buscar por No. Ingreso o Remisión Física..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  style={{ fontSize: "0.8rem" }}
+                />
+              </InputGroup>
+            </div>
+
+            {/* Indicadores de estado */}
+            {!loading && (
+              <div className="d-flex gap-2 flex-wrap align-items-center">
+                {cntMuestreado > 0 && (
+                  <Badge bg="primary-transparent" className="rounded-pill">
+                    Equi. Muestreado: {cntMuestreado}
+                  </Badge>
+                )}
+                {cntGeneralRecibida > 0 && (
+                  <Badge bg="success-transparent" className="rounded-pill">
+                    General: {cntGeneralRecibida}
+                  </Badge>
+                )}
+                {cntPendPrevia > 0 && (
+                  <Badge bg="warning-transparent" className="rounded-pill">
+                    Pend. Previa Aprobación: {cntPendPrevia}
+                  </Badge>
+                )}
+                {cntPendGeneral > 0 && (
+                  <Badge bg="danger-transparent" className="rounded-pill">
+                    Pend. General Aprobación: {cntPendGeneral}
+                  </Badge>
+                )}
+                {muestras.length === 0 && (
+                  <span style={{ fontSize: "0.78rem", color: "#888" }}>Sin muestras en bandeja</span>
+                )}
+              </div>
+            )}
+          </div>
         </Card.Body>
       </Card>
 
@@ -145,6 +196,7 @@ export default function LaboratorioPage() {
         hasPermission={hasPermission}
         onOpenModal={handleOpenModal}
         onPrintClick={handlePrintClick}
+        searchTerm={searchTerm}
       />
 
       <CatacionModal

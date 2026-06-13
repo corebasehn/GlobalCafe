@@ -1,18 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, KeyboardEvent } from "react";
 import { Search } from "lucide-react";
-import { Card, Form, InputGroup } from "react-bootstrap";
+import { Badge, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 
 // APIs
-import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi } from "../../../../api/reception.api";
-import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal } from "../../../../api/catalogs.api";
+import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi } from "../../../../api/reception.api";
+import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal, getConductoresApi, Conductor } from "../../../../api/catalogs.api";
+
+// Estado IDs (según catálogo de base de datos)
+const ESTADO_PESADA_ABIERTA = 7;  // "Pesada Abierta"
+const ESTADO_PESADA_CERRADA = 8;  // "Pesada Cerrada"
 
 // Components
 import BasculaTable, { type ModalMode } from "../Components/BasculaTable";
 import PesadaModal from "../Components/PesadaModal";
 
 export default function BasculaEntradaPage() {
+  const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -21,6 +26,7 @@ export default function BasculaEntradaPage() {
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [bodegas, setBodegas] = useState<Bodega[]>([]);
   const [placasCabezal, setPlacasCabezal] = useState<PlacaCabezal[]>([]);
+  const [conductores, setConductores] = useState<Conductor[]>([]);
 
   // Estado del Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,6 +36,8 @@ export default function BasculaEntradaPage() {
   const [pesoInput, setPesoInput] = useState("");
   const [bodegaSearch, setBodegaSearch] = useState("");
   const [placaInput, setPlacaInput] = useState("");
+  const [conductorInput, setConductorInput] = useState("");
+  const [observacionesInput, setObservacionesInput] = useState("");
 
   useEffect(() => {
     loadData();
@@ -38,14 +46,16 @@ export default function BasculaEntradaPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [data, bods, placas] = await Promise.all([
+      const [data, bods, placas, conds] = await Promise.all([
         getPendientesBasculaApi(),
         getBodegasApi(),
         getPlacasCabezalApi(),
+        getConductoresApi(),
       ]);
       setRecepciones(data);
       setBodegas(bods);
       setPlacasCabezal(placas);
+      setConductores(conds);
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar los vehículos en báscula");
@@ -64,6 +74,8 @@ export default function BasculaEntradaPage() {
     setModalMode(mode);
     setPesoInput("");
     setBodegaSearch("");
+    setConductorInput("");
+    setObservacionesInput("");
     if (mode === "SALIDA_CABEZAL") {
       let currentCabezal = recepcion.id_placa_cabezal?.toString() || "";
       if (carga?.cambios_cabezal && carga.cambios_cabezal.length > 0) {
@@ -99,28 +111,71 @@ export default function BasculaEntradaPage() {
       return;
     }
 
+    if (modalMode === "ENTRADA_CABEZAL" && !conductorInput) {
+      toast.error("Por favor, seleccione el conductor del nuevo cabezal.");
+      return;
+    }
+
     try {
       setSubmitting(true);
+      let resultado: any = null;
+
       if (modalMode === "ENTRADA") {
         if (!bodegaSearch) {
           toast.error("Por favor, seleccione una bodega válida de la lista.");
           setSubmitting(false);
           return;
         }
-        await registrarPesadaEntradaApi(selectedCarga.id_detalle_recepcion, peso, Number(bodegaSearch));
+        resultado = await registrarPesadaEntradaApi(selectedCarga.id_detalle_recepcion, peso, Number(bodegaSearch));
         toast.success("Peso Bruto registrado. El vehículo puede ir a descargar a bodega.");
       } else if (modalMode === "SALIDA_CABEZAL") {
         await registrarSalidaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
+        // Actualizar observaciones al desacoplar el furgón
+        await updateReceptionApi(selectedRecepcion.id_recepcion, {
+          observaciones: "SALE POR DESACOPLO DEL FURGON",
+        });
         toast.success("Destarse de cabezal registrado. La carga queda 'Sin Cabezal'.");
+        // Imprimir Pase de Salida para el cabezal que sale
+        const base = import.meta.env.BASE_URL;
+        window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
       } else if (modalMode === "ENTRADA_CABEZAL") {
-        await registrarEntradaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
+        resultado = await registrarEntradaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
+        // Actualizar cabezal y conductor en la recepción
+        await updateReceptionApi(selectedRecepcion.id_recepcion, {
+          id_placa_cabezal: Number(placaInput),
+          id_conductor: Number(conductorInput),
+        });
         toast.success("Nuevo cabezal enganchado. Peso Bruto corregido automáticamente.");
       } else {
-        await registrarPesadaSalidaApi(selectedCarga.id_detalle_recepcion, peso);
+        resultado = await registrarPesadaSalidaApi(selectedCarga.id_detalle_recepcion, peso);
+        if (observacionesInput.trim()) {
+          await updateReceptionApi(selectedRecepcion.id_recepcion, {
+            observaciones: observacionesInput.trim(),
+          });
+        }
         toast.success("Tara registrada. Pesaje completado correctamente.");
       }
+
       setIsModalOpen(false);
       loadData();
+
+      // ===== Lógica de impresión según estado resultante =====
+      if (resultado?.id_estado_transaccion) {
+        const base = import.meta.env.BASE_URL;
+        const idDet = selectedCarga.id_detalle_recepcion;
+
+        if (resultado.id_estado_transaccion === ESTADO_PESADA_ABIERTA) {
+          // Primera Pesada
+          window.open(`${base}print/boleta-pesada/${idDet}/primera`, "_blank");
+        } else if (resultado.id_estado_transaccion === ESTADO_PESADA_CERRADA) {
+          // Segunda Pesada
+          window.open(`${base}print/boleta-pesada/${idDet}/segunda`, "_blank");
+          // Si todos los detalles del viaje cerraron → Pase de Salida
+          if (resultado.allClosed) {
+            window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+          }
+        }
+      }
     } catch (error: any) {
       console.error(error);
       toast.error(error.response?.data?.message || "Error al registrar el peso en el sistema.");
@@ -129,31 +184,80 @@ export default function BasculaEntradaPage() {
     }
   };
 
-  const filteredRecepciones = recepciones.filter((r) => {
-    const term = searchTerm.toLowerCase();
-    return (
-      r.numero_entrada?.toLowerCase().includes(term) ||
-      r.placa_cabezal?.placa?.toLowerCase().includes(term) ||
-      r.placa_furgon?.placa?.toLowerCase().includes(term) ||
-      r.detalles?.some((d: any) => d.remision?.toLowerCase().includes(term)) ||
-      r.detalles?.some((d: any) => d.proveedor?.nombre?.toLowerCase().includes(term))
-    );
-  });
+  const trimmed = searchTerm.trim().toLowerCase();
+  const filteredRecepciones = trimmed.length === 0
+    ? []
+    : recepciones.filter((r) =>
+        r.numero_entrada?.toLowerCase().includes(trimmed) ||
+        r.placa_cabezal?.placa?.toLowerCase().includes(trimmed) ||
+        r.placa_furgon?.placa?.toLowerCase().includes(trimmed) ||
+        r.detalles?.some((d: any) => d.remision?.toLowerCase().includes(trimmed))
+      );
+
+  // Indicadores: contar detalles por estado en TODOS los registros cargados
+  const allDetalles: any[] = recepciones.flatMap((r) => r.detalles || []);
+  const countEstado = (nombre: string) =>
+    allDetalles.filter((d) => d.estado_transaccion?.nombre === nombre).length;
+  const cntPesadaAbierta  = countEstado("Pesada Abierta");
+  const cntSinCabezal     = countEstado("Sin Cabezal");
+  const cntCompletado     = countEstado("Pesaje Completado");
+  const cntEnBodega       = countEstado("En Bodega");
+
+  const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") setSearchTerm(inputValue);
+  };
 
   return (
     <div>
       <Pageheader title="Báscula de Entrada" heading="Recepción" active="Báscula de Entrada" />
 
       <Card className="mb-6">
-        <Card.Body className="p-4">
-          <InputGroup>
-            <InputGroup.Text><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
-            <Form.Control
-              placeholder="Buscar por ingreso, remisión o proveedor..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </InputGroup>
+        <Card.Body className="p-3">
+          <div className="d-flex align-items-center gap-4 flex-wrap">
+            {/* Buscador */}
+            <div style={{ flex: 1, minWidth: "260px" }}>
+              <InputGroup size="sm">
+                <InputGroup.Text><Search className="w-3 h-3 text-neutral-400" /></InputGroup.Text>
+                <Form.Control
+                  size="sm"
+                  placeholder="Buscar por No. Ingreso, Remisión, Placa Cabezal o Furgón..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  style={{ fontSize: "0.8rem" }}
+                />
+              </InputGroup>
+            </div>
+
+            {/* Indicadores por estado */}
+            {!loading && (
+              <div className="d-flex gap-2 flex-wrap align-items-center">
+                {cntPesadaAbierta > 0 && (
+                  <Badge bg="info-transparent" className="rounded-pill">
+                    Pesada Abierta: {cntPesadaAbierta}
+                  </Badge>
+                )}
+                {cntSinCabezal > 0 && (
+                  <Badge bg="warning-transparent" className="rounded-pill">
+                    Sin Cabezal: {cntSinCabezal}
+                  </Badge>
+                )}
+                {cntCompletado > 0 && (
+                  <Badge bg="success-transparent" className="rounded-pill">
+                    Completado: {cntCompletado}
+                  </Badge>
+                )}
+                {cntEnBodega > 0 && (
+                  <Badge bg="secondary-transparent" className="rounded-pill">
+                    En Bodega: {cntEnBodega}
+                  </Badge>
+                )}
+                {allDetalles.length === 0 && (
+                  <span style={{ fontSize: "0.78rem", color: "#888" }}>Sin vehículos en báscula</span>
+                )}
+              </div>
+            )}
+          </div>
         </Card.Body>
       </Card>
 
@@ -163,6 +267,7 @@ export default function BasculaEntradaPage() {
         expandedRows={expandedRows}
         onToggleRow={toggleRow}
         onOpenModal={handleOpenModal}
+        searchTerm={searchTerm}
       />
 
       <PesadaModal
@@ -173,13 +278,18 @@ export default function BasculaEntradaPage() {
         pesoInput={pesoInput}
         bodegaSearch={bodegaSearch}
         placaInput={placaInput}
+        conductorInput={conductorInput}
+        observaciones={observacionesInput}
         bodegas={bodegas}
         placasCabezal={placasCabezal}
+        conductores={conductores}
         submitting={submitting}
         onClose={() => setIsModalOpen(false)}
         onPesoChange={setPesoInput}
         onBodegaChange={setBodegaSearch}
         onPlacaChange={setPlacaInput}
+        onConductorChange={setConductorInput}
+        onObservacionesChange={setObservacionesInput}
         onSubmit={handleSubmitPeso}
       />
     </div>

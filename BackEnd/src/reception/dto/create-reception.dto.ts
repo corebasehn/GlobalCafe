@@ -18,12 +18,24 @@ export class CreateReceptionDetalleDto {
   @IsNotEmpty()
   cantidad_qq: number;
 
-  @IsString() 
+  @IsString()
   @IsNotEmpty()
   remision: string;
 
-  @IsOptional() 
-  @IsString() 
+  @IsOptional()
+  @IsInt()
+  id_tipo_remision?: number;
+
+  @IsOptional()
+  @IsInt()
+  id_tipo_cafe?: number;
+
+  @IsOptional()
+  @IsInt()
+  id_tipo_empaque?: number;
+
+  @IsOptional()
+  @IsString()
   observaciones?: string;
 }
 

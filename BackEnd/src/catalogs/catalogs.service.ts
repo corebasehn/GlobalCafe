@@ -59,7 +59,10 @@ export class CatalogsService {
   }
 
   async getConductores() {
-    return this.prisma.conductor.findMany({ where: { estado: true } });
+    return this.prisma.conductor.findMany({
+      where: { estado: true },
+      include: { transporte: { select: { nombre: true } } },
+    });
   }
 
   async createConductor(data: any, userId: number) {
@@ -367,5 +370,26 @@ export class CatalogsService {
       where: { id_estibas: id },
       data: { ...data, usuario_modificacion: userId, fecha_modificacion: new Date() }
     });
+  }
+
+  // ==========================================
+  // TIPO CAFÉ
+  // ==========================================
+  async getTiposCafe() {
+    return this.prisma.tipoCafe.findMany({ where: { estado: true }, orderBy: { tipo_cafe: 'asc' } });
+  }
+
+  // ==========================================
+  // TIPO REMISIÓN
+  // ==========================================
+  async getTiposRemision() {
+    return this.prisma.tipoRemision.findMany({ where: { estado: true }, orderBy: { tipo_remision: 'asc' } });
+  }
+
+  // ==========================================
+  // TIPO EMPAQUE
+  // ==========================================
+  async getTiposEmpaque() {
+    return this.prisma.tipoEmpaque.findMany({ where: { estado: true }, orderBy: { tipo_empaque: 'asc' } });
   }
 }

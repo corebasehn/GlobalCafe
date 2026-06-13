@@ -1,7 +1,7 @@
-import React from "react";
-import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck } from "lucide-react";
-import { Card, Table, Badge, Button, Dropdown } from "react-bootstrap";
-
+import React, { useEffect, useState } from "react";
+import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck, FileSpreadsheet } from "lucide-react";
+import { Card, Table, Badge, Button, Dropdown, Pagination } from "react-bootstrap";
+import * as XLSX from "xlsx";
 export type ModalMode = "ENTRADA" | "SALIDA" | "SALIDA_CABEZAL" | "ENTRADA_CABEZAL";
 
 export interface BasculaTableProps {
@@ -10,19 +10,89 @@ export interface BasculaTableProps {
   expandedRows: number[];
   onToggleRow: (id: number) => void;
   onOpenModal: (recepcion: any, carga: any, mode: ModalMode) => void;
+  searchTerm: string;
 }
+
+const PAGE_SIZE = 15;
 
 function getBadgeVariant(estado: string) {
-  if (estado === "Muestra Aprobada" || estado === "Pesada Abierta") return "info";
-  if (estado === "Pesaje Completado" || estado === "En Bodega") return "success";
-  if (estado.includes("Rechazada") || estado === "Devolución") return "danger";
-  if (estado.includes("Pendiente")) return "warning";
-  return "secondary";
+  if (estado === "Muestra Aprobada" || estado === "Pesada Abierta") return "info-transparent";
+  if (estado === "Pesaje Completado" || estado === "En Bodega") return "success-transparent";
+  if (estado.includes("Rechazada") || estado === "Devolución") return "danger-transparent";
+  if (estado.includes("Pendiente")) return "warning-transparent";
+  return "secondary-transparent";
 }
 
-export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal }: BasculaTableProps) {
+export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal, searchTerm }: BasculaTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [recepciones.length]);
+
+  const totalPages = Math.max(1, Math.ceil(recepciones.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginated = recepciones.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const exportarExcel = () => {
+    const filas: Record<string, unknown>[] = [];
+    recepciones.forEach(r => {
+      const transporteName = r.conductor?.transporte?.nombre || "N/A";
+      const conductorName = r.conductor?.nombre || "N/A";
+      const cabezal = r.placa_cabezal?.placa || "N/A";
+      const furgon = r.placa_furgon?.placa || "";
+      const detalles: any[] = r.detalles || [];
+      if (detalles.length === 0) {
+        filas.push({
+          "N° Entrada": r.numero_entrada,
+          "Fecha y Hora": new Date(r.fecha_entrada).toLocaleString(),
+          "Transporte": transporteName,
+          "Placa Cabezal": cabezal,
+          "Placa Furgón": furgon,
+          "Conductor": conductorName,
+          "Remisión": "",
+          "Proveedor / Finca": "",
+          "Sacos": 0,
+          "Pesada Entrada (LB)": "",
+          "Pesada Salida (LB)": "",
+          "Cafe Neto (LB)": "",
+          "Estado": "",
+        });
+      } else {
+        detalles.forEach((carga, idx) => {
+          filas.push({
+            "N° Entrada": idx === 0 ? r.numero_entrada : "",
+            "Fecha y Hora": idx === 0 ? new Date(r.fecha_entrada).toLocaleString() : "",
+            "Transporte": idx === 0 ? transporteName : "",
+            "Placa Cabezal": idx === 0 ? cabezal : "",
+            "Placa Furgón": idx === 0 ? furgon : "",
+            "Conductor": idx === 0 ? conductorName : "",
+            "Remisión": carga.remision,
+            "Proveedor / Finca": carga.proveedor?.nombre || "",
+            "Sacos": carga.cantidad_sacos,
+            "Pesada Entrada (LB)": carga.pesada_entrada ? Number(carga.pesada_entrada) : "",
+            "Pesada Salida (LB)": carga.pesada_salida ? Number(carga.pesada_salida) : "",
+            "Cafe Neto (LB)": carga.peso_neto ? Number(carga.peso_neto) : "",
+            "Estado": carga.estado_transaccion?.nombre || "",
+          });
+        });
+      }
+    });
+    const ws = XLSX.utils.json_to_sheet(filas);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Bascula");
+    XLSX.writeFile(wb, `Bascula_${new Date().toISOString().slice(0, 10)}.xlsx`);
+  };
+
   return (
     <Card>
+      {!loading && recepciones.length > 0 && (
+        <Card.Header className="d-flex justify-content-end py-2 bg-white border-bottom">
+          <Button variant="outline-success" size="sm" onClick={exportarExcel} className="d-flex align-items-center gap-1">
+            <FileSpreadsheet className="w-4 h-4" /> Exportar Excel
+          </Button>
+        </Card.Header>
+      )}
       <Table responsive hover className="mb-0">
         <thead>
           <tr>
@@ -44,20 +114,28 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
           ) : recepciones.length === 0 ? (
             <tr>
               <td colSpan={6} className="text-center py-8 text-neutral-500">
-                No hay vehículos en patio en espera de pesaje.
+                {searchTerm.trim().length === 0
+                  ? "Ingrese un No. Ingreso, Remisión o Placa para buscar."
+                  : "No se encontraron resultados para la búsqueda."}
               </td>
             </tr>
           ) : (
-            recepciones.map((r) => {
+            paginated.map((r) => {
               const isExpanded = expandedRows.includes(r.id_recepcion);
               const transporteName = r.conductor?.transporte?.nombre || "N/A";
               const conductorName = r.conductor?.nombre || "N/A";
               const cabezal = r.placa_cabezal?.placa || "N/A";
               const furgon = r.placa_furgon?.placa;
+              const detalles: any[] = r.detalles || [];
 
-              const isVehicleOnScale = r.detalles?.some((d: any) =>
-                ["Pesada Abierta", "Sin Cabezal"].includes(d.estado_transaccion?.nombre || "")
+              const isVehicleOnScale = detalles.some((d: any) =>
+                ["Pesada Abierta", "Sin Cabezal", "Muestra General Recibida"].includes(d.estado_transaccion?.nombre || "")
               );
+
+              const sumSacos = detalles.reduce((s, d) => s + (d.cantidad_sacos || 0), 0);
+              const sumEntrada = detalles.reduce((s, d) => s + (Number(d.pesada_entrada) || 0), 0);
+              const sumSalida = detalles.reduce((s, d) => s + (Number(d.pesada_salida) || 0), 0);
+              const sumNeto = detalles.reduce((s, d) => s + (Number(d.peso_neto) || 0), 0);
 
               return (
                 <React.Fragment key={r.id_recepcion}>
@@ -101,7 +179,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                 </tr>
                               </thead>
                               <tbody>
-                                {r.detalles.map((carga: any) => {
+                                {detalles.map((carga: any) => {
                                   const estadoNombre = carga.estado_transaccion?.nombre || "";
                                   const isMuestraAprobada = estadoNombre === "Muestra Aprobada";
                                   const isEntrada = isMuestraAprobada && !isVehicleOnScale;
@@ -171,7 +249,8 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                         ) : (
                                           <div className="text-center">
                                             {isPendienteFaltos && <Badge bg="danger" className="flex items-center gap-1 mx-auto w-fit"><ShieldCheck size={12}/> Gerencia</Badge>}
-                                            {isPendiente && <Badge bg="warning" className="text-dark"><Loader2 className="w-3 h-3 animate-spin me-1" /> Esperando</Badge>}
+                                            {isPendiente && <div  className="spinner-border text-warning" role="status"><span  className="visually-hidden">Loading...</span></div>}
+
                                             {isRechazada && <Badge bg="danger">Rechazada</Badge>}
                                             {isCompletado && <span className="text-xs text-muted font-bold uppercase">Procesado</span>}
                                             {isBloqueadoPorBascula && <Badge bg="warning" className="text-dark" title="Otra carga de este vehículo está en báscula">En Fila</Badge>}
@@ -193,6 +272,24 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                   );
                                 })}
                               </tbody>
+                              <tfoot className="table-light border-top border-2">
+                                <tr>
+                                  <td colSpan={3} className="text-end fw-bold text-neutral-600 py-1">
+                                    Total ({detalles.length} {detalles.length === 1 ? "carga" : "cargas"}):
+                                  </td>
+                                  <td className="text-center fw-bold">{sumSacos.toLocaleString()}</td>
+                                  <td className="text-end fw-bold font-monospace">
+                                    {sumEntrada > 0 ? sumEntrada.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---"} LB
+                                  </td>
+                                  <td className="text-end fw-bold font-monospace">
+                                    {sumSalida > 0 ? sumSalida.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---"} LB
+                                  </td>
+                                  <td className="text-end fw-bold font-monospace text-coffee-800">
+                                    {sumNeto > 0 ? sumNeto.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---"} LB
+                                  </td>
+                                  <td />
+                                </tr>
+                              </tfoot>
                             </Table>
                           </Card>
                         </div>
@@ -205,6 +302,35 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
           )}
         </tbody>
       </Table>
+
+      {!loading && recepciones.length > 0 && (
+        <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span className="text-muted small">
+            {totalPages > 1 ? `Página ${safePage} de ${totalPages} — ` : ""}{recepciones.length} {recepciones.length === 1 ? "registro" : "registros"}
+          </span>
+
+          {totalPages > 1 && (
+            <Pagination size="sm" className="mb-0">
+              <Pagination.First onClick={() => setCurrentPage(1)} disabled={safePage === 1} />
+              <Pagination.Prev onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} />
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === "..."
+                    ? <Pagination.Ellipsis key={`e-${idx}`} disabled />
+                    : <Pagination.Item key={p} active={p === safePage} onClick={() => setCurrentPage(p as number)}>{p}</Pagination.Item>
+                )}
+              <Pagination.Next onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} />
+              <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages} />
+            </Pagination>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

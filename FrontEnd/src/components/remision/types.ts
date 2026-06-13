@@ -4,6 +4,9 @@ export interface RemisionDetalleForm {
   cantidad_sacos: string;
   cantidad_qq: string;
   remision: string;
+  id_tipo_remision: string;
+  id_tipo_cafe: string;
+  id_tipo_empaque: string;
   observaciones: string;
   is_editable?: boolean;
 }
@@ -36,6 +39,9 @@ export const initialState: RemisionFormData = {
     cantidad_sacos: "",
     cantidad_qq: "",
     remision: "",
+    id_tipo_remision: "",
+    id_tipo_cafe: "",
+    id_tipo_empaque: "",
     observaciones: "",
     is_editable: true,
   }],
