@@ -36,6 +36,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (payload: LoginRequest) => {
     const resp = await loginApi(payload);
+    // Guardar inmediatamente para evitar condiciones de carrera
+    localStorage.setItem("auth_token", resp.token);
+    localStorage.setItem("auth_profile", JSON.stringify(resp));
     setToken(resp.token);
     setProfile(resp);
     return resp;

@@ -26,9 +26,13 @@ async function bootstrap() {
 
   // 2. Habilitar CORS
   app.enableCors({
-    origin: true, // true permite el origen de la solicitud (útil para pruebas y despliegue inicial)
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: (origin, callback) => {
+      // Permitir cualquier origen en desarrollo y producción para debug
+      callback(null, true);
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
   const port = process.env.PORT || 3000;
