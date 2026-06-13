@@ -647,7 +647,6 @@ model Recepcion {
   fecha_creacion       DateTime  @default(now()) @db.Timestamptz
   usuario_modificacion Int?
   fecha_modificacion   DateTime? @db.Timestamptz
-  tipo_recepcion       String    @default("i") @db.VarChar(2)
 
   sucursal             Sucursal  @relation(fields: [id_sucursal], references: [id_sucursal])
   cosecha              Cosecha   @relation(fields: [id_cosecha], references: [id_cosecha])
