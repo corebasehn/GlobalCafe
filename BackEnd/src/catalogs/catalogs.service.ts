@@ -371,4 +371,25 @@ export class CatalogsService {
       data: { ...data, usuario_modificacion: userId, fecha_modificacion: new Date() }
     });
   }
+
+  // ==========================================
+  // TIPO CAFÉ
+  // ==========================================
+  async getTiposCafe() {
+    return this.prisma.tipoCafe.findMany({ where: { estado: true }, orderBy: { tipo_cafe: 'asc' } });
+  }
+
+  // ==========================================
+  // TIPO REMISIÓN
+  // ==========================================
+  async getTiposRemision() {
+    return this.prisma.tipoRemision.findMany({ where: { estado: true }, orderBy: { tipo_remision: 'asc' } });
+  }
+
+  // ==========================================
+  // TIPO EMPAQUE
+  // ==========================================
+  async getTiposEmpaque() {
+    return this.prisma.tipoEmpaque.findMany({ where: { estado: true }, orderBy: { tipo_empaque: 'asc' } });
+  }
 }
