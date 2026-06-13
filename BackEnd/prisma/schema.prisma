@@ -7,10 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ==========================================
-// 1. MÓDULO ADMINISTRATIVO (DBA)
-// ==========================================
-
 model Licencia {
   id_lic                Int       @id @default(autoincrement())
   id_sucursal           Int
@@ -22,16 +18,15 @@ model Licencia {
   cantidad_areas        Int?      @db.SmallInt
   estado                Boolean   @default(true)
   motivo_desactivacion  String?   @db.VarChar(250)
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion        DateTime  @default(now()) @db.Timestamptz(6)
   usuario_creacion      Int?
-  fecha_actualizacion   DateTime? @db.Timestamptz
+  fecha_actualizacion   DateTime? @db.Timestamptz(6)
   usuario_actualizacion Int?
+  sucursal              Sucursal  @relation(fields: [id_sucursal], references: [id_sucursal])
 
-  sucursal Sucursal @relation(fields: [id_sucursal], references: [id_sucursal])
-
-  @@map("licencia")
   @@index([id_sucursal, inicio, final])
   @@index([estado])
+  @@map("licencia")
 }
 
 model EmpresaConfiguracionVisual {
@@ -59,127 +54,122 @@ model EmpresaConfiguracionVisual {
   margen_izquierdo        Int?      @db.SmallInt
   margen_derecho          Int?      @db.SmallInt
   activo                  Boolean   @default(true)
-  fecha_creacion          DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion          DateTime  @default(now()) @db.Timestamptz(6)
   usuario_creacion        Int?
-  fecha_actualizacion     DateTime? @db.Timestamptz
+  fecha_actualizacion     DateTime? @db.Timestamptz(6)
   usuario_actualizacion   Int?
+  empresa                 Empresa   @relation(fields: [id_empresa], references: [id_empresa])
 
-  empresa Empresa @relation(fields: [id_empresa], references: [id_empresa])
-
-  @@map("empresa_configuracion_visual")
   @@unique([id_empresa, modulo, tipo_documento])
+  @@map("empresa_configuracion_visual")
 }
 
 model Empresa {
-  id_empresa                Int       @id @default(autoincrement())
-  nombre                    String    @db.VarChar(150)
-  razon_social              String?   @db.VarChar(200)
-  rtn                       String?   @unique @db.VarChar(20)
-  registro_sanitario        String?   @db.VarChar(50)
-  pais                      String?   @db.VarChar(80)
-  ciudad                    String?   @db.VarChar(100)
-  direccion                 String?   @db.VarChar(250)
-  telefono                  String?   @db.VarChar(30)
-  telefono_secundario       String?   @db.VarChar(30)
-  correo                    String?   @db.VarChar(150)
-  sitio_web                 String?   @db.VarChar(150)
-  moneda_base               String?   @db.VarChar(10)
-  tipo_cambio_base          Decimal?  @db.Decimal(18, 6)
-  cuenta_contable_principal String?   @db.VarChar(50)
+  id_empresa                Int                         @id @default(autoincrement())
+  nombre                    String                      @db.VarChar(150)
+  razon_social              String?                     @db.VarChar(200)
+  rtn                       String?                     @unique @db.VarChar(20)
+  registro_sanitario        String?                     @db.VarChar(50)
+  pais                      String?                     @db.VarChar(80)
+  ciudad                    String?                     @db.VarChar(100)
+  direccion                 String?                     @db.VarChar(250)
+  telefono                  String?                     @db.VarChar(30)
+  telefono_secundario       String?                     @db.VarChar(30)
+  correo                    String?                     @db.VarChar(150)
+  sitio_web                 String?                     @db.VarChar(150)
+  moneda_base               String?                     @db.VarChar(10)
+  tipo_cambio_base          Decimal?                    @db.Decimal(18, 6)
+  cuenta_contable_principal String?                     @db.VarChar(50)
   logo                      Bytes?
-  eslogan                   String?   @db.VarChar(150)
-  prefijo_documentos        String?   @db.VarChar(10)
+  eslogan                   String?                     @db.VarChar(150)
+  prefijo_documentos        String?                     @db.VarChar(10)
   correlativo_global        Int?
-  permite_multi_sucursal    Boolean?  @default(true)
-  activo                    Boolean   @default(true)
-  fecha_creacion            DateTime  @default(now()) @db.Timestamptz
+  permite_multi_sucursal    Boolean?                    @default(true)
+  activo                    Boolean                     @default(true)
+  fecha_creacion            DateTime                    @default(now()) @db.Timestamptz(6)
   usuario_creacion          Int?
-  fecha_actualizacion       DateTime? @db.Timestamptz
+  fecha_actualizacion       DateTime?                   @db.Timestamptz(6)
   usuario_actualizacion     Int?
-  fecha_eliminacion         DateTime? @db.Timestamptz
-  observaciones             String?   @db.VarChar(250)
-
-  sucursales            Sucursal[]
-  configuracion_visual  EmpresaConfiguracionVisual?
+  fecha_eliminacion         DateTime?                   @db.Timestamptz(6)
+  observaciones             String?                     @db.VarChar(250)
+  configuracion_visual      EmpresaConfiguracionVisual?
+  sucursales                Sucursal[]
 
   @@map("empresa")
 }
 
 model Sucursal {
-  id_sucursal             Int       @id @default(autoincrement())
-  id_empresa              Int
-  nombre                  String    @db.VarChar(120)
-  codigo                  String?   @db.VarChar(20)
-  tipo_sucursal           String?   @db.VarChar(30)
-  es_sucursal_principal   Boolean   @default(false)
-  direccion               String?   @db.VarChar(200)
-  ciudad                  String?   @db.VarChar(100)
-  departamento            String?   @db.VarChar(100)
-  pais                    String?   @db.VarChar(80)
-  telefono                String?   @db.VarChar(30)
-  telefono_secundario     String?   @db.VarChar(30)
-  correo                  String?   @db.VarChar(120)
-  latitud                 Decimal?  @db.Decimal(10, 7)
-  longitud                Decimal?  @db.Decimal(10, 7)
-  horario_apertura        DateTime? @db.Time
-  horario_cierre          DateTime? @db.Time
-  zona_horaria            String?   @db.VarChar(60)
-  responsable_nombre      String?   @db.VarChar(120)
-  responsable_telefono    String?   @db.VarChar(30)
-  eslogan                 String?   @db.VarChar(120)
-  imagen                  Bytes?
-  formato                 String?   @db.VarChar(50)
-  estado                  Boolean   @default(true)
-  fecha_creacion          DateTime  @default(now()) @db.Timestamptz
-  usuario_creacion        Int?
-  fecha_actualizacion     DateTime? @db.Timestamptz
-  usuario_actualizacion   Int?
-  fecha_eliminacion       DateTime? @db.Timestamptz
-  observaciones           String?   @db.VarChar(250)
+  id_sucursal           Int         @id @default(autoincrement())
+  id_empresa            Int
+  nombre                String      @db.VarChar(120)
+  codigo                String?     @db.VarChar(20)
+  tipo_sucursal         String?     @db.VarChar(30)
+  es_sucursal_principal Boolean     @default(false)
+  direccion             String?     @db.VarChar(200)
+  ciudad                String?     @db.VarChar(100)
+  departamento          String?     @db.VarChar(100)
+  pais                  String?     @db.VarChar(80)
+  telefono              String?     @db.VarChar(30)
+  telefono_secundario   String?     @db.VarChar(30)
+  correo                String?     @db.VarChar(120)
+  latitud               Decimal?    @db.Decimal(10, 7)
+  longitud              Decimal?    @db.Decimal(10, 7)
+  horario_apertura      DateTime?   @db.Time(6)
+  horario_cierre        DateTime?   @db.Time(6)
+  zona_horaria          String?     @db.VarChar(60)
+  responsable_nombre    String?     @db.VarChar(120)
+  responsable_telefono  String?     @db.VarChar(30)
+  eslogan               String?     @db.VarChar(120)
+  imagen                Bytes?
+  formato               String?     @db.VarChar(50)
+  estado                Boolean     @default(true)
+  fecha_creacion        DateTime    @default(now()) @db.Timestamptz(6)
+  usuario_creacion      Int?
+  fecha_actualizacion   DateTime?   @db.Timestamptz(6)
+  usuario_actualizacion Int?
+  fecha_eliminacion     DateTime?   @db.Timestamptz(6)
+  observaciones         String?     @db.VarChar(250)
+  areas                 Area[]
+  licencias             Licencia[]
+  recepciones           Recepcion[]
+  empresa               Empresa     @relation(fields: [id_empresa], references: [id_empresa])
 
-  empresa     Empresa     @relation(fields: [id_empresa], references: [id_empresa])
-  licencias   Licencia[]
-  areas       Area[]
-  
-  recepciones Recepcion[] 
-
-  @@map("sucursal")
   @@unique([id_empresa, codigo])
   @@index([id_empresa, estado])
   @@index([tipo_sucursal])
+  @@map("sucursal")
 }
 
 model Area {
-  id_area                Int       @id @default(autoincrement())
+  id_area                Int           @id @default(autoincrement())
   id_sucursal            Int
-  nombre                 String    @db.VarChar(100)
-  codigo                 String    @db.VarChar(30)
-  tipo_area              String?   @db.VarChar(30)
-  modulo_principal       String?   @db.VarChar(50)
+  nombre                 String        @db.VarChar(100)
+  codigo                 String        @db.VarChar(30)
+  tipo_area              String?       @db.VarChar(30)
+  modulo_principal       String?       @db.VarChar(50)
   id_area_padre          Int?
-  es_area_operativa      Boolean   @default(true)
-  orden_visual           Int?      @db.SmallInt
-  observaciones          String?   @db.VarChar(250)
+  es_area_operativa      Boolean       @default(true)
+  orden_visual           Int?          @db.SmallInt
+  observaciones          String?       @db.VarChar(250)
   id_usuario_responsable Int?
-  responsable_nombre     String?   @db.VarChar(120)
-  responsable_telefono   String?   @db.VarChar(30)
-  responsable_correo     String?   @db.VarChar(120)
-  estado                 Boolean   @default(true)
-  fecha_creacion         DateTime  @default(now()) @db.Timestamptz
+  responsable_nombre     String?       @db.VarChar(120)
+  responsable_telefono   String?       @db.VarChar(30)
+  responsable_correo     String?       @db.VarChar(120)
+  estado                 Boolean       @default(true)
+  fecha_creacion         DateTime      @default(now()) @db.Timestamptz(6)
   usuario_creacion       Int?
-  fecha_actualizacion    DateTime? @db.Timestamptz
+  fecha_actualizacion    DateTime?     @db.Timestamptz(6)
   usuario_actualizacion  Int?
-  fecha_eliminacion      DateTime? @db.Timestamptz
+  fecha_eliminacion      DateTime?     @db.Timestamptz(6)
+  sucursal               Sucursal      @relation(fields: [id_sucursal], references: [id_sucursal])
+  usuario_responsable    Usuario?      @relation("AreaResponsable", fields: [id_usuario_responsable], references: [id])
+  empleados              Empleado[]
+  usuario_areas          UsuarioArea[]
 
-  sucursal            Sucursal      @relation(fields: [id_sucursal], references: [id_sucursal])
-  usuario_responsable Usuario?      @relation("AreaResponsable", fields: [id_usuario_responsable], references: [id])
-  empleados           Empleado[]
-  usuario_areas       UsuarioArea[]
-
-  @@map("area")
   @@unique([id_sucursal, codigo])
   @@index([id_sucursal, estado])
   @@index([modulo_principal])
+  @@map("area")
 }
 
 model Empleado {
@@ -202,54 +192,48 @@ model Empleado {
   fecha_baja                 DateTime? @db.Date
   estado_laboral             String    @default("ACTIVO") @db.VarChar(20)
   observaciones              String?   @db.VarChar(250)
-  fecha_creacion             DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion             DateTime  @default(now()) @db.Timestamptz(6)
   usuario_creacion           Int?
-  fecha_actualizacion        DateTime? @db.Timestamptz
+  fecha_actualizacion        DateTime? @db.Timestamptz(6)
   usuario_actualizacion      Int?
-  fecha_eliminacion          DateTime? @db.Timestamptz
+  fecha_eliminacion          DateTime? @db.Timestamptz(6)
+  area                       Area      @relation(fields: [id_area], references: [id_area])
+  usuario                    Usuario?  @relation("EmpleadoUsuario", fields: [id_usuario], references: [id])
 
-  area    Area     @relation(fields: [id_area], references: [id_area])
-  usuario Usuario? @relation("EmpleadoUsuario", fields: [id_usuario], references: [id])
-
-  @@map("empleado")
   @@index([id_area, estado_laboral])
+  @@map("empleado")
 }
 
-// ==========================================
-// 2. SEGURIDAD Y ACCESO (RBAC)
-// ==========================================
-
 model Usuario {
-  id                    Int       @id @default(autoincrement())
-  usuario               String    @unique @db.VarChar(50) 
-  clave_hash            String    @db.Text              
-  ultimo_cambio_clave   DateTime? @db.Timestamptz
-  requiere_cambio_clave Boolean   @default(false)
-  nombre_visible        String    @db.VarChar(150)      
-  correo                String?   @db.VarChar(150)
-  telefono              String?   @db.VarChar(30)
-  intentos_fallidos     Int       @default(0) @db.SmallInt
-  bloqueado_hasta       DateTime? @db.Timestamptz
-  es_administrador      Boolean   @default(false)
-  ultimo_login          DateTime? @db.Timestamptz
-  ultimo_ip             String?   @db.VarChar(45)
-  activo                Boolean   @default(true)        
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
+  id                    Int           @id @default(autoincrement())
+  usuario               String        @unique @db.VarChar(50)
+  clave_hash            String
+  ultimo_cambio_clave   DateTime?     @db.Timestamptz(6)
+  requiere_cambio_clave Boolean       @default(false)
+  nombre_visible        String        @db.VarChar(150)
+  correo                String?       @db.VarChar(150)
+  telefono              String?       @db.VarChar(30)
+  intentos_fallidos     Int           @default(0) @db.SmallInt
+  bloqueado_hasta       DateTime?     @db.Timestamptz(6)
+  es_administrador      Boolean       @default(false)
+  ultimo_login          DateTime?     @db.Timestamptz(6)
+  ultimo_ip             String?       @db.VarChar(45)
+  activo                Boolean       @default(true)
+  fecha_creacion        DateTime      @default(now()) @db.Timestamptz(6)
   usuario_creacion      Int?
-  fecha_actualizacion   DateTime? @db.Timestamptz
+  fecha_actualizacion   DateTime?     @db.Timestamptz(6)
   usuario_actualizacion Int?
-  fecha_eliminacion     DateTime? @db.Timestamptz
-  observaciones         String?   @db.VarChar(250)
+  fecha_eliminacion     DateTime?     @db.Timestamptz(6)
+  observaciones         String?       @db.VarChar(250)
+  areas_responsable     Area[]        @relation("AreaResponsable")
+  empleado_asociado     Empleado?     @relation("EmpleadoUsuario")
+  logs_sistemas         LogSistema[]
+  usuario_areas         UsuarioArea[]
+  roles                 UsuarioRol[]
 
-  empleado_asociado Empleado?     @relation("EmpleadoUsuario")
-  areas_responsable Area[]        @relation("AreaResponsable")
-  usuario_areas     UsuarioArea[]
-  roles             UsuarioRol[]
-  logs_sistemas     LogSistema[]
-
-  @@map("usuario") // Nombre en DB: "usuario"
   @@index([correo])
   @@index([activo])
+  @@map("usuario")
 }
 
 model UsuarioArea {
@@ -257,85 +241,80 @@ model UsuarioArea {
   usuario_id          Int
   id_area             Int
   es_area_principal   Boolean   @default(false)
-  fecha_asignacion    DateTime  @default(now()) @db.Timestamptz
+  fecha_asignacion    DateTime  @default(now()) @db.Timestamptz(6)
   usuario_asignacion  Int?
-  fecha_desasignacion DateTime? @db.Timestamptz
+  fecha_desasignacion DateTime? @db.Timestamptz(6)
   activo              Boolean   @default(true)
+  area                Area      @relation(fields: [id_area], references: [id_area])
+  usuario             Usuario   @relation(fields: [usuario_id], references: [id])
 
-  usuario Usuario @relation(fields: [usuario_id], references: [id])
-  area    Area    @relation(fields: [id_area], references: [id_area])
-
-  @@map("usuario_area")
   @@unique([usuario_id, id_area])
   @@index([usuario_id, es_area_principal])
+  @@map("usuario_area")
 }
 
 model Rol {
-  id_rol                Int       @id @default(autoincrement())
-  codigo                String    @unique @db.VarChar(50) 
-  nombre                String    @db.VarChar(120)
-  descripcion           String?   @db.VarChar(250)
-  es_rol_sistema        Boolean   @default(false)
-  prioridad             Int       @default(100) @db.SmallInt
-  estado                Boolean   @default(true)
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
+  id_rol                Int          @id @default(autoincrement())
+  codigo                String       @unique @db.VarChar(50)
+  nombre                String       @db.VarChar(120)
+  descripcion           String?      @db.VarChar(250)
+  es_rol_sistema        Boolean      @default(false)
+  prioridad             Int          @default(100) @db.SmallInt
+  estado                Boolean      @default(true)
+  fecha_creacion        DateTime     @default(now()) @db.Timestamptz(6)
   usuario_creacion      Int?
-  fecha_actualizacion   DateTime? @db.Timestamptz
+  fecha_actualizacion   DateTime?    @db.Timestamptz(6)
   usuario_actualizacion Int?
-  fecha_eliminacion     DateTime? @db.Timestamptz
-  observaciones         String?   @db.VarChar(250)
+  fecha_eliminacion     DateTime?    @db.Timestamptz(6)
+  observaciones         String?      @db.VarChar(250)
+  permisos              RolPermiso[]
+  usuarios              UsuarioRol[]
 
-  permisos RolPermiso[]
-  usuarios UsuarioRol[]
-
-  @@map("rol")
   @@index([estado])
   @@index([es_rol_sistema])
+  @@map("rol")
 }
 
 model Permiso {
-  id_permiso     Int      @id @default(autoincrement())
-  codigo         String   @unique @db.VarChar(100)
-  modulo         String   @db.VarChar(50)
-  accion         String   @db.VarChar(50)
-  descripcion    String?  @db.VarChar(250)
-  es_critico     Boolean  @default(false)
-  estado         Boolean  @default(true)
-  fecha_creacion DateTime @default(now()) @db.Timestamptz
+  id_permiso     Int          @id @default(autoincrement())
+  codigo         String       @unique @db.VarChar(100)
+  modulo         String       @db.VarChar(50)
+  accion         String       @db.VarChar(50)
+  descripcion    String?      @db.VarChar(250)
+  es_critico     Boolean      @default(false)
+  estado         Boolean      @default(true)
+  fecha_creacion DateTime     @default(now()) @db.Timestamptz(6)
+  roles          RolPermiso[]
 
-  roles RolPermiso[]
-
-  @@map("permiso")
   @@index([modulo])
+  @@map("permiso")
 }
 
 model RolPermiso {
   id_rol_permiso     Int      @id @default(autoincrement())
   id_rol             Int
   id_permiso         Int
-  fecha_asignacion   DateTime @default(now()) @db.Timestamptz
+  fecha_asignacion   DateTime @default(now()) @db.Timestamptz(6)
   usuario_asignacion Int?
+  permiso            Permiso  @relation(fields: [id_permiso], references: [id_permiso])
+  rol                Rol      @relation(fields: [id_rol], references: [id_rol])
 
-  rol     Rol     @relation(fields: [id_rol], references: [id_rol])
-  permiso Permiso @relation(fields: [id_permiso], references: [id_permiso])
-
-  @@map("rol_permiso")
   @@unique([id_rol, id_permiso])
+  @@map("rol_permiso")
 }
 
 model UsuarioRol {
   id_usuario_rol     Int      @id @default(autoincrement())
   usuario_id         Int
   id_rol             Int
-  fecha_asignacion   DateTime @default(now()) @db.Timestamptz
+  fecha_asignacion   DateTime @default(now()) @db.Timestamptz(6)
   usuario_asignacion Int?
   activo             Boolean  @default(true)
+  rol                Rol      @relation(fields: [id_rol], references: [id_rol])
+  usuario            Usuario  @relation(fields: [usuario_id], references: [id])
 
-  usuario Usuario @relation(fields: [usuario_id], references: [id])
-  rol     Rol     @relation(fields: [id_rol], references: [id_rol])
-
-  @@map("usuario_rol")
   @@unique([usuario_id, id_rol])
+  @@map("usuario_rol")
 }
 
 model LogSistema {
@@ -367,501 +346,489 @@ model LogSistema {
   user_agent      String?  @db.VarChar(250)
   exito           Boolean  @default(true)
   error_mensaje   String?  @db.VarChar(250)
-  error_detalle   String?  @db.Text
-  fecha_evento    DateTime @default(now()) @db.Timestamptz
+  error_detalle   String?
+  fecha_evento    DateTime @default(now()) @db.Timestamptz(6)
+  usuario         Usuario? @relation(fields: [usuario_id], references: [id])
 
-  usuario Usuario? @relation(fields: [usuario_id], references: [id])
-
-  @@map("log_sistema")
   @@index([fecha_evento])
   @@index([usuario_login])
   @@index([id_accion, id_tabla])
   @@index([tabla_nombre, id_entidad])
   @@index([correlacion_id])
   @@index([id_empresa, id_sucursal])
+  @@map("log_sistema")
 }
 
-// ==========================================
-// 3. MÓDULO OPERATIVO (CATÁLOGOS BASE)
-// ==========================================
-
 model Departamento {
-  id_departamento      Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
-  estado               Boolean   @default(true)
+  id_departamento      Int         @id @default(autoincrement())
+  nombre               String      @db.VarChar(100)
+  estado               Boolean     @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime    @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?   @db.Timestamptz(6)
   municipios           Municipio[]
+
   @@map("departamento")
 }
 
 model Municipio {
-  id_municipio         Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
+  id_municipio         Int          @id @default(autoincrement())
+  nombre               String       @db.VarChar(100)
   id_departamento      Int
-  estado               Boolean   @default(true)
+  estado               Boolean      @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime     @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
-  departamento         Departamento @relation(fields: [id_departamento], references: [id_departamento])
-  transportes          Transporte[]
+  fecha_modificacion   DateTime?    @db.Timestamptz(6)
   conductores          Conductor[]
+  departamento         Departamento @relation(fields: [id_departamento], references: [id_departamento])
   proveedores          Proveedor[]
   recepciones          Recepcion[]
+  transportes          Transporte[]
+
   @@map("municipio")
 }
 
 model Transporte {
-  id_transporte        Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(150)
-  rtn                  String?   @db.VarChar(20)
+  id_transporte        Int         @id @default(autoincrement())
+  nombre               String      @db.VarChar(150)
+  rtn                  String?     @db.VarChar(20)
   id_municipio         Int
-  direccion            String?   @db.VarChar(250)
-  contacto             String?   @db.VarChar(100)
-  telefono             String?   @db.VarChar(30)
-  estado               Boolean   @default(true)
+  direccion            String?     @db.VarChar(250)
+  contacto             String?     @db.VarChar(100)
+  telefono             String?     @db.VarChar(30)
+  estado               Boolean     @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime    @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
-  municipio            Municipio @relation(fields: [id_municipio], references: [id_municipio])
+  fecha_modificacion   DateTime?   @db.Timestamptz(6)
   conductores          Conductor[]
+  municipio            Municipio   @relation(fields: [id_municipio], references: [id_municipio])
+
   @@map("transporte")
 }
 
 model Conductor {
-  id_conductor         Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(150)
-  dni                  String?   @db.VarChar(20)
-  licencia             String?   @db.VarChar(50)
+  id_conductor         Int         @id @default(autoincrement())
+  nombre               String      @db.VarChar(150)
+  licencia             String?     @db.VarChar(50)
   id_municipio         Int?
   id_transporte        Int?
-  telefono             String?   @db.VarChar(30)
-  estado               Boolean   @default(true)
+  telefono             String?     @db.VarChar(30)
+  estado               Boolean     @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime    @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?   @db.Timestamptz(6)
+  dni                  String?     @db.VarChar(20)
   municipio            Municipio?  @relation(fields: [id_municipio], references: [id_municipio])
   transporte           Transporte? @relation(fields: [id_transporte], references: [id_transporte])
   recepciones          Recepcion[]
+
   @@map("conductor")
 }
 
 model Proveedor {
-  id_proveedor         Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(150)
-  rtn                  String?   @db.VarChar(20)
+  id_proveedor         Int                @id @default(autoincrement())
+  nombre               String             @db.VarChar(150)
+  rtn                  String?            @db.VarChar(20)
   id_municipio         Int
-  direccion            String?   @db.VarChar(250)
-  telefono             String?   @db.VarChar(30)
-  estado               Boolean   @default(true)
+  direccion            String?            @db.VarChar(250)
+  telefono             String?            @db.VarChar(30)
+  estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
-  municipio            Municipio @relation(fields: [id_municipio], references: [id_municipio])
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   detalles_recepcion   DetalleRecepcion[]
+  municipio            Municipio          @relation(fields: [id_municipio], references: [id_municipio])
+
   @@map("proveedor")
 }
 
 model PlacaCabezal {
-  id_placa_cabezal     Int       @id @default(autoincrement())
-  placa                String    @unique @db.VarChar(20)
-  estado               Boolean   @default(true)
-  usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
+  id_placa_cabezal         Int             @id @default(autoincrement())
+  placa                    String          @unique @db.VarChar(20)
+  estado                   Boolean         @default(true)
+  usuario_creacion         Int?
+  fecha_creacion           DateTime        @default(now()) @db.Timestamptz(6)
+  usuario_modificacion     Int?
+  fecha_modificacion       DateTime?       @db.Timestamptz(6)
+  cambios_cabezal_entrante CambioCabezal[] @relation("CabezalEntrante")
+  cambios_cabezal_saliente CambioCabezal[] @relation("CabezalSaliente")
+  recepciones              Recepcion[]
 
-  recepciones                 Recepcion[]
-  cambios_cabezal_saliente    CambioCabezal[] @relation("CabezalSaliente")
-  cambios_cabezal_entrante    CambioCabezal[] @relation("CabezalEntrante")
   @@map("placa_cabezal")
 }
 
 model PlacaFurgon {
-  id_placa_furgon      Int       @id @default(autoincrement())
-  placa                String    @unique @db.VarChar(20)
-  estado               Boolean   @default(true)
+  id_placa_furgon      Int         @id @default(autoincrement())
+  placa                String      @unique @db.VarChar(20)
+  estado               Boolean     @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime    @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?   @db.Timestamptz(6)
   recepciones          Recepcion[]
+
   @@map("placa_furgon")
 }
 
 model Cosecha {
-  id_cosecha           Int       @id @default(autoincrement())
-  cosecha              String    @unique @db.VarChar(50)
-  estado               Boolean   @default(true)
-  cosecha_actual       Boolean   @default(false)
+  id_cosecha           Int         @id @default(autoincrement())
+  cosecha              String      @unique @db.VarChar(50)
+  estado               Boolean     @default(true)
+  cosecha_actual       Boolean     @default(false)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime    @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?   @db.Timestamptz(6)
   recepciones          Recepcion[]
+
   @@map("cosecha")
 }
 
 model EstadoTransaccion {
-  id_estado_transaccion Int      @id @default(autoincrement())
-  nombre                String   @unique @db.VarChar(100)
-  estado                Boolean  @default(true)
+  id_estado_transaccion Int                @id @default(autoincrement())
+  nombre                String             @unique @db.VarChar(100)
+  estado                Boolean            @default(true)
   usuario_creacion      Int?
-  fecha_creacion        DateTime @default(now()) @db.Timestamptz
+  fecha_creacion        DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
-
-  detalles_recepcion    DetalleRecepcion[]
+  fecha_modificacion    DateTime?          @db.Timestamptz(6)
   analisis_calidad      AnalisisCalidad[]
+  detalles_recepcion    DetalleRecepcion[]
+
   @@map("estado_transaccion")
 }
 
 model Bodega {
-  id_bodega            Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
-  externa              Boolean   @default(false)
-  estado               Boolean   @default(true)
+  id_bodega            Int                @id @default(autoincrement())
+  nombre               String             @db.VarChar(100)
+  externa              Boolean            @default(false)
+  estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
-  estibas              Estiba[]
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   detalles_recepcion   DetalleRecepcion[]
+  estibas              Estiba[]
+
   @@map("bodega")
 }
 
 model Estiba {
-  id_estibas           Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
+  id_estibas           Int                @id @default(autoincrement())
+  nombre               String             @db.VarChar(100)
   id_bodega            Int
-  estado               Boolean   @default(true)
+  estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
-  bodega               Bodega    @relation(fields: [id_bodega], references: [id_bodega])
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
+  bodega               Bodega             @relation(fields: [id_bodega], references: [id_bodega])
   nota_patio_detalles  NotaPatioDetalle[]
+
   @@map("estiba")
 }
 
 model Catador {
-  id_catador           Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(150)
-  estado               Boolean   @default(true)
+  id_catador           Int               @id @default(autoincrement())
+  nombre               String            @db.VarChar(150)
+  estado               Boolean           @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime          @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?         @db.Timestamptz(6)
   analisis_calidad     AnalisisCalidad[]
+
   @@map("catador")
 }
 
 model Calidad {
-  id_calidad           Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
-  estado               Boolean   @default(true)
+  id_calidad           Int               @id @default(autoincrement())
+  nombre               String            @db.VarChar(100)
+  estado               Boolean           @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime          @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?         @db.Timestamptz(6)
   analisis_calidad     AnalisisCalidad[]
+
   @@map("calidad")
 }
 
 model Defecto {
-  id_defecto           Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
-  estado               Boolean   @default(true)
+  id_defecto           Int                @id @default(autoincrement())
+  nombre               String             @db.VarChar(100)
+  estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   analisis_defectos    AnalisisDefectos[]
+
   @@map("defecto")
 }
 
 model Zaranda {
-  id_zaranda           Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(50)
-  estado               Boolean   @default(true)
+  id_zaranda           Int                @id @default(autoincrement())
+  nombre               String             @db.VarChar(50)
+  estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   analisis_zarandas    AnalisisZarandas[]
+
   @@map("zaranda")
 }
 
 model Taza {
-  id_tazas             Int       @id @default(autoincrement())
-  nombre               String    @db.VarChar(100)
-  estado               Boolean   @default(true)
+  id_tazas             Int             @id @default(autoincrement())
+  nombre               String          @db.VarChar(100)
+  estado               Boolean         @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime        @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
+  fecha_modificacion   DateTime?       @db.Timestamptz(6)
   analisis_tazas       AnalisisTazas[]
+
   @@map("taza")
 }
 
-// ==========================================
-// 4. MÓDULO OPERATIVO (TRANSACCIONES)
-// ==========================================
-
 model Recepcion {
-  id_recepcion         Int       @id @default(autoincrement())
   id_sucursal          Int
+  numero_entrada       String             @unique @db.VarChar(50)
+  tipo_vehiculo        String             @db.VarChar(50)
+  estado               Boolean            @default(true)
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
+  fecha_entrada        DateTime           @default(now()) @db.Timestamptz(6)
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
+  id_conductor         Int
   id_cosecha           Int
-  numero_entrada       String    @unique @db.VarChar(50)
-  fecha_entrada        DateTime  @default(now()) @db.Timestamptz
-  tipo_vehiculo        String    @db.VarChar(50)
+  id_municipio         Int
   id_placa_cabezal     Int
   id_placa_furgon      Int?
-  id_conductor         Int
-  id_municipio         Int
-  marchamo             String?   @db.VarChar(100)
-  estado               Boolean   @default(true)
-  cantidad_impresiones Int       @default(0)
-  observaciones        String?   @db.Text
+  id_recepcion         Int                @id @default(autoincrement())
+  marchamo             String?            @db.VarChar(100)
+  observaciones        String?
   usuario_creacion     Int?
-  fecha_creacion       DateTime  @default(now()) @db.Timestamptz
   usuario_modificacion Int?
-  fecha_modificacion   DateTime? @db.Timestamptz
-
-  sucursal             Sucursal  @relation(fields: [id_sucursal], references: [id_sucursal])
-  cosecha              Cosecha   @relation(fields: [id_cosecha], references: [id_cosecha])
-  placa_cabezal        PlacaCabezal @relation(fields: [id_placa_cabezal], references: [id_placa_cabezal])
-  placa_furgon         PlacaFurgon? @relation(fields: [id_placa_furgon], references: [id_placa_furgon])
-  conductor            Conductor @relation(fields: [id_conductor], references: [id_conductor])
-  municipio            Municipio @relation(fields: [id_municipio], references: [id_municipio])
-  
+  cantidad_impresiones Int                @default(0)
   detalles             DetalleRecepcion[]
+  conductor            Conductor          @relation(fields: [id_conductor], references: [id_conductor])
+  cosecha              Cosecha            @relation(fields: [id_cosecha], references: [id_cosecha])
+  municipio            Municipio          @relation(fields: [id_municipio], references: [id_municipio])
+  placa_cabezal        PlacaCabezal       @relation(fields: [id_placa_cabezal], references: [id_placa_cabezal])
+  placa_furgon         PlacaFurgon?       @relation(fields: [id_placa_furgon], references: [id_placa_furgon])
+  sucursal             Sucursal           @relation(fields: [id_sucursal], references: [id_sucursal])
+
   @@map("recepcion")
 }
 
 model DetalleRecepcion {
-  id_detalle_recepcion   Int       @id @default(autoincrement())
-  id_recepcion           Int
-  id_proveedor           Int
-  id_estado_transaccion  Int
-  cantidad_sacos         Int
-  cantidad_qq            Decimal   @db.Decimal(10, 2)
-  remision               String    @db.VarChar(50)
-  fecha_entrada_bascula  DateTime? @db.Timestamptz
-  pesada_entrada         Decimal?  @db.Decimal(10, 2)
-  fecha_salida_bascula   DateTime? @db.Timestamptz
-  pesada_salida          Decimal?  @db.Decimal(10, 2)
-  id_bodega_descargada   Int?
+  id_detalle_recepcion       Int               @id @default(autoincrement())
+  id_recepcion               Int
+  id_proveedor               Int
+  id_estado_transaccion      Int
+  cantidad_sacos             Int
+  cantidad_qq                Decimal           @db.Decimal(10, 2)
+  remision                   String            @db.VarChar(50)
+  fecha_entrada_bascula      DateTime?         @db.Timestamptz(6)
+  pesada_entrada             Decimal?          @db.Decimal(10, 2)
+  fecha_salida_bascula       DateTime?         @db.Timestamptz(6)
+  pesada_salida              Decimal?          @db.Decimal(10, 2)
+  id_bodega_descargada       Int?
   cantidad_sacos_descargados Int?
-  peso_neto              Decimal?  @db.Decimal(10, 2)
-  estado                 Boolean   @default(true)
-  observaciones          String?   @db.Text
-  usuario_creacion       Int?
-  fecha_creacion         DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion   Int?
-  fecha_modificacion     DateTime? @db.Timestamptz
-  id_tipo_empaque        Int?
-  id_tipo_cafe           Int?
-  id_tipo_remision       Int?
+  peso_neto                  Decimal?          @db.Decimal(10, 2)
+  estado                     Boolean           @default(true)
+  observaciones              String?
+  usuario_creacion           Int?
+  fecha_creacion             DateTime          @default(now()) @db.Timestamptz(6)
+  usuario_modificacion       Int?
+  fecha_modificacion         DateTime?         @db.Timestamptz(6)
+  id_tipo_empaque            Int?
+  id_tipo_cafe               Int?
+  id_tipo_remision           Int?
+  analisis_calidad           AnalisisCalidad[]
+  cambios_cabezal            CambioCabezal[]
+  bodega_descargada          Bodega?           @relation(fields: [id_bodega_descargada], references: [id_bodega])
+  estado_transaccion         EstadoTransaccion @relation(fields: [id_estado_transaccion], references: [id_estado_transaccion])
+  proveedor                  Proveedor         @relation(fields: [id_proveedor], references: [id_proveedor])
+  recepcion                  Recepcion         @relation(fields: [id_recepcion], references: [id_recepcion], onDelete: Cascade)
+  tipo_empaque               tipo_empaque?     @relation(fields: [id_tipo_empaque], references: [id_tipo_empaque], onDelete: NoAction, onUpdate: NoAction)
+  tipo_cafe                  tipo_cafe?        @relation(fields: [id_tipo_cafe], references: [id_tipo_cafe], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_cafe")
+  tipo_remision              tipo_remision?    @relation(fields: [id_tipo_remision], references: [id_tipo_remision], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_remision")
+  notas_patio                NotaDePatio[]
+  notas_peso                 NotaDePeso[]
 
-  recepcion              Recepcion @relation(fields: [id_recepcion], references: [id_recepcion], onDelete: Cascade)
-  proveedor              Proveedor @relation(fields: [id_proveedor], references: [id_proveedor])
-  estado_transaccion     EstadoTransaccion @relation(fields: [id_estado_transaccion], references: [id_estado_transaccion])
-  bodega_descargada      Bodega?   @relation(fields: [id_bodega_descargada], references: [id_bodega])
-  tipo_empaque           tipo_empaque? @relation(fields: [id_tipo_empaque], references: [id_tipo_empaque], onDelete: NoAction, onUpdate: NoAction)
-  tipo_cafe              tipo_cafe?    @relation(fields: [id_tipo_cafe], references: [id_tipo_cafe], onDelete: NoAction, onUpdate: NoAction)
-  tipo_remision          tipo_remision? @relation(fields: [id_tipo_remision], references: [id_tipo_remision], onDelete: NoAction, onUpdate: NoAction)
-
-  cambios_cabezal        CambioCabezal[]
-  analisis_calidad       AnalisisCalidad[]
-  notas_patio            NotaDePatio[]
-  notas_peso             NotaDePeso[]
   @@map("detalle_recepcion")
 }
 
 model CambioCabezal {
-  id_cambio_cabezal          Int       @id @default(autoincrement())
-  id_detalle_recepcion       Int
-  id_placa_cabezal_saliente  Int
-  peso_cabezal_saliente      Decimal   @db.Decimal(10, 2)
-  id_placa_cabezal_entrante  Int?
-  peso_cabezal_entrante      Decimal?  @db.Decimal(10, 2)
-  peso_bruto                 Decimal?  @db.Decimal(10, 2)
-  estado                     Boolean   @default(true)
-  usuario_creacion           Int?
-  fecha_creacion             DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion       Int?
-  fecha_modificacion         DateTime? @db.Timestamptz
+  id_cambio_cabezal         Int              @id @default(autoincrement())
+  id_detalle_recepcion      Int
+  id_placa_cabezal_saliente Int
+  peso_cabezal_saliente     Decimal          @db.Decimal(10, 2)
+  id_placa_cabezal_entrante Int?
+  peso_cabezal_entrante     Decimal?         @db.Decimal(10, 2)
+  peso_bruto                Decimal?         @db.Decimal(10, 2)
+  estado                    Boolean          @default(true)
+  usuario_creacion          Int?
+  fecha_creacion            DateTime         @default(now()) @db.Timestamptz(6)
+  usuario_modificacion      Int?
+  fecha_modificacion        DateTime?        @db.Timestamptz(6)
+  detalle_recepcion         DetalleRecepcion @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
+  placa_cabezal_entrante    PlacaCabezal?    @relation("CabezalEntrante", fields: [id_placa_cabezal_entrante], references: [id_placa_cabezal])
+  placa_cabezal_saliente    PlacaCabezal     @relation("CabezalSaliente", fields: [id_placa_cabezal_saliente], references: [id_placa_cabezal])
 
-  detalle_recepcion          DetalleRecepcion @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
-  placa_cabezal_saliente     PlacaCabezal     @relation("CabezalSaliente", fields: [id_placa_cabezal_saliente], references: [id_placa_cabezal])
-  placa_cabezal_entrante     PlacaCabezal?    @relation("CabezalEntrante", fields: [id_placa_cabezal_entrante], references: [id_placa_cabezal])
   @@map("cambio_cabezal")
 }
 
 model AnalisisCalidad {
-  id_analisis_calidad   Int       @id @default(autoincrement())
+  id_analisis_calidad   Int                @id @default(autoincrement())
   id_detalle_recepcion  Int
   id_estado_transaccion Int
-  tipo_analisis         String    @db.VarChar(50) // Ej: Muestra Previa, Muestra General
-  numero_analisis       String    @db.VarChar(50)
-  fecha_analisis        DateTime  @default(now()) @db.Timestamptz
+  tipo_analisis         String             @db.VarChar(50)
+  numero_analisis       String             @db.VarChar(50)
+  fecha_analisis        DateTime           @default(now()) @db.Timestamptz(6)
   id_catador            Int
-  primer_rendimiento    Decimal?  @db.Decimal(10, 2)
-  segundo_rendimiento   Decimal?  @db.Decimal(10, 2)
-  humedad               Decimal?  @db.Decimal(5, 2)
-  dano                  Decimal?  @db.Decimal(5, 2)
+  primer_rendimiento    Decimal?           @db.Decimal(10, 2)
+  segundo_rendimiento   Decimal?           @db.Decimal(10, 2)
+  humedad               Decimal?           @db.Decimal(5, 2)
+  dano                  Decimal?           @db.Decimal(5, 2)
   id_calidad            Int?
-  observaciones         String?   @db.Text
+  observaciones         String?
   usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion        DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
-
-  detalle_recepcion     DetalleRecepcion @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
-  estado_transaccion    EstadoTransaccion @relation(fields: [id_estado_transaccion], references: [id_estado_transaccion])
-  catador               Catador   @relation(fields: [id_catador], references: [id_catador])
-  calidad               Calidad?  @relation(fields: [id_calidad], references: [id_calidad])
-
+  fecha_modificacion    DateTime?          @db.Timestamptz(6)
+  calidad               Calidad?           @relation(fields: [id_calidad], references: [id_calidad])
+  catador               Catador            @relation(fields: [id_catador], references: [id_catador])
+  detalle_recepcion     DetalleRecepcion   @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
+  estado_transaccion    EstadoTransaccion  @relation(fields: [id_estado_transaccion], references: [id_estado_transaccion])
   analisis_defectos     AnalisisDefectos[]
-  analisis_zarandas     AnalisisZarandas[]
   analisis_tazas        AnalisisTazas[]
+  analisis_zarandas     AnalisisZarandas[]
+
   @@map("analisis_calidad")
 }
 
 model AnalisisDefectos {
-  id_analisis_defectos  Int       @id @default(autoincrement())
-  id_analisis_calidad   Int
-  id_defecto            Int
-  cantidad              Decimal   @db.Decimal(10, 2)
-  usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
+  id_analisis_defectos Int             @id @default(autoincrement())
+  id_analisis_calidad  Int
+  id_defecto           Int
+  cantidad             Decimal         @db.Decimal(10, 2)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime        @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?       @db.Timestamptz(6)
+  analisis_calidad     AnalisisCalidad @relation(fields: [id_analisis_calidad], references: [id_analisis_calidad], onDelete: Cascade)
+  defecto              Defecto         @relation(fields: [id_defecto], references: [id_defecto])
 
-  analisis_calidad      AnalisisCalidad @relation(fields: [id_analisis_calidad], references: [id_analisis_calidad], onDelete: Cascade)
-  defecto               Defecto         @relation(fields: [id_defecto], references: [id_defecto])
   @@map("analisis_defectos")
 }
 
 model AnalisisZarandas {
-  id_analisis_zarandas  Int       @id @default(autoincrement())
-  id_analisis_calidad   Int
-  id_zaranda            Int
-  cantidad              Decimal   @db.Decimal(10, 2)
-  usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
+  id_analisis_zarandas Int             @id @default(autoincrement())
+  id_analisis_calidad  Int
+  id_zaranda           Int
+  cantidad             Decimal         @db.Decimal(10, 2)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime        @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?       @db.Timestamptz(6)
+  analisis_calidad     AnalisisCalidad @relation(fields: [id_analisis_calidad], references: [id_analisis_calidad], onDelete: Cascade)
+  zaranda              Zaranda         @relation(fields: [id_zaranda], references: [id_zaranda])
 
-  analisis_calidad      AnalisisCalidad @relation(fields: [id_analisis_calidad], references: [id_analisis_calidad], onDelete: Cascade)
-  zaranda               Zaranda         @relation(fields: [id_zaranda], references: [id_zaranda])
   @@map("analisis_zarandas")
 }
 
 model AnalisisTazas {
-  id_analisis_tazas     Int       @id @default(autoincrement())
-  id_analisis_calidad   Int
-  id_tazas              Int
-  cantidad              Decimal   @db.Decimal(10, 2)
-  usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
+  id_analisis_tazas    Int             @id @default(autoincrement())
+  id_analisis_calidad  Int
+  id_tazas             Int
+  cantidad             Decimal         @db.Decimal(10, 2)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime        @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?       @db.Timestamptz(6)
+  analisis_calidad     AnalisisCalidad @relation(fields: [id_analisis_calidad], references: [id_analisis_calidad], onDelete: Cascade)
+  taza                 Taza            @relation(fields: [id_tazas], references: [id_tazas])
 
-  analisis_calidad      AnalisisCalidad @relation(fields: [id_analisis_calidad], references: [id_analisis_calidad], onDelete: Cascade)
-  taza                  Taza            @relation(fields: [id_tazas], references: [id_tazas])
   @@map("analisis_tazas")
 }
 
 model NotaDePatio {
-  id_nota_patio         Int       @id @default(autoincrement())
-  id_detalle_recepcion  Int
-  numero_nota_patio     String    @unique @db.VarChar(50)
-  fecha_nota_patio      DateTime  @default(now()) @db.Timestamptz
-  observaciones         String?   @db.Text
-  estado                Boolean   @default(true)
-  usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
+  id_nota_patio        Int                @id @default(autoincrement())
+  id_detalle_recepcion Int
+  numero_nota_patio    String             @unique @db.VarChar(50)
+  fecha_nota_patio     DateTime           @default(now()) @db.Timestamptz(6)
+  observaciones        String?
+  estado               Boolean            @default(true)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
+  detalle_recepcion    DetalleRecepcion   @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
+  detalles             NotaPatioDetalle[]
 
-  detalle_recepcion     DetalleRecepcion @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
-  detalles              NotaPatioDetalle[]
   @@map("nota_de_patio")
 }
 
 model NotaPatioDetalle {
-  id_nota_patio_detalle Int       @id @default(autoincrement())
+  id_nota_patio_detalle Int         @id @default(autoincrement())
   id_nota_patio         Int
   id_estibas            Int
   cantidad_sacos        Int
-  estado                Boolean   @default(true)
+  estado                Boolean     @default(true)
   usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
+  fecha_creacion        DateTime    @default(now()) @db.Timestamptz(6)
   usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
-
-  nota_patio            NotaDePatio @relation(fields: [id_nota_patio], references: [id_nota_patio], onDelete: Cascade)
+  fecha_modificacion    DateTime?   @db.Timestamptz(6)
   estiba                Estiba      @relation(fields: [id_estibas], references: [id_estibas])
+  nota_patio            NotaDePatio @relation(fields: [id_nota_patio], references: [id_nota_patio], onDelete: Cascade)
+
   @@map("nota_patio_detalle")
 }
 
 model NotaDePeso {
-  id_nota_peso          Int       @id @default(autoincrement())
-  id_detalle_recepcion  Int
-  numero_nota_peso      String    @unique @db.VarChar(50)
-  fecha_nota_peso       DateTime  @default(now()) @db.Timestamptz
-  observaciones         String?   @db.Text
-  estado                Boolean   @default(true)
-  usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
+  id_nota_peso         Int               @id @default(autoincrement())
+  id_detalle_recepcion Int
+  numero_nota_peso     String            @unique @db.VarChar(50)
+  fecha_nota_peso      DateTime          @default(now()) @db.Timestamptz(6)
+  observaciones        String?
+  estado               Boolean           @default(true)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime          @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?         @db.Timestamptz(6)
+  detalle_recepcion    DetalleRecepcion  @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
+  detalles             NotaPesoDetalle[]
 
-  detalle_recepcion     DetalleRecepcion @relation(fields: [id_detalle_recepcion], references: [id_detalle_recepcion])
-  detalles              NotaPesoDetalle[]
   @@map("nota_de_peso")
 }
 
 model NotaPesoDetalle {
-  id_nota_peso_detalle  Int       @id @default(autoincrement())
-  id_nota_peso          Int
-  cantidad_sacos        Int
-  peso_bruto            Decimal   @db.Decimal(10, 2)
-  tara                  Decimal   @db.Decimal(10, 4)
-  porcentaje_descuento_humedad Decimal? @db.Decimal(5, 2)
-  porcentaje_descuento_calidad Decimal? @db.Decimal(5, 2)
-  porcentaje_descuento_peso    Decimal? @db.Decimal(5, 2)
-  porcentaje_descuento_dano    Decimal? @db.Decimal(5, 2)
-  peso_neto             Decimal   @db.Decimal(10, 2)
-  estado                Boolean   @default(true)
-  usuario_creacion      Int?
-  fecha_creacion        DateTime  @default(now()) @db.Timestamptz
-  usuario_modificacion  Int?
-  fecha_modificacion    DateTime? @db.Timestamptz
+  id_nota_peso_detalle         Int        @id @default(autoincrement())
+  id_nota_peso                 Int
+  cantidad_sacos               Int
+  peso_bruto                   Decimal    @db.Decimal(10, 2)
+  tara                         Decimal    @db.Decimal(10, 4)
+  porcentaje_descuento_humedad Decimal?   @db.Decimal(5, 2)
+  porcentaje_descuento_calidad Decimal?   @db.Decimal(5, 2)
+  porcentaje_descuento_peso    Decimal?   @db.Decimal(5, 2)
+  porcentaje_descuento_dano    Decimal?   @db.Decimal(5, 2)
+  peso_neto                    Decimal    @db.Decimal(10, 2)
+  estado                       Boolean    @default(true)
+  usuario_creacion             Int?
+  fecha_creacion               DateTime   @default(now()) @db.Timestamptz(6)
+  usuario_modificacion         Int?
+  fecha_modificacion           DateTime?  @db.Timestamptz(6)
+  nota_peso                    NotaDePeso @relation(fields: [id_nota_peso], references: [id_nota_peso], onDelete: Cascade)
 
-  nota_peso             NotaDePeso @relation(fields: [id_nota_peso], references: [id_nota_peso], onDelete: Cascade)
   @@map("nota_peso_detalle")
 }
 
@@ -870,9 +837,9 @@ model tipo_cafe {
   tipo_cafe            String             @db.VarChar(100)
   estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime           @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime?          @db.Timestamptz
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   detalle_recepcion    DetalleRecepcion[]
 }
 
@@ -882,9 +849,9 @@ model tipo_empaque {
   tara                 Decimal            @default(0) @db.Decimal(10, 4)
   estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime           @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime?          @db.Timestamptz
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   detalle_recepcion    DetalleRecepcion[]
 }
 
@@ -893,8 +860,8 @@ model tipo_remision {
   tipo_remision        String             @db.VarChar(100)
   estado               Boolean            @default(true)
   usuario_creacion     Int?
-  fecha_creacion       DateTime           @default(now()) @db.Timestamptz
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
   usuario_modificacion Int?
-  fecha_modificacion   DateTime?          @db.Timestamptz
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
   detalle_recepcion    DetalleRecepcion[]
 }
