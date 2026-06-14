@@ -1,5 +1,5 @@
 import { Printer, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
+import { Modal, Button, Form, Alert, Row, Col, Badge } from "react-bootstrap";
 import { useState } from "react";
 
 export interface DevolucionFaltosModalProps {

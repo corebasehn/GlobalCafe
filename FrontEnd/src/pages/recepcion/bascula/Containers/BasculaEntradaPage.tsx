@@ -186,7 +186,7 @@ export default function BasculaEntradaPage() {
 
   const trimmed = searchTerm.trim().toLowerCase();
   const filteredRecepciones = trimmed.length === 0
-    ? []
+    ? recepciones
     : recepciones.filter((r) =>
         r.numero_entrada?.toLowerCase().includes(trimmed) ||
         r.placa_cabezal?.placa?.toLowerCase().includes(trimmed) ||

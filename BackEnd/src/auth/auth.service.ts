@@ -54,4 +54,19 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload),
     };
   }
+
+  async cambiarClave(userId: number, claveActual: string, claveNueva: string) {
+    const user = await this.usersService.findById(userId);
+    if (!user) throw new UnauthorizedException('Usuario no encontrado');
+
+    const isMatch = await bcrypt.compare(claveActual, user.clave_hash);
+    if (!isMatch) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+
+    // Actualizar clave usando el servicio de usuarios
+    await this.usersService.update(userId, { password: claveNueva } as any, { id: userId, username: user.usuario, nombre: user.nombre_visible });
+    
+    return { message: 'Contraseña actualizada correctamente' };
+  }
 }

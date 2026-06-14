@@ -281,15 +281,45 @@ export class CatalogsController {
   @Get('tipos-cafe')
   getTiposCafe() { return this.catalogsService.getTiposCafe(); }
 
+  @Post('tipos-cafe')
+  createTipoCafe(@Body() data: any, @Request() req) {
+    return this.catalogsService.createTipoCafe(data, req.user.id);
+  }
+
+  @Patch('tipos-cafe/:id')
+  updateTipoCafe(@Param('id') id: string, @Body() data: any, @Request() req) {
+    return this.catalogsService.updateTipoCafe(+id, data, req.user.id);
+  }
+
   // ==========================================
   // TIPO REMISIÓN
   // ==========================================
   @Get('tipos-remision')
   getTiposRemision() { return this.catalogsService.getTiposRemision(); }
 
+  @Post('tipos-remision')
+  createTipoRemision(@Body() data: any, @Request() req) {
+    return this.catalogsService.createTipoRemision(data, req.user.id);
+  }
+
+  @Patch('tipos-remision/:id')
+  updateTipoRemision(@Param('id') id: string, @Body() data: any, @Request() req) {
+    return this.catalogsService.updateTipoRemision(+id, data, req.user.id);
+  }
+
   // ==========================================
   // TIPO EMPAQUE
   // ==========================================
   @Get('tipos-empaque')
   getTiposEmpaque() { return this.catalogsService.getTiposEmpaque(); }
+
+  @Post('tipos-empaque')
+  createTipoEmpaque(@Body() data: any, @Request() req) {
+    return this.catalogsService.createTipoEmpaque(data, req.user.id);
+  }
+
+  @Patch('tipos-empaque/:id')
+  updateTipoEmpaque(@Param('id') id: string, @Body() data: any, @Request() req) {
+    return this.catalogsService.updateTipoEmpaque(+id, data, req.user.id);
+  }
 }

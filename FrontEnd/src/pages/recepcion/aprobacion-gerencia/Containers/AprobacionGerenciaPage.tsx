@@ -1,5 +1,5 @@
 import { useState, useEffect, Fragment } from "react";
-import { Search, Beaker, ClipboardCheck, ShieldAlert } from "lucide-react";
+import { Search, Beaker, ShieldAlert } from "lucide-react";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 import { Card, Form, InputGroup, Tabs, Tab, Badge, Row, Col } from "react-bootstrap";
 import toast from "react-hot-toast";
@@ -15,9 +15,7 @@ import EvaluacionModal from "../Components/EvaluacionModal";
 import DevolucionModal from "../Components/DevolucionModal";
 import FaltosTable from "../../patio/Components/FaltosTable";
 import DevolucionFaltosModal from "../../patio/Components/DevolucionFaltosModal";
-import Pageheader from "../../../../layout/layoutcomponent/pageheader";
-
-const colors = moduleColors.recepcion;
+import { moduleColors } from "../../../../config/colors.config";
 
 export interface MuestraGerencia {
   id_analisis_calidad: number;

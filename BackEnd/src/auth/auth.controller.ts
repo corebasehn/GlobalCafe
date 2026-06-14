@@ -24,4 +24,10 @@ export class AuthController {
     // Aquí devolvemos OK para confirmar la acción.
     return { message: 'Sesión cerrada correctamente' };
   }
+
+  @UseGuards(AuthGuard)
+  @Post('cambiar-clave')
+  cambiarClave(@Body() body: { claveActual: string; claveNueva: string }, @Request() req) {
+    return this.authService.cambiarClave(req.user.id, body.claveActual, body.claveNueva);
+  }
 }

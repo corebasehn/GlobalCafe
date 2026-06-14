@@ -199,9 +199,6 @@ model Empleado {
   fecha_eliminacion          DateTime? @db.Timestamptz(6)
   area                       Area      @relation(fields: [id_area], references: [id_area])
   usuario                    Usuario?  @relation("EmpleadoUsuario", fields: [id_usuario], references: [id])
-  fecha_eliminacion          DateTime? @db.Timestamptz(6)
-  area                       Area      @relation(fields: [id_area], references: [id_area])
-  usuario                    Usuario?  @relation("EmpleadoUsuario", fields: [id_usuario], references: [id])
 
   @@index([id_area, estado_laboral])
   @@map("empleado")
@@ -349,9 +346,6 @@ model LogSistema {
   user_agent      String?  @db.VarChar(250)
   exito           Boolean  @default(true)
   error_mensaje   String?  @db.VarChar(250)
-  error_detalle   String?
-  fecha_evento    DateTime @default(now()) @db.Timestamptz(6)
-  usuario         Usuario? @relation(fields: [usuario_id], references: [id])
   error_detalle   String?
   fecha_evento    DateTime @default(now()) @db.Timestamptz(6)
   usuario         Usuario? @relation(fields: [usuario_id], references: [id])
@@ -839,7 +833,7 @@ model NotaPesoDetalle {
 }
 
 model TipoCafe {
-  id_tipo_cafe         Int                @id
+  id_tipo_cafe         Int                @id @default(autoincrement())
   tipo_cafe            String             @db.VarChar(100)
   estado               Boolean            @default(true)
   usuario_creacion     Int?
@@ -852,7 +846,7 @@ model TipoCafe {
 }
 
 model TipoRemision {
-  id_tipo_remision     Int                @id
+  id_tipo_remision     Int                @id @default(autoincrement())
   tipo_remision        String             @db.VarChar(100)
   estado               Boolean            @default(true)
   usuario_creacion     Int?
@@ -865,7 +859,7 @@ model TipoRemision {
 }
 
 model TipoEmpaque {
-  id_tipo_empaque      Int                @id
+  id_tipo_empaque      Int                @id @default(autoincrement())
   tipo_empaque         String             @db.VarChar(100)
   tara                 Decimal            @default(0) @db.Decimal(10, 4)
   estado               Boolean            @default(true)

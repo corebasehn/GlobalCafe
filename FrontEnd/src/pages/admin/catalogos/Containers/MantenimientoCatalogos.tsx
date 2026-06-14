@@ -21,8 +21,11 @@ import {
   getTazasApi, createTazaApi, updateTazaApi,
   getBodegasApi, createBodegaApi, updateBodegaApi,
   getEstibasApi, createEstibaApi, updateEstibaApi,
+  getTiposCafeApi, createTipoCafeApi, updateTipoCafeApi,
+  getTiposRemisionApi, createTipoRemisionApi, updateTipoRemisionApi,
+  getTiposEmpaqueApi, createTipoEmpaqueApi, updateTipoEmpaqueApi,
   Cosecha, Proveedor, Conductor, PlacaCabezal, PlacaFurgon, Municipio, Transporte, Departamento,
-  Catador, Calidad, Defecto, Zaranda, Taza, Bodega, Estiba
+  Catador, Calidad, Defecto, Zaranda, Taza, Bodega, Estiba, TipoCafe, TipoRemision, TipoEmpaque
 } from "../../../../api/catalogs.api";
 
 // Components
@@ -30,7 +33,7 @@ import CatalogosHeader from "../Components/CatalogosHeader";
 import CatalogosTable from "../Components/CatalogosTable";
 import CatalogosModal from "../Components/CatalogosModal";
 
-type TabType = "proveedores" | "transportes" | "conductores" | "placas-cabezal" | "placas-furgon" | "cosechas" | "departamentos" | "municipios" | "catadores" | "calidades" | "defectos" | "zarandas" | "tazas" | "bodegas" | "estibas";
+type TabType = "proveedores" | "transportes" | "conductores" | "placas-cabezal" | "placas-furgon" | "cosechas" | "departamentos" | "municipios" | "catadores" | "calidades" | "defectos" | "zarandas" | "tazas" | "bodegas" | "estibas" | "tipos-cafe" | "tipos-remision" | "tipos-empaque";
 
 export default function MantenimientoCatalogos() {
   const [activeTab, setActiveTab] = useState<TabType>("proveedores");
@@ -54,11 +57,15 @@ export default function MantenimientoCatalogos() {
     tazas: Taza[];
     bodegas: Bodega[];
     estibas: Estiba[];
+    tiposCafe: TipoCafe[];
+    tiposRemision: TipoRemision[];
+    tiposEmpaque: TipoEmpaque[];
   }>({
     proveedores: [], conductores: [], placasCabezal: [], placasFurgon: [],
     cosechas: [], municipios: [], transportes: [], departamentos: [],
     catadores: [], calidades: [], defectos: [], zarandas: [],
-    tazas: [], bodegas: [], estibas: []
+    tazas: [], bodegas: [], estibas: [],
+    tiposCafe: [], tiposRemision: [], tiposEmpaque: []
   });
 
   // Modal State
@@ -73,18 +80,20 @@ export default function MantenimientoCatalogos() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [provs, conds, pCabezal, pFurgon, cos, muns, trans, deptos, cat, cal, def, zar, taz, bods, ests] = await Promise.all([
+      const [provs, conds, pCabezal, pFurgon, cos, muns, trans, deptos, cat, cal, def, zar, taz, bods, ests, tCafe, tRem, tEmp] = await Promise.all([
         getProveedoresApi(), getConductoresApi(), getPlacasCabezalApi(), getPlacasFurgonApi(),
         getCosechasApi(), getMunicipiosApi(), getTransportesApi(), getDepartamentosApi(),
         getCatadoresApi(), getCalidadesApi(), getDefectosApi(), getZarandasApi(),
-        getTazasApi(), getBodegasApi(), getEstibasApi()
+        getTazasApi(), getBodegasApi(), getEstibasApi(),
+        getTiposCafeApi(), getTiposRemisionApi(), getTiposEmpaqueApi()
       ]);
 
       setData({
         proveedores: provs, conductores: conds, placasCabezal: pCabezal, placasFurgon: pFurgon,
         cosechas: cos, municipios: muns, transportes: trans, departamentos: deptos,
         catadores: cat, calidades: cal, defectos: def, zarandas: zar,
-        tazas: taz, bodegas: bods, estibas: ests
+        tazas: taz, bodegas: bods, estibas: ests,
+        tiposCafe: tCafe, tiposRemision: tRem, tiposEmpaque: tEmp
       });
     } catch (error) {
       console.error("Error cargando catálogos:", error);
@@ -110,6 +119,9 @@ export default function MantenimientoCatalogos() {
     { id: "tazas", label: "Atributos de Taza" },
     { id: "bodegas", label: "Bodegas" },
     { id: "estibas", label: "Estibas" },
+    { id: "tipos-cafe", label: "Tipos de Café" },
+    { id: "tipos-remision", label: "Tipos de Remisión" },
+    { id: "tipos-empaque", label: "Tipos de Empaque" },
   ];
 
   const handleEdit = (item: any, idField: string) => {
@@ -189,6 +201,21 @@ export default function MantenimientoCatalogos() {
         if (editingId) await updateEstibaApi(editingId, { ...payload, estado: formData.estado });
         else await createEstibaApi(payload);
       }
+      else if (activeTab === "tipos-cafe") {
+        const payload = { tipo_cafe: formData.tipo_cafe };
+        if (editingId) await updateTipoCafeApi(editingId, { ...payload, estado: formData.estado });
+        else await createTipoCafeApi(payload);
+      }
+      else if (activeTab === "tipos-remision") {
+        const payload = { tipo_remision: formData.tipo_remision };
+        if (editingId) await updateTipoRemisionApi(editingId, { ...payload, estado: formData.estado });
+        else await createTipoRemisionApi(payload);
+      }
+      else if (activeTab === "tipos-empaque") {
+        const payload = { tipo_empaque: formData.tipo_empaque, tara: Number(formData.tara) };
+        if (editingId) await updateTipoEmpaqueApi(editingId, { ...payload, estado: formData.estado });
+        else await createTipoEmpaqueApi(payload);
+      }
 
       toast.success("Registro guardado exitosamente");
       setIsModalOpen(false);
@@ -218,6 +245,9 @@ export default function MantenimientoCatalogos() {
       case "tazas": return data.tazas;
       case "bodegas": return data.bodegas;
       case "estibas": return data.estibas;
+      case "tipos-cafe": return data.tiposCafe;
+      case "tipos-remision": return data.tiposRemision;
+      case "tipos-empaque": return data.tiposEmpaque;
       default: return [];
     }
   };

@@ -55,7 +55,7 @@ export default function CatalogosTable({
 
     const term = searchTerm.toLowerCase();
     const filteredData = data.filter(item => {
-      const mainText = (item.nombre || item.placa || item.cosecha || "").toLowerCase();
+      const mainText = (item.nombre || item.placa || item.cosecha || item.tipo_cafe || item.tipo_remision || item.tipo_empaque || "").toLowerCase();
       const secondaryText = (item.rtn || item.dni || item.licencia || "").toLowerCase();
       const deptoText = (item.departamento?.nombre || "").toLowerCase();
       const bodegaText = (item.bodega?.nombre || "").toLowerCase();
@@ -168,6 +168,31 @@ export default function CatalogosTable({
             <td className="text-center"><Badge bg={e.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{e.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
+      case "tipos-cafe":
+        return filteredData.map((item) => (
+          <tr key={item.id_tipo_cafe}>
+            {renderActions(item, "id_tipo_cafe")}
+            <td className="fw-semibold">{item.tipo_cafe}</td>
+            <td className="text-center"><Badge bg={item.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{item.estado ? "Activo" : "Inactivo"}</Badge></td>
+          </tr>
+        ));
+      case "tipos-remision":
+        return filteredData.map((item) => (
+          <tr key={item.id_tipo_remision}>
+            {renderActions(item, "id_tipo_remision")}
+            <td className="fw-semibold">{item.tipo_remision}</td>
+            <td className="text-center"><Badge bg={item.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{item.estado ? "Activo" : "Inactivo"}</Badge></td>
+          </tr>
+        ));
+      case "tipos-empaque":
+        return filteredData.map((item) => (
+          <tr key={item.id_tipo_empaque}>
+            {renderActions(item, "id_tipo_empaque")}
+            <td className="fw-semibold">{item.tipo_empaque}</td>
+            <td className="text-muted">{item.tara} Lbs</td>
+            <td className="text-center"><Badge bg={item.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{item.estado ? "Activo" : "Inactivo"}</Badge></td>
+          </tr>
+        ));
       default: // Catálogos simples (Catadores, Calidades, Defectos, Zarandas, Tazas)
         return filteredData.map((item) => {
           const idField = Object.keys(item).find(key => key.startsWith('id_')) || 'id';
@@ -197,6 +222,7 @@ export default function CatalogosTable({
             {activeTab === "cosechas" && <th className="text-center">Status</th>}
             {activeTab === "bodegas" && <th className="text-center">Tipo</th>}
             {activeTab === "estibas" && <th>Bodega</th>}
+            {activeTab === "tipos-empaque" && <th>Tara</th>}
             <th scope="col" className="text-center">Estado</th>
           </tr>
         </thead>

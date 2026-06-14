@@ -299,6 +299,45 @@ export default function CatalogosModal({
             </Col>
           </Row>
         );
+      case "tipos-cafe":
+        return (
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Descripción del Tipo de Café</Form.Label>
+                <Form.Control type="text" placeholder="Ej: Café Pergamino Seco" value={formData.tipo_cafe || ""} onChange={(e) => onChange({...formData, tipo_cafe: e.target.value})} required />
+              </Form.Group>
+            </Col>
+          </Row>
+        );
+      case "tipos-remision":
+        return (
+          <Row>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Descripción del Tipo de Remisión</Form.Label>
+                <Form.Control type="text" placeholder="Ej: Remisión de Compra" value={formData.tipo_remision || ""} onChange={(e) => onChange({...formData, tipo_remision: e.target.value})} required />
+              </Form.Group>
+            </Col>
+          </Row>
+        );
+      case "tipos-empaque":
+        return (
+          <Row>
+            <Col md={8}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Descripción del Tipo de Empaque</Form.Label>
+                <Form.Control type="text" placeholder="Ej: Saco de Yute" value={formData.tipo_empaque || ""} onChange={(e) => onChange({...formData, tipo_empaque: e.target.value})} required />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Tara (Libras)</Form.Label>
+                <Form.Control type="number" step="0.01" value={formData.tara || 0} onChange={(e) => onChange({...formData, tara: e.target.value})} required />
+              </Form.Group>
+            </Col>
+          </Row>
+        );
       default:
         return (
           <Row>
