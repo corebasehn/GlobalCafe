@@ -1,6 +1,7 @@
 {
   "printSettings": {
     "fontFamily": "Arial",
-    "fontSize": "10pt"
+    "fontSize": "8pt",
+    "leyendaCafeExterno": "CAFÉ EXTERNO (SERVICIO DE MAQUILADO)"
   }
 }

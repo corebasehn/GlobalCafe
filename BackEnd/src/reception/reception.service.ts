@@ -74,7 +74,12 @@ export class ReceptionService {
       where: { estado: true },
       include: { 
         detalles: {
-          include: { estado_transaccion: true }
+          include: { 
+            estado_transaccion: true,
+            tipo_remision: true,
+            tipo_cafe: true,
+            tipo_empaque: true
+          }
         } 
       },
       orderBy: { id_recepcion: 'desc' },
@@ -87,7 +92,12 @@ export class ReceptionService {
       where: { id_recepcion: id },
       include: { 
         detalles: {
-          include: { estado_transaccion: true }
+          include: { 
+            estado_transaccion: true,
+            tipo_remision: true,
+            tipo_cafe: true,
+            tipo_empaque: true
+          }
         } 
       },
     });
@@ -354,6 +364,9 @@ export class ReceptionService {
           include: { 
             proveedor: true, 
             estado_transaccion: true,
+            tipo_remision: true,
+            tipo_cafe: true,
+            tipo_empaque: true,
             notas_patio: true, // Incluimos para validar en el front
             cambios_cabezal: { where: { estado: true } }
           },
@@ -597,6 +610,9 @@ export class ReceptionService {
       include: {
         proveedor: true,
         estado_transaccion: true,
+        tipo_remision: true,
+        tipo_cafe: true,
+        tipo_empaque: true,
         cambios_cabezal: {
           where: { estado: true },
           orderBy: { id_cambio_cabezal: 'asc' },

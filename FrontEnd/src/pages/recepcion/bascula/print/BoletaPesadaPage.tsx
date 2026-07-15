@@ -35,6 +35,7 @@ export default function BoletaPesadaPage() {
   const [error, setError] = useState<string | null>(null);
   const [fontFamily, setFontFamily] = useState<string>("Arial");
   const [fontSize, setFontSize] = useState<string>("8pt");
+  const [leyendaCafeExterno, setLeyendaCafeExterno] = useState<string>("CAFÉ EXTERNO (SERVICIO DE MAQUILADO)");
 
   const esPrimera = tipo === "primera";
 
@@ -54,6 +55,9 @@ export default function BoletaPesadaPage() {
         }
         if (settings?.printSettings?.fontSize) {
           setFontSize(settings.printSettings.fontSize);
+        }
+        if (settings?.printSettings?.leyendaCafeExterno) {
+          setLeyendaCafeExterno(settings.printSettings.leyendaCafeExterno);
         }
       })
       .catch(() => console.warn("No se pudo cargar settings.json"));
@@ -159,7 +163,7 @@ export default function BoletaPesadaPage() {
 
         @page {
           size: ${PAGE_W} ${PAGE_H};
-          margin: 0;
+          margin: 3cm 1.5cm 2cm 1.5cm;
         }
 
         body {
@@ -201,7 +205,7 @@ export default function BoletaPesadaPage() {
         }
 
         @media print {
-          .boleta-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
+          .boleta-paper { padding: 0; }
           .no-print { display: none !important; }
         }
 
@@ -269,6 +273,17 @@ export default function BoletaPesadaPage() {
           padding-top: 4px;
           font-size: ${getFontSize(0.9375)};
         }
+
+        .blt-leyenda-externa {
+          background: #ffffff;
+          border: 2px solid #333;
+          padding: 3px;
+          text-align: center;
+          font-weight: bold;
+          font-size: ${getFontSize(1.0)};
+          margin: 3px 0;
+          letter-spacing: 1px;
+        }
       `}</style>
 
       <div className="no-print">
@@ -305,13 +320,25 @@ export default function BoletaPesadaPage() {
               <td>{placaCompleta}</td>
             </tr>
             <tr>
+              <td className="lbl">CONDUCTOR:</td>
+              <td>{recepcion?.conductor?.nombre ?? "—"}</td>
+              <td className="lbl">TELEFONO:</td>
+              <td>{recepcion?.conductor?.telefono ?? "—"}</td>
+            </tr>
+            <tr>
               <td className="lbl">OBSERVACION:</td>
               <td colSpan={3}>{detalle.observaciones || "—"}</td>
             </tr>
           </tbody>
         </table>
 
-        <div className="blt-pergamino">PERGAMINO SECO</div>
+        {!esPrimera && detalle.id_tipo_remision === 2 && (
+          <div className="blt-leyenda-externa">
+            {leyendaCafeExterno}
+          </div>
+        )}
+
+        <div className="blt-pergamino">{detalle.tipo_cafe?.tipo_cafe?.toUpperCase() ?? "N/A"}</div>
 
         <div className="blt-section-title">NOTA DE PESO DEL CAMION</div>
 
@@ -344,10 +371,12 @@ export default function BoletaPesadaPage() {
               <td><strong>PESO BRUTO:</strong>&nbsp;{fmt(pesoBruto)} LB</td>
               <td><strong>TOTAL SACOS:</strong>&nbsp;{totalSacos}</td>
             </tr>
-            <tr>
-              <td><strong>TARA (0.5 × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
-              <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
-            </tr>
+            {!esPrimera && (
+              <tr>
+                <td><strong>TARA (0.5 × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
+                <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
+              </tr>
+            )}
           </tbody>
         </table>
 
