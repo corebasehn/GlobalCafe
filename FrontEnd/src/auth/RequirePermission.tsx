@@ -7,7 +7,7 @@ const RequirePermission = ({ children, permission }: { children: ReactNode, perm
   const { hasPermission, isAuthenticated } = useAuth(); 
   
   if (isAuthenticated && !hasPermission(permission)) {
-    return <Navigate to="/" replace />; // Lo mandamos al Dashboard si no tiene permiso
+    return <Navigate to="/dashboard/operaciones" replace />; // Lo mandamos al Dashboard si no tiene permiso
   }
   return <>{children}</>;
 };

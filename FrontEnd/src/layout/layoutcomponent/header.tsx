@@ -24,6 +24,24 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
     if (logout) logout();
   };
 
+  // Función para obtener las iniciales del nombre_visible
+  const getInitials = (nombre: string | undefined): string => {
+    if (!nombre) return "U";
+    const trimmedName = nombre.trim();
+    
+    // Si contiene espacio, tomar primera letra de cada palabra
+    if (trimmedName.includes(" ")) {
+      const words = trimmedName.split(" ").filter(w => w.length > 0);
+      if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+      }
+      return words[0][0].toUpperCase();
+    }
+    
+    // Si no tiene espacio, tomar solo la primera letra
+    return trimmedName[0].toUpperCase();
+  };
+
   function menuClose() {
     const theme = store.getState();
     ThemeChanger({ ...theme, "toggled": "close" });
@@ -522,7 +540,17 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
               <Dropdown.Toggle as='a' className="header-link" variant="" id="mainHeaderProfile">
                 <div className="d-flex align-items-center">
                   <div className="me-sm-2 me-0">
-                    <img src={imagesData('face2')} alt="img" width="32" height="32" className="rounded-circle" />
+                    <div 
+                      className="rounded-circle d-flex align-items-center justify-content-center fw-semibold text-white"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: 'rgb(var(--primary-rgb))',
+                        fontSize: '14px'
+                      }}
+                    >
+                      {getInitials(profile?.nombre)}
+                    </div>
                   </div>
                   <div className="d-xl-block d-none">
                     <p className="fw-semibold mb-0 lh-1">{profile?.nombre || "Usuario"}</p>
