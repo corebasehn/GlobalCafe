@@ -74,7 +74,7 @@ export default function LoginPage() {
               <Card.Body className="p-4 p-sm-5">
                 <LoginHeader 
                   title="Iniciar Sesión" 
-                  logoSrc="/src/assets/images/brand-logos/Logo-Global-Coffee-Group.jpeg" 
+                  logoSrc="/src/assets/images/brand-logos/eCoffe-core-color.png" 
                 />
 
                 <LoginForm 
