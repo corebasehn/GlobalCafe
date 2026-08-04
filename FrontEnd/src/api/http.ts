@@ -9,6 +9,7 @@ export const http = axios.create({
 
 // Adjunta token automáticamente
 http.interceptors.request.use((config) => {
+  // Leemos directamente de localStorage para tener el valor más reciente
   const token = localStorage.getItem("auth_token");
   if (token) {
     config.headers = config.headers ?? {};

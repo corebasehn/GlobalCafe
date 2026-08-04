@@ -26,11 +26,17 @@ async function bootstrap() {
 
   // 2. Habilitar CORS
   app.enableCors({
-    origin: [/localhost:5173$/, /127\.0\.0\.1:5173$/, /192\.168\.\d+\.\d+:5173$/],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: (origin, callback) => {
+      // Permitir cualquier origen en desarrollo y producción para debug
+      callback(null, true);
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    allowedHeaders: 'Content-Type, Accept, Authorization',
   });
 
-  await app.listen(3000, '0.0.0.0');
-}
-bootstrap();
+  const port = process.env.PORT || 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`Application is running on: http://localhost:${port}`);
+  }
+  bootstrap();

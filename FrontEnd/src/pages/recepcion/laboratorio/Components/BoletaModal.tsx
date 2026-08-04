@@ -71,8 +71,12 @@ export default function BoletaModal({ muestra, onClose }: BoletaModalProps) {
                 <p style={{ margin: 0 }}><strong>Humedad:</strong> {muestra.analisis.humedad}%</p>
                 <p style={{ margin: 0 }}><strong>Daño:</strong> {muestra.analisis.dano}%</p>
                 <p style={{ margin: 0 }}><strong>Calidad:</strong> {muestra.analisis.calidad?.nombre || "N/A"}</p>
-                <p style={{ margin: 0 }}><strong>Rendimiento 1:</strong> {muestra.analisis.primer_rendimiento ?? "N/A"}</p>
-                <p style={{ margin: 0 }}><strong>Rendimiento 2:</strong> {muestra.analisis.segundo_rendimiento ?? "N/A"}</p>
+                {muestra.analisis.primer_rendimiento != null && (
+                  <p style={{ margin: 0 }}><strong>Rendimiento 1:</strong> {muestra.analisis.primer_rendimiento}</p>
+                )}
+                {muestra.analisis.segundo_rendimiento != null && (
+                  <p style={{ margin: 0 }}><strong>Rendimiento 2:</strong> {muestra.analisis.segundo_rendimiento}</p>
+                )}
               </div>
 
               {/* 3 columnas: Defectos / Zarandas / Taza */}

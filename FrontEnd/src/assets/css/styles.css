@@ -71,7 +71,7 @@ width
 @tailwind utilities;
 :root {
   --body-bg-rgb:	249, 251, 251;
-  --primary-rgb:	56, 202, 179;
+  --primary-rgb:	108, 56, 23;
   --secondary-rgb:	247, 79, 117;
   --warning-rgb:	255, 189, 90;
   --info-rgb:	78, 194, 240;

@@ -398,6 +398,16 @@ export async function getTiposCafeApi(): Promise<TipoCafe[]> {
   return data;
 }
 
+export async function createTipoCafeApi(payload: { tipo_cafe: string }): Promise<TipoCafe> {
+  const { data } = await http.post<TipoCafe>("/catalogs/tipos-cafe", payload);
+  return data;
+}
+
+export async function updateTipoCafeApi(id: number, payload: Partial<TipoCafe>): Promise<TipoCafe> {
+  const { data } = await http.patch<TipoCafe>(`/catalogs/tipos-cafe/${id}`, payload);
+  return data;
+}
+
 // ==========================================
 // TIPO REMISIÓN
 // ==========================================
@@ -412,16 +422,37 @@ export async function getTiposRemisionApi(): Promise<TipoRemision[]> {
   return data;
 }
 
+export async function createTipoRemisionApi(payload: { tipo_remision: string }): Promise<TipoRemision> {
+  const { data } = await http.post<TipoRemision>("/catalogs/tipos-remision", payload);
+  return data;
+}
+
+export async function updateTipoRemisionApi(id: number, payload: Partial<TipoRemision>): Promise<TipoRemision> {
+  const { data } = await http.patch<TipoRemision>(`/catalogs/tipos-remision/${id}`, payload);
+  return data;
+}
+
 // ==========================================
 // TIPO EMPAQUE
 // ==========================================
 export interface TipoEmpaque {
   id_tipo_empaque: number;
   tipo_empaque: string;
+  tara: number;
   estado: boolean;
 }
 
 export async function getTiposEmpaqueApi(): Promise<TipoEmpaque[]> {
   const { data } = await http.get<TipoEmpaque[]>("/catalogs/tipos-empaque");
+  return data;
+}
+
+export async function createTipoEmpaqueApi(payload: { tipo_empaque: string; tara: number }): Promise<TipoEmpaque> {
+  const { data } = await http.post<TipoEmpaque>("/catalogs/tipos-empaque", payload);
+  return data;
+}
+
+export async function updateTipoEmpaqueApi(id: number, payload: Partial<TipoEmpaque>): Promise<TipoEmpaque> {
+  const { data } = await http.patch<TipoEmpaque>(`/catalogs/tipos-empaque/${id}`, payload);
   return data;
 }

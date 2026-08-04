@@ -35,10 +35,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [profile]);
 
   const login = async (payload: LoginRequest) => {
-    const resp = await loginApi(payload);
-    setToken(resp.token);
-    setProfile(resp);
-    return resp;
+    try {
+      const resp = await loginApi(payload);
+      if (!resp.token) throw new Error("No se recibió token del servidor");
+      
+      // Guardar inmediatamente en localStorage
+      localStorage.setItem("auth_token", resp.token);
+      localStorage.setItem("auth_profile", JSON.stringify(resp));
+      
+      // Actualizar estado de React
+      setToken(resp.token);
+      setProfile(resp);
+      return resp;
+    } catch (error) {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_profile");
+      throw error;
+    }
   };
 
   const logout = () => {

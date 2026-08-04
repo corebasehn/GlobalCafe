@@ -4,6 +4,9 @@ import { useAuth } from "../../../../auth/useAuth";
 import toast from "react-hot-toast";
 import { Container, Row, Col, Card } from 'react-bootstrap';
 
+// Assets
+import logoImg from "../../../../assets/images/brand-logos/eCoffe-core-color.png";
+
 // Components
 import LoginForm from "../Components/LoginForm";
 import LoginHeader from "../Components/LoginHeader";
@@ -17,7 +20,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "/";
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || "dashboard/operaciones/";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +77,7 @@ export default function LoginPage() {
               <Card.Body className="p-4 p-sm-5">
                 <LoginHeader 
                   title="Iniciar Sesión" 
-                  logoSrc="/src/assets/images/brand-logos/Logo-Global-Coffee-Group.jpeg" 
+                  logoSrc={logoImg} 
                 />
 
                 <LoginForm 

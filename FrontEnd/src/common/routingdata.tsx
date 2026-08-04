@@ -153,10 +153,13 @@ import UsuariosPage from "../pages/admin/usuarios/Containers/UsuariosPage";
 import RolesPage from "../pages/admin/roles/Containers/RolesPage";
 import ConfiguracionPage from "../pages/admin/configuracion/Containers/ConfiguracionPage";
 import MantenimientoCatalogos from "../pages/admin/catalogos/Containers/MantenimientoCatalogos";
+// Dashboard Global Cafe
+import DashboardPage from "../pages/dashboard/DashboardPage";
 
 
 export const Routingdata = [
   //Dashboard
+  { path: `${import.meta.env.BASE_URL}dashboard/operaciones`, element: <DashboardPage /> },
   { path: `${import.meta.env.BASE_URL}dashboard/dashboard`, element: <Dashboard /> },
   { path: `${import.meta.env.BASE_URL}dashboard/dashboard2`, element: <Dashboard2 /> },
   { path: `${import.meta.env.BASE_URL}dashboard/dashboard3`, element: <Dashboard3 /> },
@@ -333,7 +336,7 @@ export const Sidebarcomponents = [
   //Dashboard
   {
     label: "Dashboard",
-    path: `${import.meta.env.BASE_URL}dashboard/dashboard`,
+    path: `${import.meta.env.BASE_URL}dashboard/operaciones`,
     type: "link",
     active: false,
   },

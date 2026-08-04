@@ -10,6 +10,7 @@ import { AnalisisModule } from './reception/analisis.module';
 import { PrismaService } from './prisma.service';
 import { ReceptionModule } from './reception/reception.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { EmpresaModule } from './empresa/empresa.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     CatalogsModule,
     AnalisisModule,
     NotificationsModule,
+    EmpresaModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

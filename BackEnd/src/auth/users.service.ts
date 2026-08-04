@@ -39,6 +39,19 @@ export class UsersService {
     });
   }
 
+  async findById(id: number) {
+    return this.prisma.usuario.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          include: {
+            rol: true,
+          },
+        },
+      },
+    });
+  }
+
   async create(data: CreateUserDto, currentUser: any): Promise<Usuario> {
     try {
       // 1. Validar que el rol existe (si se proporcionó)

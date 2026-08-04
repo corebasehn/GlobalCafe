@@ -11,8 +11,8 @@ export default function LoginHeader({ title, logoSrc }: LoginHeaderProps) {
       </h2>
       <img 
         src={logoSrc} 
-        alt="Global Café Logo" 
-        style={{ height: '70px', width: 'auto' }}
+        alt="eCoffe Core" 
+        style={{ height: '100px', width: 'auto' }}
       />
     </div>
   );

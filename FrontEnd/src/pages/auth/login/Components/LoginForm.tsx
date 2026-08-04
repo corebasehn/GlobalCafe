@@ -81,9 +81,9 @@ export default function LoginForm({
           type="submit"
           size="lg"
           disabled={loading}
-          className="fw-medium border-0 shadow-sm"
+          variant="primary"
+          className="fw-medium shadow-sm"
           style={{ 
-            backgroundColor: '#6c3817',
             borderRadius: '12px',
             padding: '12px'
           }}

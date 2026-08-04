@@ -39,6 +39,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
     recepciones.forEach(r => {
       const transporteName = r.conductor?.transporte?.nombre || "N/A";
       const conductorName = r.conductor?.nombre || "N/A";
+      const conductorTelefono = r.conductor?.telefono || "N/A";
       const cabezal = r.placa_cabezal?.placa || "N/A";
       const furgon = r.placa_furgon?.placa || "";
       const detalles: any[] = r.detalles || [];
@@ -50,6 +51,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
           "Placa Cabezal": cabezal,
           "Placa Furgón": furgon,
           "Conductor": conductorName,
+          "Teléfono": conductorTelefono,
           "Remisión": "",
           "Proveedor / Finca": "",
           "Sacos": 0,
@@ -67,6 +69,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
             "Placa Cabezal": idx === 0 ? cabezal : "",
             "Placa Furgón": idx === 0 ? furgon : "",
             "Conductor": idx === 0 ? conductorName : "",
+            "Teléfono": idx === 0 ? conductorTelefono : "",
             "Remisión": carga.remision,
             "Proveedor / Finca": carga.proveedor?.nombre || "",
             "Sacos": carga.cantidad_sacos,
@@ -102,18 +105,19 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
             <th>Transporte</th>
             <th>Placas</th>
             <th>Conductor</th>
+            <th>Teléfono</th>
           </tr>
         </thead>
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={6} className="text-center py-8">
+              <td colSpan={7} className="text-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin inline-block text-neutral-400 mr-2" /> Cargando vehículos en báscula...
               </td>
             </tr>
           ) : recepciones.length === 0 ? (
             <tr>
-              <td colSpan={6} className="text-center py-8 text-neutral-500">
+              <td colSpan={7} className="text-center py-8 text-neutral-500">
                 {searchTerm.trim().length === 0
                   ? "Ingrese un No. Ingreso, Remisión o Placa para buscar."
                   : "No se encontraron resultados para la búsqueda."}
@@ -124,6 +128,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
               const isExpanded = expandedRows.includes(r.id_recepcion);
               const transporteName = r.conductor?.transporte?.nombre || "N/A";
               const conductorName = r.conductor?.nombre || "N/A";
+              const conductorTelefono = r.conductor?.telefono || "N/A";
               const cabezal = r.placa_cabezal?.placa || "N/A";
               const furgon = r.placa_furgon?.placa;
               const detalles: any[] = r.detalles || [];
@@ -158,11 +163,12 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                       {furgon && <div className="text-sm text-neutral-500">Fur: <span className="font-medium">{furgon}</span></div>}
                     </td>
                     <td>{conductorName}</td>
+                    <td>{conductorTelefono}</td>
                   </tr>
 
                   {isExpanded && (
                     <tr>
-                      <td colSpan={6} className="p-0 border-bottom">
+                      <td colSpan={7} className="p-0 border-bottom">
                         <div className="px-4 py-3 bg-light bg-opacity-50">
                           <Card className="shadow-sm">
                             <Table responsive hover size="sm" className="mb-0">

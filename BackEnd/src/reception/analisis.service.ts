@@ -176,7 +176,16 @@ export class AnalisisService {
         } 
       },
       include: {
-        detalle_recepcion: { include: { proveedor: true, recepcion: true, estado_transaccion: true } },
+        detalle_recepcion: { 
+          include: { 
+            proveedor: true, 
+            recepcion: true, 
+            estado_transaccion: true,
+            tipo_remision: true,
+            tipo_cafe: true,
+            tipo_empaque: true
+          } 
+        },
         catador: true, calidad: true, estado_transaccion: true,
         analisis_defectos: { include: { defecto: true } },
         analisis_zarandas: { include: { zaranda: true } },

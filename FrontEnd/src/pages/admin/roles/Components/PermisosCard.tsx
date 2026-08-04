@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import { Card, Badge } from 'react-bootstrap';
+import { Card, Badge, Button } from 'react-bootstrap';
 import type { PermissionGroup, Permission } from "../../../../api/roles.api";
 
 interface PermisosCardProps {
@@ -14,33 +14,36 @@ export default function PermisosCard({
   onEditPermission
 }: PermisosCardProps) {
   return (
-    <Card>
-      <Card.Header>
-        <div className="flex items-center justify-between">
-          <Card.Title as="h3" className="text-lg font-semibold text-neutral-900 mb-0">Permisos por Módulo</Card.Title>
-          <button 
-            type="button" 
-            onClick={onAddPermission} 
-            className="p-1 hover:bg-neutral-100 rounded-md transition-colors" 
-            title="Nuevo Permiso"
-          >
-            <Plus className="w-5 h-5 text-neutral-600" />
-          </button>
-        </div>
+    <Card className="custom-card">
+      <Card.Header className="justify-content-between">
+        <Card.Title className="fw-semibold">
+          <span className="border-start border-3 border-success me-2"></span>
+          Permisos por Módulo
+        </Card.Title>
+        <Button 
+          variant="" 
+          onClick={onAddPermission} 
+          className="btn btn-icon btn-sm btn-primary-light btn-wave"
+          title="Nuevo Permiso"
+        >
+          <Plus className="w-4 h-4" />
+        </Button>
       </Card.Header>
-      <Card.Body className="space-y-4">
+      <Card.Body>
         {permissions.map((m) => (
-          <div key={m.modulo}>
-            <h4 className="font-medium text-sm text-neutral-900 mb-2">{m.modulo}</h4>
-            <div className="flex flex-wrap gap-1">
+          <div key={m.modulo} className="mb-4">
+            <h5 className="fw-semibold fs-14 mb-2">{m.modulo}</h5>
+            <div className="d-flex flex-wrap gap-1">
               {m.permisos.map((p) => (
                 <span 
                   key={p.id} 
                   title={p.descripcion} 
                   onClick={() => onEditPermission(p, m.modulo)} 
-                  className="cursor-pointer hover:opacity-80 transition-opacity"
+                  className="cursor-pointer"
                 >
-                  <Badge bg="secondary">{p.accion}</Badge>
+                  <Badge bg="danger-transparent" className="rounded-1 fw-medium">
+                    {p.accion}
+                  </Badge>
                 </span>
               ))}
             </div>
@@ -50,3 +53,4 @@ export default function PermisosCard({
     </Card>
   );
 }
+

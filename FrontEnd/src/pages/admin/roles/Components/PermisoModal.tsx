@@ -1,4 +1,4 @@
-import { Modal, Form, Button } from 'react-bootstrap';
+import { Modal, Form, Button, Row, Col } from 'react-bootstrap';
 
 interface PermisoModalProps {
   show: boolean;
@@ -20,36 +20,40 @@ export default function PermisoModal({
   onSubmit
 }: PermisoModalProps) {
   return (
-    <Modal show={show} onHide={onClose} size="lg">
+    <Modal show={show} onHide={onClose} size="lg" centered>
       <Form onSubmit={onSubmit}>
         <Modal.Header closeButton>
-          <Modal.Title>{editingId ? "Editar Permiso" : "Nuevo Permiso"}</Modal.Title>
+          <Modal.Title className="fs-18">{editingId ? "Editar Permiso" : "Nuevo Permiso"}</Modal.Title>
         </Modal.Header>
-        <Modal.Body className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Form.Group>
-              <Form.Label>Módulo</Form.Label>
-              <Form.Control 
-                type="text" 
-                placeholder="Ej: Recepción" 
-                value={formData.modulo} 
-                onChange={(e) => onChange({...formData, modulo: e.target.value})} 
-                required 
-              />
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Código</Form.Label>
-              <Form.Control 
-                type="text" 
-                placeholder="Ej: VER_REMISIONES" 
-                value={formData.codigo} 
-                onChange={(e) => onChange({...formData, codigo: e.target.value.toUpperCase().replace(/\s+/g, '_')})} 
-                required 
-              />
-            </Form.Group>
-          </div>
-          <Form.Group>
-            <Form.Label>Acción</Form.Label>
+        <Modal.Body>
+          <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Módulo</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Ej: Recepción" 
+                  value={formData.modulo} 
+                  onChange={(e) => onChange({...formData, modulo: e.target.value})} 
+                  required 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Código</Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Ej: VER_REMISIONES" 
+                  value={formData.codigo} 
+                  onChange={(e) => onChange({...formData, codigo: e.target.value.toUpperCase().replace(/\s+/g, '_')})} 
+                  required 
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+          <Form.Group className="mb-3">
+            <Form.Label className="fw-semibold">Acción</Form.Label>
             <Form.Control 
               type="text" 
               placeholder="Ej: Ver remisiones" 
@@ -58,8 +62,8 @@ export default function PermisoModal({
               required 
             />
           </Form.Group>
-          <Form.Group>
-            <Form.Label>Descripción</Form.Label>
+          <Form.Group className="mb-3">
+            <Form.Label className="fw-semibold">Descripción</Form.Label>
             <Form.Control 
               type="text" 
               placeholder="Descripción breve..." 
@@ -68,28 +72,27 @@ export default function PermisoModal({
             />
           </Form.Group>
         </Modal.Body>
-        <Modal.Footer>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              {editingId && (
-                <button 
-                  type="button" 
-                  onClick={onDelete} 
-                  className="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-transparent hover:border-red-200"
-                >
-                  Eliminar
-                </button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button variant="secondary" type="button" onClick={onClose}>Cancelar</Button>
-              <Button variant="primary" type="submit">
-                {editingId ? "Guardar" : "Crear"}
+        <Modal.Footer className="justify-content-between">
+          <div>
+            {editingId && (
+              <Button 
+                variant="danger-light" 
+                className="btn-wave"
+                onClick={onDelete}
+              >
+                Eliminar
               </Button>
-            </div>
+            )}
+          </div>
+          <div className="d-flex gap-2">
+            <Button variant="secondary" className="btn-wave" type="button" onClick={onClose}>Cancelar</Button>
+            <Button variant="primary" className="btn-wave" type="submit">
+              {editingId ? "Guardar" : "Crear"}
+            </Button>
           </div>
         </Modal.Footer>
       </Form>
     </Modal>
   );
 }
+

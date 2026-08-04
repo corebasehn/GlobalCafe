@@ -175,8 +175,8 @@ export class RolesService {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
         throw new ConflictException('El código del permiso ya existe');
       }
-      console.error(error);
-      throw new InternalServerErrorException('Error al crear el permiso');
+      console.error('Error al crear permiso:', error);
+      throw new InternalServerErrorException('Error al crear el permiso: ' + (error.message || 'Error desconocido'));
     }
   }
 

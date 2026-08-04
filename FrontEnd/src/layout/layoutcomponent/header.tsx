@@ -24,6 +24,24 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
     if (logout) logout();
   };
 
+  // Función para obtener las iniciales del nombre_visible
+  const getInitials = (nombre: string | undefined): string => {
+    if (!nombre) return "U";
+    const trimmedName = nombre.trim();
+    
+    // Si contiene espacio, tomar primera letra de cada palabra
+    if (trimmedName.includes(" ")) {
+      const words = trimmedName.split(" ").filter(w => w.length > 0);
+      if (words.length >= 2) {
+        return (words[0][0] + words[1][0]).toUpperCase();
+      }
+      return words[0][0].toUpperCase();
+    }
+    
+    // Si no tiene espacio, tomar solo la primera letra
+    return trimmedName[0].toUpperCase();
+  };
+
   function menuClose() {
     const theme = store.getState();
     ThemeChanger({ ...theme, "toggled": "close" });
@@ -424,53 +442,6 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
               </Dropdown>
             </div>
 
-            {/* country flag */}
-
-            <Dropdown className="header-element country-selector" autoClose='outside'>
-              <Dropdown.Toggle variant="" as='a' className="header-link no-caret" id="dropdown-basic">
-                <img src={imagesData('us')} alt="img" className="rounded-circle" />
-              </Dropdown.Toggle>
-
-              <Dropdown.Menu as='ul' className='main-header-dropdown' align='end'>
-                <Dropdown.Item as='li' className='d-flex align-items-center'>
-                  <span className="avatar avatar-xs lh-1 me-2">
-                    <img src={imagesData('us')} alt="img" />
-                  </span>
-                  English
-                </Dropdown.Item>
-                <Dropdown.Item as='li' className='d-flex align-items-center'>
-                  <span className="avatar avatar-xs lh-1 me-2">
-                    <img src={imagesData('spain')} alt="img" />
-                  </span>
-                  Spanish
-                </Dropdown.Item>
-                <Dropdown.Item as='li' className='d-flex align-items-center'>
-                  <span className="avatar avatar-xs lh-1 me-2">
-                    <img src={imagesData('french')} alt="img" />
-                  </span>
-                  French
-                </Dropdown.Item>
-                <Dropdown.Item as='li' className='d-flex align-items-center'>
-                  <span className="avatar avatar-xs lh-1 me-2">
-                    <img src={imagesData('germany')} alt="img" />
-                  </span>
-                  German
-                </Dropdown.Item>
-                <Dropdown.Item as='li' className='d-flex align-items-center'>
-                  <span className="avatar avatar-xs lh-1 me-2">
-                    <img src={imagesData('italy')} alt="img" />
-                  </span>
-                  Italian
-                </Dropdown.Item>
-                <Dropdown.Item as='li' className='d-flex align-items-center'>
-                  <span className="avatar avatar-xs lh-1 me-2">
-                    <img src={imagesData('russia')} alt="img" />
-                  </span>
-                  Russian
-                </Dropdown.Item>
-              </Dropdown.Menu>
-            </Dropdown>
-
             {/* Toggle dark icon */}
 
             <div className="header-element header-theme-mode">
@@ -487,72 +458,6 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
               </Link>
 
             </div>
-
-            {/* Shopping cart */}
-
-            <Dropdown className="header-element cart-dropdown" autoClose='outside'>
-              <Dropdown.Toggle variant="" as='a' className="header-link no-caret" id="dropdown-basic">
-                <svg xmlns="http://www.w3.org/2000/svg" className="header-link-icon" width="24" height="24" viewBox="0 0 24 24"><path d="M21.822 7.431A1 1 0 0 0 21 7H7.333L6.179 4.23A1.994 1.994 0 0 0 4.333 3H2v2h2.333l4.744 11.385A1 1 0 0 0 10 17h8c.417 0 .79-.259.937-.648l3-8a1 1 0 0 0-.115-.921zM17.307 15h-6.64l-2.5-6h11.39l-2.25 6z" /><circle cx="10.5" cy="19.5" r="1.5" /><circle cx="17.5" cy="19.5" r="1.5" /></svg>
-                <span className="badge bg-warning rounded-pill header-icon-badge" id="cart-icon-badge">{remainingCount1}</span>
-              </Dropdown.Toggle>
-              <Dropdown.Menu className='main-header-dropdown' align='end'>
-
-                <div className="p-3">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="mb-0 fs-15 fw-semibold">Shopping Cart</p>
-                    <span className="badge bg-indigo" id="cart-data">Items ({remainingCount1})</span>
-                  </div>
-                </div>
-                <Dropdown.Divider />
-
-                {remainingCount1 === 0 ? (
-                  <div className="p-5 empty-item">
-                    <div className="text-center">
-                      <span className="avatar avatar-xl avatar-rounded bg-warning-transparent">
-                        <i className="ri-shopping-cart-2-line fs-2"></i>
-                      </span>
-                      <h6 className="fw-bold mb-1 mt-3">Your Cart is Empty</h6>
-                      <span className="mb-3 fw-normal fs-13 d-block">Add some items to make me happy :)</span>
-                      <Link to={`${import.meta.env.BASE_URL}pages/ecommerce/shop/`} className="btn btn-primary btn-wave btn-sm m-1" data-abc="true">continue shopping <i className="bi bi-arrow-right ms-1"></i></Link>
-                    </div>
-                  </div>
-
-                ) : (
-                  <Fragment>
-                    <ul className="list-unstyled mb-0" id="header-cart-items-scroll">
-                      {cartItems.map((item, index) => (
-                        <Dropdown.Item as='li' key={index}>
-                          <div className="d-flex align-items-start cart-dropdown-item">
-                            <img src={imagesData(item.image)} alt="img" className="avatar avatar-rounded br-5 me-3" />
-                            <div className="flex-grow-1">
-                              <div className="d-flex align-items-center justify-content-between mb-0">
-                                <div className="mb-0">
-                                  <Link className="text-muted fs-13" to={`${import.meta.env.BASE_URL}pages/ecommerce/cart/`}>{item.name}</Link>
-                                  <div className="fw-semibold text-dark fs-12">{item.quantity}* ${item.price}</div>
-                                </div>
-                                <div>
-                                  <Link to="#" className="header-cart-remove float-end dropdown-item-close me-2" onClick={() => removeFromCart(index)}><i className="fe fe-trash-2 text-danger"></i></Link>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </Dropdown.Item>
-                      ))}
-                    </ul>
-                    {remainingCount1 > 0 && (
-                      <div className="p-2 bg-primary-transparent d-flex justify-content-between align-items-center empty-header-item border-top">
-                        <div className="">
-                          <Link to={`${import.meta.env.BASE_URL}pages/ecommerce/checkout/`} className="btn btn-sm btn-primary btn-w-xs">checkout</Link>
-                        </div>
-                        <div>
-                          <span className="text-dark fw-semibold">Sub Total : $ 485.93</span>
-                        </div>
-                      </div>
-                    )}
-                  </Fragment>
-                )}
-              </Dropdown.Menu>
-            </Dropdown>
 
             {/* notifiation */}
 
@@ -621,43 +526,6 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
               </Dropdown.Menu>
             </Dropdown>
 
-            {/* related apps */}
-
-            <Dropdown className='header-element header-shortcuts-dropdown d-md-block d-none'>
-              <Dropdown.Toggle variant="" as='a' className='header-link no-caret' id="dropdown-basic">
-                <svg xmlns="http://www.w3.org/2000/svg" className="header-link-icon" height="24px" viewBox="0 0 24 24" width="24px" fill="#000000"><path d="M0 0h24v24H0V0z" fill="none" /><path d="M4 8h4V4H4v4zm6 12h4v-4h-4v4zm-6 0h4v-4H4v4zm0-6h4v-4H4v4zm6 0h4v-4h-4v4zm6-10v4h4V4h-4zm-6 4h4V4h-4v4zm6 6h4v-4h-4v4zm0 6h4v-4h-4v4z" /></svg>
-              </Dropdown.Toggle>
-              <Dropdown.Menu className='main-header-dropdown header-shortcuts-dropdown pb-0' align='end' aria-labelledby="notificationDropdown">
-                <div className="p-3">
-                  <div className="d-flex align-items-center justify-content-between">
-                    <p className="mb-0 fs-17 fw-semibold">Related Apps</p>
-                  </div>
-                </div>
-                <Dropdown.Divider className='mb-0"' />
-                <div className="main-header-shortcuts p-2" id="header-shortcut-scroll">
-                  <div className="row g-2">
-                    {appData.map((app, index) => (
-                      <div className="col-4" key={index}>
-                        <Link to="#">
-                          <div className="text-center p-3 related-app">
-                            <span className="avatar avatar-sm avatar-rounded">
-                              <img src={imagesData(app.image)} alt={app.name} />
-                            </span>
-                            <span className="d-block fs-12">{app.name}</span>
-                          </div>
-                        </Link>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="p-3 border-top">
-                  <div className="d-grid">
-                    <Link to="#" className="btn btn-primary">View All</Link>
-                  </div>
-                </div>
-              </Dropdown.Menu>
-            </Dropdown>
-
             {/* Fullscreen icon */}
             <div className="header-element header-fullscreen">
 
@@ -666,21 +534,23 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
               </Link>
             </div>
 
-            {/* Right sidebar */}
-            <div className="header-element d-md-block d-none">
-              <Link to="#" className="header-link" data-bs-toggle="offcanvas" data-bs-target="#sidebar-canvas" onClick={handleClick}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="header-link-icon" width="24" height="24" viewBox="0 0 24 24"><path d="M4 6h16v2H4zm4 5h12v2H8zm5 5h7v2h-7z" /></svg>
-              </Link>
-            </div>
-            <Rightsidebar show={offshow} handleClose={() => setoffShow(false)} />
-
             {/* Profile */}
 
             <Dropdown className="header-element">
               <Dropdown.Toggle as='a' className="header-link" variant="" id="mainHeaderProfile">
                 <div className="d-flex align-items-center">
                   <div className="me-sm-2 me-0">
-                    <img src={imagesData('face2')} alt="img" width="32" height="32" className="rounded-circle" />
+                    <div 
+                      className="rounded-circle d-flex align-items-center justify-content-center fw-semibold text-white"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        backgroundColor: 'rgb(var(--primary-rgb))',
+                        fontSize: '14px'
+                      }}
+                    >
+                      {getInitials(profile?.nombre)}
+                    </div>
                   </div>
                   <div className="d-xl-block d-none">
                     <p className="fw-semibold mb-0 lh-1">{profile?.nombre || "Usuario"}</p>
@@ -690,10 +560,6 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
               </Dropdown.Toggle>
               <Dropdown.Menu as='ul' className="main-header-dropdown pt-0 overflow-hidden header-profile-dropdown" aria-labelledby="mainHeaderProfile" align='end'>
                 <Link to={`${import.meta.env.BASE_URL}pages/profile/`} className='dropdown-item d-flex border-bottom'><i className="far fa-user-circle fs-16 me-2 op-7"></i>Profile</Link>
-                <Link to={`${import.meta.env.BASE_URL}pages/mail/chat/`} className='dropdown-item d-flex border-bottom'><i className="far fa-smile fs-16 me-2 op-7"></i>Chat</Link>
-                <Link to={`${import.meta.env.BASE_URL}pages/mail/mail/`} className='dropdown-item d-flex border-bottom'><i className="far fa-envelope  fs-16 me-2 op-7"></i>Inbox <span className="badge bg-success-transparent ms-auto">25</span></Link>
-                <Link to={`${import.meta.env.BASE_URL}pages/mail/chat/`} className='dropdown-item d-flex border-bottom'><i className="far fa-comment-dots fs-16 me-2 op-7"></i>Messages</Link>
-                <Link to={`${import.meta.env.BASE_URL}pages/settings/`} className='dropdown-item d-flex border-bottom'><i className="far fa-sun fs-16 me-2 op-7"></i>Settings</Link>
                 <Link to="#" onClick={handleLogout} className='dropdown-item d-flex'><i className="far fa-arrow-alt-circle-left fs-16 me-2 op-7"></i>Sign Out</Link>
               </Dropdown.Menu>
             </Dropdown>

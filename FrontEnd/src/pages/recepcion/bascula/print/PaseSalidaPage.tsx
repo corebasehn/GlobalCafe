@@ -27,6 +27,29 @@ export default function PaseSalidaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fontFamily, setFontFamily] = useState<string>("Arial");
+  const [fontSize, setFontSize] = useState<string>("8.5pt");
+
+  // Función para calcular tamaños de fuente relativos
+  const getFontSize = (multiplier: number) => {
+    const baseSize = parseFloat(fontSize);
+    const unit = fontSize.replace(/[0-9.]/g, '');
+    return `${(baseSize * multiplier).toFixed(2)}${unit}`;
+  };
+
+  useEffect(() => {
+    fetch("/settings.json")
+      .then((res) => res.json())
+      .then((settings) => {
+        if (settings?.printSettings?.fontFamily) {
+          setFontFamily(settings.printSettings.fontFamily);
+        }
+        if (settings?.printSettings?.fontSize) {
+          setFontSize(settings.printSettings.fontSize);
+        }
+      })
+      .catch(() => console.warn("No se pudo cargar settings.json"));
+  }, []);
 
   useEffect(() => {
     if (!idDetalle) return;
@@ -44,13 +67,13 @@ export default function PaseSalidaPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "2cm", textAlign: "center", fontFamily: "Arial" }}>
+      <div style={{ padding: "2cm", textAlign: "center", fontFamily }}>
         Cargando pase de salida...
       </div>
     );
   }
   if (error) {
-    return <div style={{ padding: "2cm", color: "red", fontFamily: "Arial" }}>{error}</div>;
+    return <div style={{ padding: "2cm", color: "red", fontFamily }}>{error}</div>;
   }
   if (!data) return null;
 
@@ -71,8 +94,8 @@ export default function PaseSalidaPage() {
         }
 
         body {
-          font-family: Arial, Helvetica, sans-serif;
-          font-size: 8.5pt;
+          font-family: ${fontFamily}, Helvetica, sans-serif;
+          font-size: ${fontSize};
           background: white;
         }
 
@@ -104,7 +127,7 @@ export default function PaseSalidaPage() {
             border: 1px solid #555;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 9pt;
+            font-size: ${getFontSize(1.06)};
           }
         }
 
@@ -120,12 +143,12 @@ export default function PaseSalidaPage() {
           border-bottom: 2px solid #000;
           padding-bottom: 4px;
         }
-        .ps-titulo  { font-size: 13pt; font-weight: bold; letter-spacing: 2px; }
-        .ps-subtitulo { font-size: 8pt; color: #555; margin-top: 1px; }
+        .ps-titulo  { font-size: ${getFontSize(1.53)}; font-weight: bold; letter-spacing: 2px; }
+        .ps-subtitulo { font-size: ${getFontSize(0.94)}; color: #555; margin-top: 1px; }
 
         .ps-fecha-emision {
           text-align: right;
-          font-size: 7.5pt;
+          font-size: ${getFontSize(0.88)};
           margin-bottom: 8px;
           font-style: italic;
         }
@@ -142,7 +165,7 @@ export default function PaseSalidaPage() {
         .ps-row {
           display: flex;
           align-items: baseline;
-          font-size: 8.5pt;
+          font-size: ${fontSize};
           border-bottom: 1px dotted #ccc;
           padding-bottom: 3px;
           gap: 6px;
@@ -152,11 +175,11 @@ export default function PaseSalidaPage() {
           font-weight: bold;
           white-space: nowrap;
           min-width: 110px;
-          font-size: 8pt;
+          font-size: ${getFontSize(0.94)};
           color: #333;
         }
         .ps-row .ps-val {
-          font-size: 8.5pt;
+          font-size: ${fontSize};
           font-weight: 600;
           flex: 1;
         }
@@ -165,16 +188,16 @@ export default function PaseSalidaPage() {
           border: 1.5px solid #000;
           padding: 5px 12px;
           min-height: 28px;
-          font-size: 8.5pt;
+          font-size: ${fontSize};
           margin-bottom: 10px;
         }
-        .ps-obs-lbl { font-weight: bold; font-size: 8pt; margin-bottom: 2px; }
+        .ps-obs-lbl { font-weight: bold; font-size: ${getFontSize(0.94)}; margin-bottom: 2px; }
 
         .ps-firmas {
           display: flex;
           justify-content: space-between;
           margin-top: 50px;
-          font-size: 8pt;
+          font-size: ${getFontSize(0.94)};
         }
         .ps-firma {
           text-align: center;

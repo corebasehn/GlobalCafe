@@ -379,6 +379,17 @@ export class CatalogsService {
     return this.prisma.tipoCafe.findMany({ where: { estado: true }, orderBy: { tipo_cafe: 'asc' } });
   }
 
+  async createTipoCafe(data: { tipo_cafe: string }, userId: number) {
+    return this.prisma.tipoCafe.create({ data: { ...data, usuario_creacion: userId } });
+  }
+
+  async updateTipoCafe(id: number, data: { tipo_cafe: string; estado?: boolean }, userId: number) {
+    return this.prisma.tipoCafe.update({
+      where: { id_tipo_cafe: id },
+      data: { ...data, usuario_modificacion: userId, fecha_modificacion: new Date() }
+    });
+  }
+
   // ==========================================
   // TIPO REMISIÓN
   // ==========================================
@@ -386,10 +397,32 @@ export class CatalogsService {
     return this.prisma.tipoRemision.findMany({ where: { estado: true }, orderBy: { tipo_remision: 'asc' } });
   }
 
+  async createTipoRemision(data: { tipo_remision: string }, userId: number) {
+    return this.prisma.tipoRemision.create({ data: { ...data, usuario_creacion: userId } });
+  }
+
+  async updateTipoRemision(id: number, data: { tipo_remision: string; estado?: boolean }, userId: number) {
+    return this.prisma.tipoRemision.update({
+      where: { id_tipo_remision: id },
+      data: { ...data, usuario_modificacion: userId, fecha_modificacion: new Date() }
+    });
+  }
+
   // ==========================================
   // TIPO EMPAQUE
   // ==========================================
   async getTiposEmpaque() {
     return this.prisma.tipoEmpaque.findMany({ where: { estado: true }, orderBy: { tipo_empaque: 'asc' } });
+  }
+
+  async createTipoEmpaque(data: { tipo_empaque: string, tara: number }, userId: number) {
+    return this.prisma.tipoEmpaque.create({ data: { ...data, usuario_creacion: userId } });
+  }
+
+  async updateTipoEmpaque(id: number, data: { tipo_empaque: string; tara: number; estado?: boolean }, userId: number) {
+    return this.prisma.tipoEmpaque.update({
+      where: { id_tipo_empaque: id },
+      data: { ...data, usuario_modificacion: userId, fecha_modificacion: new Date() }
+    });
   }
 }

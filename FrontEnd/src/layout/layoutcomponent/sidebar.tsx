@@ -595,7 +595,7 @@ const Sidebar: FC<actiontype> = ({ local_varaiable, ThemeChanger }) => {
 
 
         <div className="main-sidebar-header">
-          <Link to={`${import.meta.env.BASE_URL}dashboard/dashboard/`} className="header-logo">
+          <Link to={`${import.meta.env.BASE_URL}dashboard/operaciones/`} className="header-logo">
             <img src={imagesData('desktoplogo')} alt="logo" className="desktop-logo" />
             <img src={imagesData('togglelogo')} alt="logo" className="toggle-logo" />
             <img src={imagesData('desktopdark')} alt="logo" className="desktop-dark" />

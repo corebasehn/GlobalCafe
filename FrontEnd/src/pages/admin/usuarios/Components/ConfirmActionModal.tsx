@@ -1,5 +1,4 @@
 import { Modal, Button } from 'react-bootstrap';
-import type { User } from "../../../../api/users.api";
 
 interface ConfirmActionModalProps {
   show: boolean;
@@ -21,17 +20,18 @@ export default function ConfirmActionModal({
   onConfirm
 }: ConfirmActionModalProps) {
   return (
-    <Modal show={show} onHide={onClose} size="sm">
+    <Modal show={show} onHide={onClose} size="sm" centered>
       <Modal.Header closeButton>
-        <Modal.Title>{title}</Modal.Title>
+        <Modal.Title className="fs-18">{title}</Modal.Title>
       </Modal.Header>
-      <Modal.Body>
-        <div className="text-neutral-600 mb-0">{message}</div>
+      <Modal.Body className="text-center p-4">
+        <div className="text-muted fs-14">{message}</div>
       </Modal.Body>
-      <Modal.Footer>
-        <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-        <Button variant={variant} onClick={onConfirm}>{actionLabel}</Button>
+      <Modal.Footer className="justify-content-center border-top-0 pt-0">
+        <Button variant="light" className="btn-wave" onClick={onClose}>Cancelar</Button>
+        <Button variant={variant} className="btn-wave" onClick={onConfirm}>{actionLabel}</Button>
       </Modal.Footer>
     </Modal>
   );
 }
+

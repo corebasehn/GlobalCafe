@@ -33,8 +33,35 @@ export default function BoletaPesadaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [fontFamily, setFontFamily] = useState<string>("Arial");
+  const [fontSize, setFontSize] = useState<string>("8pt");
+  const [leyendaCafeExterno, setLeyendaCafeExterno] = useState<string>("CAFÉ EXTERNO (SERVICIO DE MAQUILADO)");
 
   const esPrimera = tipo === "primera";
+
+  // Función para calcular tamaños de fuente relativos
+  const getFontSize = (multiplier: number) => {
+    const baseSize = parseFloat(fontSize);
+    const unit = fontSize.replace(/[0-9.]/g, '');
+    return `${(baseSize * multiplier).toFixed(2)}${unit}`;
+  };
+
+  useEffect(() => {
+    fetch("/settings.json")
+      .then((res) => res.json())
+      .then((settings) => {
+        if (settings?.printSettings?.fontFamily) {
+          setFontFamily(settings.printSettings.fontFamily);
+        }
+        if (settings?.printSettings?.fontSize) {
+          setFontSize(settings.printSettings.fontSize);
+        }
+        if (settings?.printSettings?.leyendaCafeExterno) {
+          setLeyendaCafeExterno(settings.printSettings.leyendaCafeExterno);
+        }
+      })
+      .catch(() => console.warn("No se pudo cargar settings.json"));
+  }, []);
 
   useEffect(() => {
     if (!idDetalle) return;
@@ -52,13 +79,13 @@ export default function BoletaPesadaPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: "2cm", textAlign: "center", fontFamily: "Arial" }}>
+      <div style={{ padding: "2cm", textAlign: "center", fontFamily }}>
         Cargando boleta...
       </div>
     );
   }
   if (error) {
-    return <div style={{ padding: "2cm", color: "red", fontFamily: "Arial" }}>{error}</div>;
+    return <div style={{ padding: "2cm", color: "red", fontFamily }}>{error}</div>;
   }
   if (!data) return null;
 
@@ -136,12 +163,12 @@ export default function BoletaPesadaPage() {
 
         @page {
           size: ${PAGE_W} ${PAGE_H};
-          margin: 0;
+          margin: 3cm 1.5cm 2cm 1.5cm;
         }
 
         body {
-          font-family: Arial, Helvetica, sans-serif;
-          font-size: 8pt;
+          font-family: ${fontFamily}, Helvetica, sans-serif;
+          font-size: ${fontSize};
           background: white;
         }
 
@@ -173,30 +200,30 @@ export default function BoletaPesadaPage() {
             border: 1px solid #555;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 9pt;
+            font-size: ${getFontSize(1.125)};
           }
         }
 
         @media print {
-          .boleta-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
+          .boleta-paper { padding: 0; }
           .no-print { display: none !important; }
         }
 
         .blt-header { text-align: center; margin-bottom: 4px; }
-        .blt-titulo  { font-size: 9.5pt; font-weight: bold; text-transform: uppercase; }
+        .blt-titulo  { font-size: ${getFontSize(1.1875)}; font-weight: bold; text-transform: uppercase; }
 
         .blt-info {
           width: 100%;
           border-collapse: collapse;
           margin-bottom: 4px;
-          font-size: 7.5pt;
+          font-size: ${getFontSize(0.9375)};
         }
         .blt-info td { padding: 1px 4px; }
         .blt-info .lbl { font-weight: bold; white-space: nowrap; width: 68px; }
         .blt-info td:nth-child(2) { width: 40%; }
 
         .blt-pergamino {
-          font-size: 8pt;
+          font-size: ${fontSize};
           font-weight: bold;
           text-align: left;
           margin: 2px 0 3px 0;
@@ -204,7 +231,7 @@ export default function BoletaPesadaPage() {
         }
 
         .blt-section-title {
-          font-size: 8pt;
+          font-size: ${fontSize};
           font-weight: bold;
           text-align: center;
           padding: 1px 0;
@@ -215,12 +242,12 @@ export default function BoletaPesadaPage() {
           width: 100%;
           border-collapse: collapse;
           margin-bottom: 5px;
-          font-size: 7.5pt;
+          font-size: ${getFontSize(0.9375)};
         }
         .blt-peso-table th {
           border-bottom: 1px solid #333;
           padding: 2px 6px;
-          font-size: 7pt;
+          font-size: ${getFontSize(0.875)};
           font-weight: bold;
         }
         .blt-peso-table th.tr,
@@ -231,7 +258,7 @@ export default function BoletaPesadaPage() {
           width: 100%;
           border-collapse: collapse;
           margin-bottom: 4px;
-          font-size: 7.5pt;
+          font-size: ${getFontSize(0.9375)};
           border-top: 1px solid #333;
         }
         .blt-totales td {
@@ -244,7 +271,18 @@ export default function BoletaPesadaPage() {
         .blt-footer {
           border-top: 1px solid #333;
           padding-top: 4px;
-          font-size: 7.5pt;
+          font-size: ${getFontSize(0.9375)};
+        }
+
+        .blt-leyenda-externa {
+          background: #ffffff;
+          border: 2px solid #333;
+          padding: 3px;
+          text-align: center;
+          font-weight: bold;
+          font-size: ${getFontSize(1.0)};
+          margin: 3px 0;
+          letter-spacing: 1px;
         }
       `}</style>
 
@@ -282,13 +320,25 @@ export default function BoletaPesadaPage() {
               <td>{placaCompleta}</td>
             </tr>
             <tr>
+              <td className="lbl">CONDUCTOR:</td>
+              <td>{recepcion?.conductor?.nombre ?? "—"}</td>
+              <td className="lbl">TELEFONO:</td>
+              <td>{recepcion?.conductor?.telefono ?? "—"}</td>
+            </tr>
+            <tr>
               <td className="lbl">OBSERVACION:</td>
               <td colSpan={3}>{detalle.observaciones || "—"}</td>
             </tr>
           </tbody>
         </table>
 
-        <div className="blt-pergamino">PERGAMINO SECO</div>
+        {!esPrimera && detalle.id_tipo_remision === 2 && (
+          <div className="blt-leyenda-externa">
+            {leyendaCafeExterno}
+          </div>
+        )}
+
+        <div className="blt-pergamino">{detalle.tipo_cafe?.tipo_cafe?.toUpperCase() ?? "N/A"}</div>
 
         <div className="blt-section-title">NOTA DE PESO DEL CAMION</div>
 
@@ -321,10 +371,12 @@ export default function BoletaPesadaPage() {
               <td><strong>PESO BRUTO:</strong>&nbsp;{fmt(pesoBruto)} LB</td>
               <td><strong>TOTAL SACOS:</strong>&nbsp;{totalSacos}</td>
             </tr>
-            <tr>
-              <td><strong>TARA (0.5 × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
-              <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
-            </tr>
+            {!esPrimera && (
+              <tr>
+                <td><strong>TARA (0.5 × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
+                <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
+              </tr>
+            )}
           </tbody>
         </table>
 
