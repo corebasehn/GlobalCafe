@@ -133,11 +133,11 @@ export default function OrdenVentaPage() {
               </Form.Group>
               <Form.Group>
                 <Form.Label>Cantidad (kg)</Form.Label>
-                <Form.Control type="number" placeholder="0" required />
+                <Form.Control type="number" placeholder="0" required onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Precio por kg ($)</Form.Label>
-                <Form.Control type="number" step="0.01" placeholder="0.00" required />
+                <Form.Control type="number" step="0.01" placeholder="0.00" required onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
             </div>
             <Form.Group>

@@ -301,6 +301,7 @@ export default function ModalRemision({
                           type="number"
                           value={detalle.cantidad_sacos}
                           onChange={e => onDetalleChange(index, "cantidad_sacos", e.target.value)}
+                          onWheel={(e) => e.currentTarget.blur()}
                           placeholder="0"
                           required
                           disabled={isReadOnly}
@@ -315,6 +316,7 @@ export default function ModalRemision({
                           step="0.01"
                           value={detalle.cantidad_qq}
                           onChange={e => onDetalleChange(index, "cantidad_qq", e.target.value)}
+                          onWheel={(e) => e.currentTarget.blur()}
                           placeholder="0.00"
                           required
                           disabled={isReadOnly}

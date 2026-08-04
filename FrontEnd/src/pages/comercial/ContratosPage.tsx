@@ -103,11 +103,11 @@ export default function ContratosPage() {
               </Form.Group>
               <Form.Group>
                 <Form.Label>Cantidad (sacos)</Form.Label>
-                <Form.Control type="number" placeholder="0" required />
+                <Form.Control type="number" placeholder="0" required onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Precio por Saco ($)</Form.Label>
-                <Form.Control type="number" step="0.01" placeholder="0.00" required />
+                <Form.Control type="number" step="0.01" placeholder="0.00" required onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Fecha de Entrega</Form.Label>

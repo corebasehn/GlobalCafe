@@ -32,15 +32,15 @@ export default function BalanceMasasPage() {
               </Form.Group>
               <Form.Group>
                 <Form.Label>Peso Oro (kg)</Form.Label>
-                <Form.Control type="number" placeholder="0" />
+                <Form.Control type="number" placeholder="0" onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Peso Ciscos (kg)</Form.Label>
-                <Form.Control type="number" placeholder="0" />
+                <Form.Control type="number" placeholder="0" onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Peso Merma (kg)</Form.Label>
-                <Form.Control type="number" placeholder="0" />
+                <Form.Control type="number" placeholder="0" onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Button variant="primary" type="submit" className="flex items-center gap-2 justify-center h-11">
                 <Save className="w-4 h-4" /> Guardar Balance

@@ -33,15 +33,15 @@ export default function OrdenSacosPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <Form.Group>
                 <Form.Label>Sacos de Entrada</Form.Label>
-                <Form.Control type="number" placeholder="0" />
+                <Form.Control type="number" placeholder="0" onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Peso Total (kg)</Form.Label>
-                <Form.Control type="number" placeholder="0" />
+                <Form.Control type="number" placeholder="0" onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Factor de Rendimiento</Form.Label>
-                <Form.Control type="number" step="0.01" defaultValue="0.82" />
+                <Form.Control type="number" step="0.01" defaultValue="0.82" onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Button variant="primary" className="flex items-center gap-2 justify-center h-11">
                 <Calculator className="w-4 h-4" /> Calcular
@@ -101,11 +101,11 @@ export default function OrdenSacosPage() {
             </Form.Group>
             <Form.Group>
               <Form.Label>Sacos de Entrada</Form.Label>
-              <Form.Control type="number" placeholder="0" required />
+              <Form.Control type="number" placeholder="0" required onWheel={(e) => e.currentTarget.blur()} />
             </Form.Group>
             <Form.Group>
               <Form.Label>Factor de Rendimiento</Form.Label>
-              <Form.Control type="number" step="0.01" defaultValue="0.82" required />
+              <Form.Control type="number" step="0.01" defaultValue="0.82" required onWheel={(e) => e.currentTarget.blur()} />
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>

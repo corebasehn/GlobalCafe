@@ -92,7 +92,7 @@ export default function LotesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Form.Group>
                 <Form.Label>Cantidad de Sacos</Form.Label>
-                <Form.Control type="number" placeholder="0" required />
+                <Form.Control type="number" placeholder="0" required onWheel={(e) => e.currentTarget.blur()} />
               </Form.Group>
               <Form.Group>
                 <Form.Label>Calidad</Form.Label>

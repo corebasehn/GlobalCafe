@@ -39,41 +39,45 @@ export default function OperacionConfig() {
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold text-muted fs-12">Factor de Rendimiento por Defecto</Form.Label>
             <Form.Control 
-              type="number" 
-              step="0.01" 
-              value={formData.factorRendimiento} 
+              type="number"
+              step="0.01"
+              value={formData.factorRendimiento}
               onChange={(e) => setFormData({...formData, factorRendimiento: parseFloat(e.target.value)})}
-              required 
+              onWheel={(e) => e.currentTarget.blur()}
+              required
             />
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold text-muted fs-12">Tolerancia Báscula (%)</Form.Label>
             <Form.Control 
-              type="number" 
-              step="0.1" 
-              value={formData.toleranciaBascula} 
+              type="number"
+              step="0.1"
+              value={formData.toleranciaBascula}
               onChange={(e) => setFormData({...formData, toleranciaBascula: parseFloat(e.target.value)})}
-              required 
+              onWheel={(e) => e.currentTarget.blur()}
+              required
             />
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold text-muted fs-12">Humedad Máxima Aceptable (%)</Form.Label>
             <Form.Control 
-              type="number" 
-              step="0.1" 
-              value={formData.humedadMaxima} 
+              type="number"
+              step="0.1"
+              value={formData.humedadMaxima}
               onChange={(e) => setFormData({...formData, humedadMaxima: parseFloat(e.target.value)})}
-              required 
+              onWheel={(e) => e.currentTarget.blur()}
+              required
             />
           </Form.Group>
           <Form.Group className="mb-3">
             <Form.Label className="fw-semibold text-muted fs-12">Defectos Máximos (%)</Form.Label>
             <Form.Control 
-              type="number" 
+              type="number"
               step="0.1"
-              value={formData.defectosMaximos} 
+              value={formData.defectosMaximos}
               onChange={(e) => setFormData({...formData, defectosMaximos: parseFloat(e.target.value)})}
-              required 
+              onWheel={(e) => e.currentTarget.blur()}
+              required
             />
           </Form.Group>
           <Form.Group className="mb-4">

@@ -333,7 +333,7 @@ export default function CatalogosModal({
             <Col md={4}>
               <Form.Group className="mb-3">
                 <Form.Label className="fw-semibold">Tara (Libras)</Form.Label>
-                <Form.Control type="number" step="0.01" value={formData.tara || 0} onChange={(e) => onChange({...formData, tara: e.target.value})} required />
+                <Form.Control type="number" step="0.01" value={formData.tara || 0} onChange={(e) => onChange({...formData, tara: e.target.value})} onWheel={(e) => e.currentTarget.blur()} required />
               </Form.Group>
             </Col>
           </Row>

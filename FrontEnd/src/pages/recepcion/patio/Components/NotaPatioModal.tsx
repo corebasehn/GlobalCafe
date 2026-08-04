@@ -82,11 +82,12 @@ export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit 
                 <Form.Label className="font-bold text-success-700 flex items-center gap-2">
                   <CheckCircle size={18}/> Sacos Buenos (Descargados)
                 </Form.Label>
-                <Form.Control 
-                  type="number" 
+                <Form.Control
+                  type="number"
                   size="lg"
                   value={sacosBuenos}
                   onChange={(e) => handleSacosBuenosChange(Number(e.target.value))}
+                  onWheel={(e) => e.currentTarget.blur()}
                   min={0}
                   required
                 />
@@ -98,11 +99,12 @@ export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit 
                 <Form.Label className="font-bold text-danger-700 flex items-center gap-2">
                   <AlertTriangle size={18}/> Sacos Faltos / Problemas
                 </Form.Label>
-                <Form.Control 
-                  type="number" 
+                <Form.Control
+                  type="number"
                   size="lg"
                   value={sacosFaltos}
                   onChange={(e) => setSacosFaltos(Number(e.target.value))}
+                  onWheel={(e) => e.currentTarget.blur()}
                   min={0}
                 />
                 <Form.Text className="text-muted">Sacos con humedad, olor o daños (Requiere aprobación).</Form.Text>
