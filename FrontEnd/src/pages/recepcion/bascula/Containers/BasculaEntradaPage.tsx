@@ -1,6 +1,6 @@
 import React, { useState, useEffect, KeyboardEvent } from "react";
-import { Search } from "lucide-react";
-import { Badge, Card, Form, InputGroup } from "react-bootstrap";
+import { Search, Printer } from "lucide-react";
+import { Badge, Button, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 import { useAuth } from "../../../../auth/useAuth";
@@ -16,6 +16,7 @@ const ESTADO_PESADA_CERRADA = 8;  // "Pesada Cerrada"
 // Components
 import BasculaTable, { type ModalMode } from "../Components/BasculaTable";
 import PesadaModal from "../Components/PesadaModal";
+import ModalReimpresionPesadasIngreso from "../Components/ModalReimpresionPesadasIngreso";
 
 export default function BasculaEntradaPage() {
   const { hasPermission } = useAuth();
@@ -205,6 +206,9 @@ export default function BasculaEntradaPage() {
   const cntCompletado     = countEstado("Pesaje Completado");
   const cntEnBodega       = countEstado("En Bodega");
 
+  const [showReimpresion, setShowReimpresion] = useState(false);
+  const canReimprimir = hasPermission("REIMPRESION_PESADAS_INGRESO");
+
   const handleSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") setSearchTerm(inputValue);
   };
@@ -230,6 +234,17 @@ export default function BasculaEntradaPage() {
                 />
               </InputGroup>
             </div>
+
+            {canReimprimir && (
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                className="d-flex align-items-center gap-1 flex-shrink-0"
+                onClick={() => setShowReimpresion(true)}
+              >
+                <Printer size={14} /> Reimpresiones
+              </Button>
+            )}
 
             {/* Indicadores por estado */}
             {!loading && (
@@ -271,6 +286,11 @@ export default function BasculaEntradaPage() {
         onOpenModal={handleOpenModal}
         searchTerm={searchTerm}
         canReimprimir={hasPermission("REIMPRESION_PESADAS_INGRESO")}
+      />
+
+      <ModalReimpresionPesadasIngreso
+        show={showReimpresion}
+        onClose={() => setShowReimpresion(false)}
       />
 
       <PesadaModal

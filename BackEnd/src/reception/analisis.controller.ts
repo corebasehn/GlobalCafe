@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { AnalisisService } from './analisis.service';
 import { CreateAnalisisDto, VeredictoGerenciaDto } from './dto/create-analisis.dto';
 import { AuthGuard } from '../auth/auth.guard';
@@ -31,5 +31,11 @@ export class AnalisisController {
   @Patch(':id/veredicto')
   veredicto(@Param('id') id: string, @Body() dto: VeredictoGerenciaDto, @Request() req) {
     return this.analisisService.veredictoGerencia(+id, dto, req.user?.id);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('buscar')
+  buscarAnalisis(@Query('q') q: string) {
+    return this.analisisService.buscarAnalisis(q);
   }
 }

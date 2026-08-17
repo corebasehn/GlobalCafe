@@ -604,6 +604,35 @@ export class ReceptionService {
   // BOLETAS DE IMPRESIÓN (BÁSCULA)
   // ==========================================
 
+  async buscarPesadas(q: string) {
+    if (!q || q.trim().length < 2) return [];
+    const term = q.trim().toLowerCase();
+    return this.prisma.recepcion.findMany({
+      where: {
+        estado: true,
+        OR: [
+          { numero_entrada: { contains: term, mode: 'insensitive' } },
+          { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
+          { placa_furgon: { placa: { contains: term, mode: 'insensitive' } } },
+          { detalles: { some: { remision: { contains: term, mode: 'insensitive' }, estado: true } } },
+        ],
+        detalles: { some: { estado: true, pesada_entrada: { not: null } } },
+      },
+      include: {
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: { include: { transporte: true } },
+        detalles: {
+          where: { estado: true, pesada_entrada: { not: null } },
+          include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
+          orderBy: { id_detalle_recepcion: 'asc' },
+        },
+      },
+      orderBy: { id_recepcion: 'desc' },
+      take: 30,
+    });
+  }
+
   async getBoletaPesada(idDetalle: number) {
     const detalle = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion: idDetalle },

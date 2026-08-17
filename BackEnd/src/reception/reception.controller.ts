@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
 import { ReceptionService } from './reception.service';
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
@@ -80,6 +80,12 @@ export class ReceptionController {
   @Get('bascula/pendientes')
   getPendientesBascula() {
     return this.receptionService.getPendientesBascula();
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('bascula/buscar')
+  buscarPesadas(@Query('q') q: string) {
+    return this.receptionService.buscarPesadas(q);
   }
 
   @UseGuards(AuthGuard, PermissionsGuard)

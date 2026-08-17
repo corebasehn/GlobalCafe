@@ -1,6 +1,6 @@
 import { useState, useEffect, KeyboardEvent } from "react";
-import { Search } from "lucide-react";
-import { Badge, Card, Form, InputGroup } from "react-bootstrap";
+import { Search, Printer } from "lucide-react";
+import { Badge, Button, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../../auth/useAuth";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
@@ -14,6 +14,7 @@ import { createAnalisisApi, getAnalisisPendientesApi, CreateAnalisisRequest, Ana
 import LabTable from "../Components/LabTable";
 import CatacionModal from "../Components/CatacionModal";
 import BoletaModal from "../Components/BoletaModal";
+import ModalReimpresionAnalisis from "../Components/ModalReimpresionAnalisis";
 
 export interface MuestraPendiente extends DetalleRecepcion {
   numero_entrada: string;
@@ -95,6 +96,9 @@ export default function LaboratorioPage() {
     }
   };
 
+  const [showReimpresion, setShowReimpresion] = useState(false);
+  const canReimprimir = hasPermission("REIMPRESION_ANALISIS_INGRESO");
+
   const handleOpenModal = (muestra: MuestraPendiente) => setSelectedMuestra(muestra);
   const handleCloseModal = () => setSelectedMuestra(null);
   const handlePrintClick = (muestra: MuestraPendiente) => setMuestraToPrint(muestra);
@@ -157,6 +161,15 @@ export default function LaboratorioPage() {
               </InputGroup>
             </div>
 
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="d-flex align-items-center gap-1"
+              onClick={() => setShowReimpresion(true)}
+            >
+              <Printer size={14} /> Reimpresiones
+            </Button>
+
             {/* Indicadores de estado */}
             {!loading && (
               <div className="d-flex gap-2 flex-wrap align-items-center">
@@ -215,6 +228,11 @@ export default function LaboratorioPage() {
       <BoletaModal
         muestra={muestraToPrint}
         onClose={handleClosePrintModal}
+      />
+
+      <ModalReimpresionAnalisis
+        show={showReimpresion}
+        onClose={() => setShowReimpresion(false)}
       />
     </div>
   );
