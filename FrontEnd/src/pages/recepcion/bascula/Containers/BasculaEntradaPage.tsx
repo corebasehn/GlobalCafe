@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { Badge, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
+import { useAuth } from "../../../../auth/useAuth";
 
 // APIs
 import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi } from "../../../../api/reception.api";
@@ -17,6 +18,7 @@ import BasculaTable, { type ModalMode } from "../Components/BasculaTable";
 import PesadaModal from "../Components/PesadaModal";
 
 export default function BasculaEntradaPage() {
+  const { hasPermission } = useAuth();
   const [inputValue, setInputValue] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
@@ -268,6 +270,7 @@ export default function BasculaEntradaPage() {
         onToggleRow={toggleRow}
         onOpenModal={handleOpenModal}
         searchTerm={searchTerm}
+        canReimprimir={hasPermission("REIMPRESION_PESADAS_INGRESO")}
       />
 
       <PesadaModal

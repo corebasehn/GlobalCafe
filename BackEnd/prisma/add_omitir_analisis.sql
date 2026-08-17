@@ -1,0 +1,1 @@
+ALTER TABLE detalle_recepcion ADD COLUMN IF NOT EXISTS omitir_analisis BOOLEAN DEFAULT FALSE;

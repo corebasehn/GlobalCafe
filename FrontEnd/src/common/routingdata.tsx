@@ -122,6 +122,7 @@ import RemisionPage from "../pages/recepcion/RemisionPage";
 import MuestreoPage from "../pages/recepcion/MuestreoPage";
 import LaboratorioPage from "../pages/recepcion/laboratorio/Containers/LaboratorioPage";
 import BasculaEntradaPage from "../pages/recepcion/bascula/Containers/BasculaEntradaPage";
+import OmitirAnalisisPage from "../pages/recepcion/bascula/Containers/OmitirAnalisisPage";
 import WMSPatioPage from "../pages/recepcion/patio/Containers/WMSPatioPage";
 import NotaPesoPage from "../pages/recepcion/NotaPesoPage";
 import AprobacionGerenciaPage from '../pages/recepcion/aprobacion-gerencia/Containers/AprobacionGerenciaPage';
@@ -299,6 +300,7 @@ export const Routingdata = [
   { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, element: <RequirePermission permission="VER_MUESTREO"><MuestreoPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, element: <RequirePermission permission="VER_MUESTRA"><LaboratorioPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, element: <RequirePermission permission="VER_BASCULA"><BasculaEntradaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/omitir-analisis`, element: <RequirePermission permission="VER_OMITIR_ANALISIS"><OmitirAnalisisPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, element: <RequirePermission permission="VER_WMS_PATIO"><WMSPatioPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, element: <RequirePermission permission="VER_NOTA_PESO"><NotaPesoPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, element: <RequirePermission permission="VER_APROBACIONES"><AprobacionGerenciaPage /></RequirePermission> },
@@ -547,6 +549,7 @@ export const Sidebarcomponents = [
       { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, type: "link", active: false, label: "Muestreo en Patio", requirePermission: "VER_MUESTREO" },
       { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, type: "link", active: false, label: "Laboratorio", requirePermission: "VER_MUESTRA" },
       { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, type: "link", active: false, label: "Báscula de Entrada", requirePermission: "VER_BASCULA" },
+      { path: `${import.meta.env.BASE_URL}recepcion/omitir-analisis`, type: "link", active: false, label: "Omitir Análisis", requirePermission: "VER_OMITIR_ANALISIS" },
       { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, label: "WMS Patio", requirePermission: "VER_WMS_PATIO" },
       { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, label: "Nota de Peso", requirePermission: "VER_NOTA_PESO" },
       { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, label: "Aprobación Gerencia", requirePermission: "VER_APROBACIONES" },

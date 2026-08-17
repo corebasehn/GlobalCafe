@@ -118,6 +118,30 @@ export class ReceptionController {
   }
 
   // ==========================================
+  // RUTAS PARA OMITIR ANÁLISIS (EXTERNOS)
+  // ==========================================
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_OMITIR_ANALISIS')
+  @Get('externos/omitir-analisis')
+  getExternosOmitirAnalisis() {
+    return this.receptionService.getExternosOmitirAnalisis();
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_OMITIR_ANALISIS')
+  @Get('externos/omitidos')
+  getExternosOmitidos() {
+    return this.receptionService.getExternosOmitidos();
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('detalle/:id/omitir-analisis')
+  actualizarOmitirAnalisis(@Param('id') id: string, @Body('omitir_analisis') omitir: boolean, @Request() req) {
+    return this.receptionService.actualizarOmitirAnalisis(+id, omitir, req.user?.id);
+  }
+
+  // ==========================================
   // RUTAS PARA PATIO
   // ==========================================
 

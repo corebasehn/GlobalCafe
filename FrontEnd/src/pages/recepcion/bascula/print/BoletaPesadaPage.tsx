@@ -1,5 +1,5 @@
 ﻿import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../auth/useAuth";
 import { getBoletaPesadaApi } from "../../../../api/reception.api";
 
@@ -29,6 +29,8 @@ function fmtFecha(d: Date | null) {
 
 export default function BoletaPesadaPage() {
   const { idDetalle, tipo } = useParams<{ idDetalle: string; tipo: string }>();
+  const [searchParams] = useSearchParams();
+  const esCopia = searchParams.get("copia") === "true";
   const { profile } = useAuth();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -284,6 +286,18 @@ export default function BoletaPesadaPage() {
           margin: 3px 0;
           letter-spacing: 1px;
         }
+
+        .blt-copia {
+          position: absolute;
+          top: 0;
+          right: 0;
+          background: #c00;
+          color: white;
+          font-size: ${getFontSize(0.875)};
+          font-weight: bold;
+          letter-spacing: 2px;
+          padding: 2px 10px;
+        }
       `}</style>
 
       <div className="no-print">
@@ -291,7 +305,9 @@ export default function BoletaPesadaPage() {
         <button onClick={() => window.close()}>Cerrar</button>
       </div>
 
-      <div className="boleta-paper">
+      <div className="boleta-paper" style={{ position: "relative" }}>
+
+        {esCopia && <div className="blt-copia">COPIA</div>}
 
         <div className="blt-header">
           <div className="blt-titulo">

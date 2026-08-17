@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck, FileSpreadsheet } from "lucide-react";
+import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck, FileSpreadsheet, Printer } from "lucide-react";
 import { Card, Table, Badge, Button, Dropdown, Pagination } from "react-bootstrap";
 import * as XLSX from "xlsx";
 export type ModalMode = "ENTRADA" | "SALIDA" | "SALIDA_CABEZAL" | "ENTRADA_CABEZAL";
@@ -11,6 +11,7 @@ export interface BasculaTableProps {
   onToggleRow: (id: number) => void;
   onOpenModal: (recepcion: any, carga: any, mode: ModalMode) => void;
   searchTerm: string;
+  canReimprimir: boolean;
 }
 
 const PAGE_SIZE = 15;
@@ -23,7 +24,13 @@ function getBadgeVariant(estado: string) {
   return "secondary-transparent";
 }
 
-export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal, searchTerm }: BasculaTableProps) {
+export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal, searchTerm, canReimprimir }: BasculaTableProps) {
+  const base = import.meta.env.BASE_URL;
+
+  const handleReimprimir = (carga: any) => {
+    const tipo = carga.pesada_salida != null ? "segunda" : "primera";
+    window.open(`${base}print/boleta-pesada/${carga.id_detalle_recepcion}/${tipo}?copia=true`, "_blank");
+  };
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -190,16 +197,18 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                   const isMuestraAprobada = estadoNombre === "Muestra Aprobada";
                                   const isEntrada = isMuestraAprobada && !isVehicleOnScale;
                                   const isBloqueadoPorBascula = isMuestraAprobada && isVehicleOnScale;
-                                  const isSalida = estadoNombre === "Pesada Abierta" || 
+                                  const isSalida = estadoNombre === "Pesada Abierta" ||
                                                   estadoNombre === "Muestra General Recibida" ||
                                                   estadoNombre === "Muestra General Pendiente de Aprobacion";
                                   const hasNotaPatio = carga.notas_patio && carga.notas_patio.length > 0;
-                                  
+
                                   const isSinCabezal = estadoNombre === "Sin Cabezal";
                                   const isPendienteFaltos = estadoNombre === "Pendiente de Aprobación por Faltos";
                                   const isPendiente = estadoNombre.includes("Pendiente") && !isPendienteFaltos;
                                   const isRechazada = estadoNombre.includes("Rechazada") || estadoNombre === "Devolución";
                                   const isCompletado = estadoNombre === "Pesaje Completado" || estadoNombre === "En Bodega" || estadoNombre === "Pesada Cerrada";
+                                  const hasPesada = carga.pesada_entrada != null;
+                                  const showDropdown = isEntrada || isSalida || isSinCabezal || hasPesada;
 
                                   let rowClasses = "";
                                   if (isSalida || isSinCabezal) rowClasses = "table-primary bg-opacity-10";
@@ -210,7 +219,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                   return (
                                     <tr key={carga.id_detalle_recepcion} className={rowClasses}>
                                       <td className="text-center" style={{ verticalAlign: "middle" }}>
-                                        {(isEntrada || isSalida || isSinCabezal) ? (
+                                        {showDropdown ? (
                                           <Dropdown onClick={(e) => e.stopPropagation()}>
                                             <Dropdown.Toggle
                                               as={Button}
@@ -250,13 +259,26 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                                   <Truck size={15} className="text-primary" /> Reenganchar (Entrada Cabezal)
                                                 </Dropdown.Item>
                                               )}
+                                              {hasPesada && (isEntrada || isSalida || isSinCabezal) && (
+                                                <Dropdown.Divider />
+                                              )}
+                                              {hasPesada && (
+                                                <Dropdown.Item
+                                                  onClick={() => canReimprimir && handleReimprimir(carga)}
+                                                  className="d-flex align-items-center gap-2"
+                                                  disabled={!canReimprimir}
+                                                  title={!canReimprimir ? "No tiene permiso para reimprimir pesadas" : undefined}
+                                                >
+                                                  <Printer size={15} className={canReimprimir ? "text-secondary" : "text-muted"} />
+                                                  <span className={!canReimprimir ? "text-muted" : ""}>Reimprimir Pesada</span>
+                                                </Dropdown.Item>
+                                              )}
                                             </Dropdown.Menu>
                                           </Dropdown>
                                         ) : (
                                           <div className="text-center">
                                             {isPendienteFaltos && <Badge bg="danger" className="flex items-center gap-1 mx-auto w-fit"><ShieldCheck size={12}/> Gerencia</Badge>}
-                                            {isPendiente && <div  className="spinner-border text-warning" role="status"><span  className="visually-hidden">Loading...</span></div>}
-
+                                            {isPendiente && <div className="spinner-border text-warning" role="status"><span className="visually-hidden">Loading...</span></div>}
                                             {isRechazada && <Badge bg="danger">Rechazada</Badge>}
                                             {isCompletado && <span className="text-xs text-muted font-bold uppercase">Procesado</span>}
                                             {isBloqueadoPorBascula && <Badge bg="warning" className="text-dark" title="Otra carga de este vehículo está en báscula">En Fila</Badge>}
