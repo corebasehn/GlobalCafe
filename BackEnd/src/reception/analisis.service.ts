@@ -162,7 +162,30 @@ export class AnalisisService {
     return resultado;
   }
 
-  // 3. LISTAR PARA GERENCIA (Extrae solo los que ocupan autorización)
+  // 3. BUSCAR ANÁLISIS POR No. INGRESO O REMISIÓN (para reimpresión)
+  async buscarAnalisis(q: string) {
+    if (!q || q.trim().length < 2) return [];
+    const term = q.trim().toLowerCase();
+    return this.prisma.analisisCalidad.findMany({
+      where: {
+        OR: [
+          { detalle_recepcion: { recepcion: { numero_entrada: { contains: term, mode: 'insensitive' } } } },
+          { detalle_recepcion: { remision: { contains: term, mode: 'insensitive' } } },
+        ],
+      },
+      include: {
+        detalle_recepcion: { include: { proveedor: true, recepcion: true, estado_transaccion: true } },
+        catador: true, calidad: true, estado_transaccion: true,
+        analisis_defectos: { include: { defecto: true } },
+        analisis_zarandas: { include: { zaranda: true } },
+        analisis_tazas: { include: { taza: true } },
+      },
+      orderBy: { fecha_analisis: 'desc' },
+      take: 50,
+    });
+  }
+
+  // 4. LISTAR PARA GERENCIA (Extrae solo los que ocupan autorización)
   async findAllPendientes() {
     return this.prisma.analisisCalidad.findMany({
       where: { 

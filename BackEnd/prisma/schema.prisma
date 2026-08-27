@@ -652,6 +652,8 @@ model DetalleRecepcion {
   id_tipo_empaque            Int?
   id_tipo_cafe               Int?
   id_tipo_remision           Int?
+  omitir_analisis            Boolean?          @default(false)
+  numero_muestra             String?           @db.VarChar(50)
   analisis_calidad           AnalisisCalidad[]
   cambios_cabezal            CambioCabezal[]
   bodega_descargada          Bodega?           @relation(fields: [id_bodega_descargada], references: [id_bodega])

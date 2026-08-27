@@ -5,9 +5,10 @@ import type { MuestraPendiente } from "../Containers/LaboratorioPage";
 interface BoletaModalProps {
   muestra: MuestraPendiente | null;
   onClose: () => void;
+  esCopia?: boolean;
 }
 
-export default function BoletaModal({ muestra, onClose }: BoletaModalProps) {
+export default function BoletaModal({ muestra, onClose, esCopia = false }: BoletaModalProps) {
   return (
     <Modal show={!!muestra} onHide={onClose} size="lg">
       {muestra && muestra.analisis && (
@@ -53,8 +54,18 @@ export default function BoletaModal({ muestra, onClose }: BoletaModalProps) {
 
             <div
               id="print-boleta"
-              style={{ fontFamily: "Arial, sans-serif", padding: "28px", border: "2px solid black", backgroundColor: "white", color: "black", fontSize: "13px" }}
+              style={{ fontFamily: "Arial, sans-serif", padding: "28px", border: "2px solid black", backgroundColor: "white", color: "black", fontSize: "13px", position: "relative" }}
             >
+              {esCopia && (
+                <div style={{
+                  position: "absolute", top: "8px", right: "8px",
+                  backgroundColor: "#c00", color: "white",
+                  fontWeight: "bold", fontSize: "11px", letterSpacing: "0.08em",
+                  padding: "2px 8px", borderRadius: "3px"
+                }}>
+                  COPIA
+                </div>
+              )}
               {/* Encabezado */}
               <div style={{ textAlign: "center", borderBottom: "2px solid black", paddingBottom: "12px", marginBottom: "16px" }}>
                 <p style={{ fontSize: "20px", fontWeight: "bold", margin: "0 0 2px" }}>GLOBAL COFFEE GROUP</p>

@@ -26,10 +26,14 @@ export interface DetalleRecepcion {
   id_tipo_empaque?: number;
   estado: boolean;
   observaciones?: string;
+  omitir_analisis?: boolean;
   estado_transaccion?: {
     id_estado_transaccion: number;
     nombre: string;
   };
+  proveedor?: { nombre: string };
+  tipo_remision?: { nombre: string };
+  recepcion?: any;
 }
 
 export interface Recepcion {
@@ -143,4 +147,23 @@ export async function registrarPesadaSalidaApi(id: number, peso: number): Promis
 export async function getBoletaPesadaApi(idDetalle: number): Promise<any> {
   const { data } = await http.get<any>(`/reception/bascula/boleta-pesada/${idDetalle}`);
   return data;
+}
+
+export async function buscarPesadasApi(q: string): Promise<any[]> {
+  const { data } = await http.get<any[]>('/reception/bascula/buscar', { params: { q } });
+  return data;
+}
+
+export async function getExternosOmitirAnalisisApi(): Promise<any[]> {
+  const { data } = await http.get<any[]>("/reception/externos/omitir-analisis");
+  return data;
+}
+
+export async function getExternosOmitidosApi(): Promise<any[]> {
+  const { data } = await http.get<any[]>("/reception/externos/omitidos");
+  return data;
+}
+
+export async function actualizarOmitirAnalisisApi(idDetalle: number, omitir: boolean): Promise<void> {
+  await http.patch(`/reception/detalle/${idDetalle}/omitir-analisis`, { omitir_analisis: omitir });
 }

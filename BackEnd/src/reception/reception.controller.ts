@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, Patch, Param, Delete, Query, UseGuards, Request } from '@nestjs/common';
 import { ReceptionService } from './reception.service';
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
@@ -82,6 +82,12 @@ export class ReceptionController {
     return this.receptionService.getPendientesBascula();
   }
 
+  @UseGuards(AuthGuard)
+  @Get('bascula/buscar')
+  buscarPesadas(@Query('q') q: string) {
+    return this.receptionService.buscarPesadas(q);
+  }
+
   @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('VER_BASCULA')
   @Get('bascula/boleta-pesada/:id')
@@ -115,6 +121,30 @@ export class ReceptionController {
   @Put('bascula/salida/:id')
   registrarPesadaSalida(@Param('id') id: string, @Body('peso') peso: number, @Request() req) {
     return this.receptionService.registrarPesadaSalida(+id, peso, req.user?.id);
+  }
+
+  // ==========================================
+  // RUTAS PARA OMITIR ANÁLISIS (EXTERNOS)
+  // ==========================================
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_OMITIR_ANALISIS')
+  @Get('externos/omitir-analisis')
+  getExternosOmitirAnalisis() {
+    return this.receptionService.getExternosOmitirAnalisis();
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_OMITIR_ANALISIS')
+  @Get('externos/omitidos')
+  getExternosOmitidos() {
+    return this.receptionService.getExternosOmitidos();
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('detalle/:id/omitir-analisis')
+  actualizarOmitirAnalisis(@Param('id') id: string, @Body('omitir_analisis') omitir: boolean, @Request() req) {
+    return this.receptionService.actualizarOmitirAnalisis(+id, omitir, req.user?.id);
   }
 
   // ==========================================

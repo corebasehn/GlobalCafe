@@ -64,6 +64,11 @@ export async function getAnalisisPendientesApi(): Promise<any[]> {
   const { data } = await http.get("/analisis/pendientes");
   return data;
 }
+
+export async function buscarAnalisisApi(q: string): Promise<any[]> {
+  const { data } = await http.get("/analisis/buscar", { params: { q } });
+  return data;
+}
 export interface VeredictoGerenciaRequest {
   veredicto: "APROBAR" | "SEGUNDA_MUESTRA" | "DEVOLUCION";
   observaciones?: string;

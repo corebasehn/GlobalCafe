@@ -610,6 +610,35 @@ export class ReceptionService {
   // BOLETAS DE IMPRESIÓN (BÁSCULA)
   // ==========================================
 
+  async buscarPesadas(q: string) {
+    if (!q || q.trim().length < 2) return [];
+    const term = q.trim().toLowerCase();
+    return this.prisma.recepcion.findMany({
+      where: {
+        estado: true,
+        OR: [
+          { numero_entrada: { contains: term, mode: 'insensitive' } },
+          { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
+          { placa_furgon: { placa: { contains: term, mode: 'insensitive' } } },
+          { detalles: { some: { remision: { contains: term, mode: 'insensitive' }, estado: true } } },
+        ],
+        detalles: { some: { estado: true, pesada_entrada: { not: null } } },
+      },
+      include: {
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: { include: { transporte: true } },
+        detalles: {
+          where: { estado: true, pesada_entrada: { not: null } },
+          include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
+          orderBy: { id_detalle_recepcion: 'asc' },
+        },
+      },
+      orderBy: { id_recepcion: 'desc' },
+      take: 30,
+    });
+  }
+
   async getBoletaPesada(idDetalle: number) {
     const detalle = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion: idDetalle },
@@ -665,6 +694,72 @@ export class ReceptionService {
       : false;
 
     return { detalle, devolucion, allClosed };
+  }
+
+  // ==========================================
+  // MÓDULO OMITIR ANÁLISIS (EXTERNOS)
+  // ==========================================
+
+  async getExternosOmitirAnalisis() {
+    return this.prisma.recepcion.findMany({
+      where: {
+        estado: true,
+        detalles: {
+          some: {
+            estado: true,
+            id_tipo_remision: 2,
+            OR: [{ omitir_analisis: false }, { omitir_analisis: null }],
+          },
+        },
+      },
+      include: {
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: { include: { transporte: true } },
+        detalles: {
+          where: {
+            estado: true,
+            id_tipo_remision: 2,
+            OR: [{ omitir_analisis: false }, { omitir_analisis: null }],
+          },
+          include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
+          orderBy: { id_detalle_recepcion: 'asc' },
+        },
+      },
+      orderBy: { id_recepcion: 'asc' },
+    });
+  }
+
+  async getExternosOmitidos() {
+    return this.prisma.recepcion.findMany({
+      where: {
+        estado: true,
+        detalles: { some: { estado: true, id_tipo_remision: 2, omitir_analisis: true } },
+      },
+      include: {
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: { include: { transporte: true } },
+        detalles: {
+          where: { estado: true, id_tipo_remision: 2, omitir_analisis: true },
+          include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
+          orderBy: { id_detalle_recepcion: 'asc' },
+        },
+      },
+      orderBy: { id_recepcion: 'asc' },
+    });
+  }
+
+  async actualizarOmitirAnalisis(idDetalle: number, omitir: boolean, usuarioId: number) {
+    return this.prisma.detalleRecepcion.update({
+      where: { id_detalle_recepcion: idDetalle },
+      data: {
+        omitir_analisis: omitir,
+        id_estado_transaccion: omitir ? 5 : 1,
+        usuario_modificacion: usuarioId,
+        fecha_modificacion: new Date(),
+      },
+    });
   }
 
   // ==========================================
