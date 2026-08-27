@@ -24,6 +24,8 @@ export class ReceptionService {
     const count = await this.prisma.recepcion.count();
     const correlativo = `REC-${String(count + 1).padStart(5, '0')}`;
 
+    const countMuestras = await this.prisma.detalleRecepcion.count();
+
     const nuevaRecepcion = await this.prisma.recepcion.create({
       data: {
         numero_entrada: correlativo,
@@ -41,7 +43,8 @@ export class ReceptionService {
         usuario_creacion: usuarioId,
         // Relación con Detalles (Equivalente al cascade: true)
         detalles: {
-          create: dto.detalles?.map(det => ({
+          create: dto.detalles?.map((det, i) => ({
+            numero_muestra: `MUE-${String(countMuestras + i + 1).padStart(5, '0')}`,
             id_proveedor: det.id_proveedor,
             id_estado_transaccion: estadoInicial.id_estado_transaccion,
             cantidad_sacos: det.cantidad_sacos,
@@ -298,24 +301,27 @@ export class ReceptionService {
         });
 
         // Procesar detalles nuevos o existentes
+        let countMuestras = await tx.detalleRecepcion.count();
         for (const det of detalles) {
           const { id_detalle_recepcion, ...datosDetalle } = det; // Extraemos el ID para no intentar actualizar la llave primaria
           if (id_detalle_recepcion) {
             await tx.detalleRecepcion.update({
               where: { id_detalle_recepcion },
-              data: { 
-                ...datosDetalle, 
+              data: {
+                ...datosDetalle,
                 estado: true,
                 usuario_modificacion: usuarioId,
                 fecha_modificacion: new Date()
               },
             });
           } else {
+            countMuestras++;
             await tx.detalleRecepcion.create({
-              data: { 
-                ...datosDetalle, 
+              data: {
+                ...datosDetalle,
                   id_estado_transaccion: idEstadoInicial, // Asignamos el estado inicial automático
                 id_recepcion: id,
+                numero_muestra: `MUE-${String(countMuestras).padStart(5, '0')}`,
                 usuario_creacion: usuarioId
               },
             });
@@ -705,6 +711,8 @@ export class ReceptionService {
         });
         if (!estadoFaltos) throw new InternalServerErrorException('Estado "Pendiente de Aprobación por Faltos" no encontrado');
 
+        const countMuestras = await tx.detalleRecepcion.count();
+
         // El nuevo registro nace con los sacos faltos y la observación de por qué salieron faltos
         await tx.detalleRecepcion.create({
           data: {
@@ -714,6 +722,7 @@ export class ReceptionService {
             cantidad_sacos: cantidad_sacos_faltos,
             cantidad_qq: (Number(detalleOriginal.cantidad_qq) / detalleOriginal.cantidad_sacos) * cantidad_sacos_faltos,
             remision: `${detalleOriginal.remision}-F`,
+            numero_muestra: `MUE-${String(countMuestras + 1).padStart(5, '0')}`,
             observaciones: `Sacos Faltos: ${observaciones_faltos}`,
             estado: true, // Lo dejamos activo pero el estado_transaccion lo bloquea de báscula
             usuario_creacion: usuarioId
