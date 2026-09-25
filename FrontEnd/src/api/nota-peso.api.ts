@@ -28,8 +28,18 @@ export async function getPendientesLiquidarApi(): Promise<any[]> {
   return data;
 }
 
-export async function crearNotaPesoApi(idDetalle: number): Promise<NotaDePeso> {
-  const { data } = await http.post<NotaDePeso>(`/nota-peso/liquidar/${idDetalle}`);
+export interface LiquidarNotaPesoPayload {
+  humedad?: number;
+  dano?: number;
+  otros_descuentos?: number;
+  observaciones?: string;
+}
+
+export async function crearNotaPesoApi(
+  idDetalle: number,
+  payload?: LiquidarNotaPesoPayload
+): Promise<NotaDePeso> {
+  const { data } = await http.post<NotaDePeso>(`/nota-peso/liquidar/${idDetalle}`, payload || {});
   return data;
 }
 

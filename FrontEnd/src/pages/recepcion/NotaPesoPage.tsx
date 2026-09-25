@@ -17,7 +17,16 @@ export default function NotaPesoPage() {
   const [selectedNota, setSelectedNota] = useState<NotaDePeso | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [confirmModal, setConfirmModal] = useState<{show: boolean, id: number | null}>({ show: false, id: null });
+  const [liquidarModal, setLiquidarModal] = useState<{
+    show: boolean;
+    detalle: any | null;
+  }>({ show: false, detalle: null });
+
+  // Campos editables del modal de liquidación
+  const [formHumedad, setFormHumedad] = useState<number>(0);
+  const [formDano, setFormDano] = useState<number>(0);
+  const [formOtros, setFormOtros] = useState<number>(0);
+  const [formObservaciones, setFormObservaciones] = useState<string>("");
 
   useEffect(() => {
     fetchData();
@@ -40,24 +49,41 @@ export default function NotaPesoPage() {
     }
   };
 
-  const handleConfirmLiquidar = (idDetalle: number) => {
-    setConfirmModal({ show: true, id: idDetalle });
+  const handleOpenLiquidar = (detalle: any) => {
+    const humedadInicial = detalle.analisis_calidad?.[0]?.humedad != null
+      ? Number(detalle.analisis_calidad[0].humedad)
+      : 0;
+    const danoInicial = detalle.analisis_calidad?.[0]?.dano != null
+      ? Number(detalle.analisis_calidad[0].dano)
+      : 0;
+
+    setFormHumedad(humedadInicial);
+    setFormDano(danoInicial);
+    setFormOtros(0);
+    setFormObservaciones("");
+    setLiquidarModal({ show: true, detalle });
   };
 
   const handleLiquidar = async () => {
-    if (!confirmModal.id) return;
+    if (!liquidarModal.detalle) return;
     
     setProcessing(true);
-    setConfirmModal({ ...confirmModal, show: false });
     try {
-      const nuevaNota = await crearNotaPesoApi(confirmModal.id);
+      const payload = {
+        humedad: Number(formHumedad),
+        dano: Number(formDano),
+        otros_descuentos: Number(formOtros),
+        observaciones: formObservaciones.trim() || undefined,
+      };
+
+      const nuevaNota = await crearNotaPesoApi(liquidarModal.detalle.id_detalle_recepcion, payload);
       toast.success(`Nota de Peso ${nuevaNota.numero_nota_peso} generada exitosamente`);
+      setLiquidarModal({ show: false, detalle: null });
       fetchData();
-    } catch (error) {
-      toast.error("Error al generar la liquidación");
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Error al generar la liquidación");
     } finally {
       setProcessing(false);
-      setConfirmModal({ show: false, id: null });
     }
   };
 
@@ -74,6 +100,19 @@ export default function NotaPesoPage() {
   const handlePrint = () => {
     window.print();
   };
+
+  // Cálculos en vivo para el modal de liquidación
+  const calcPesoNetoLB = Number(liquidarModal.detalle?.peso_neto || 0);
+  const calcPesoBrutoQQ = calcPesoNetoLB / 100;
+  const calcSacos = Number(liquidarModal.detalle?.cantidad_sacos || 0);
+  const calcTaraQQ = (calcSacos * 0.5) / 100;
+  const calcSubtotalQQ = Math.max(0, calcPesoBrutoQQ - calcTaraQQ);
+
+  const calcDescHumedadQQ = formHumedad > 12 ? calcSubtotalQQ * ((formHumedad - 12) / 100) : 0;
+  const calcDescDanoQQ = calcSubtotalQQ * (formDano / 100);
+  const calcDescOtrosQQ = calcSubtotalQQ * (formOtros / 100);
+  const calcTotalDescQQ = calcDescHumedadQQ + calcDescDanoQQ + calcDescOtrosQQ;
+  const calcPesoNetoFinalQQ = Math.max(0, calcSubtotalQQ - calcTotalDescQQ);
 
   return (
     <div className="pb-5">
@@ -130,7 +169,7 @@ export default function NotaPesoPage() {
                               size="sm" 
                               className="px-3"
                               disabled={processing}
-                              onClick={() => handleConfirmLiquidar(p.id_detalle_recepcion)}
+                              onClick={() => handleOpenLiquidar(p)}
                             >
                               Liquidar
                             </Button>
@@ -205,25 +244,224 @@ export default function NotaPesoPage() {
         </Tab>
       </Tabs>
 
-      {/* MODAL DE CONFIRMACIÓN DE LIQUIDACIÓN */}
-      <Modal show={confirmModal.show} onHide={() => setConfirmModal({ show: false, id: null })} centered size="sm">
-        <Modal.Body className="text-center p-4">
-          <div className="mb-3">
-            <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-circle d-flex align-items-center justify-center mx-auto mb-3">
-              <FileText size={32} />
+      {/* MODAL DE LIQUIDACIÓN CON PARÁMETROS EDITABLES */}
+      <Modal 
+        show={liquidarModal.show} 
+        onHide={() => !processing && setLiquidarModal({ show: false, detalle: null })} 
+        centered 
+        size="lg"
+      >
+        <Modal.Header closeButton={!processing} className="border-bottom">
+          <Modal.Title className="d-flex align-items-center gap-2 fs-16 fw-bold text-coffee-800">
+            <FileText className="w-5 h-5 text-amber-600" />
+            Liquidación de Entrega de Café
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="p-4">
+          {liquidarModal.detalle && (
+            <div>
+              {/* DATOS DE LA ENTREGA */}
+              <div className="bg-light p-3 rounded mb-3 border">
+                <div className="row g-2 text-sm">
+                  <div className="col-sm-6">
+                    <span className="text-muted small d-block">Proveedor</span>
+                    <strong className="text-dark">{liquidarModal.detalle.proveedor?.nombre}</strong>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Entrada / Remisión</span>
+                    <strong>{liquidarModal.detalle.recepcion?.numero_entrada}</strong>
+                    <span className="text-muted small ms-1">({liquidarModal.detalle.remision})</span>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Cosecha</span>
+                    <Badge bg="light" className="text-dark border">{liquidarModal.detalle.recepcion?.cosecha?.cosecha}</Badge>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Sacos</span>
+                    <strong className="text-coffee-700">{calcSacos} sacos</strong>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Peso Báscula (LB)</span>
+                    <strong>{calcPesoNetoLB.toLocaleString()} LB</strong>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Peso Bruto (QQ)</span>
+                    <strong>{calcPesoBrutoQQ.toFixed(2)} QQ</strong>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Tara Sacos (QQ)</span>
+                    <strong className="text-danger">-{calcTaraQQ.toFixed(3)} QQ</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* CAMPOS EDITABLES */}
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <h6 className="fw-bold mb-0 text-dark fs-14">Parámetros de Calidad y Descuentos</h6>
+                  <span className="badge bg-amber-50 text-amber-800 border border-amber-200 small">
+                    Pre-llenado de muestra de laboratorio (editable)
+                  </span>
+                </div>
+
+                <div className="row g-3">
+                  <div className="col-md-4">
+                    <Form.Group>
+                      <Form.Label className="small fw-semibold mb-1">
+                        % Humedad
+                      </Form.Label>
+                      <InputGroup size="sm">
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={formHumedad}
+                          onChange={(e) => setFormHumedad(parseFloat(e.target.value) || 0)}
+                          disabled={processing}
+                        />
+                        <InputGroup.Text>%</InputGroup.Text>
+                      </InputGroup>
+                      <Form.Text className="text-muted fs-11">
+                        {formHumedad > 12 ? (
+                          <span className="text-danger fw-semibold">
+                            Desc. {(formHumedad - 12).toFixed(2)}% ({calcDescHumedadQQ.toFixed(2)} QQ)
+                          </span>
+                        ) : (
+                          "Sin castigo (<= 12%)"
+                        )}
+                      </Form.Text>
+                    </Form.Group>
+                  </div>
+
+                  <div className="col-md-4">
+                    <Form.Group>
+                      <Form.Label className="small fw-semibold mb-1">
+                        % Daño
+                      </Form.Label>
+                      <InputGroup size="sm">
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={formDano}
+                          onChange={(e) => setFormDano(parseFloat(e.target.value) || 0)}
+                          disabled={processing}
+                        />
+                        <InputGroup.Text>%</InputGroup.Text>
+                      </InputGroup>
+                      <Form.Text className="text-muted fs-11">
+                        {calcDescDanoQQ > 0 ? (
+                          <span className="text-danger fw-semibold">
+                            Desc: -{calcDescDanoQQ.toFixed(2)} QQ
+                          </span>
+                        ) : (
+                          "Sin descuento"
+                        )}
+                      </Form.Text>
+                    </Form.Group>
+                  </div>
+
+                  <div className="col-md-4">
+                    <Form.Group>
+                      <Form.Label className="small fw-semibold mb-1">
+                        % Otros Descuentos
+                      </Form.Label>
+                      <InputGroup size="sm">
+                        <Form.Control
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={formOtros}
+                          onChange={(e) => setFormOtros(parseFloat(e.target.value) || 0)}
+                          disabled={processing}
+                        />
+                        <InputGroup.Text>%</InputGroup.Text>
+                      </InputGroup>
+                      <Form.Text className="text-muted fs-11">
+                        {calcDescOtrosQQ > 0 ? (
+                          <span className="text-danger fw-semibold">
+                            Desc: -{calcDescOtrosQQ.toFixed(2)} QQ
+                          </span>
+                        ) : (
+                          "Descuentos adicionales"
+                        )}
+                      </Form.Text>
+                    </Form.Group>
+                  </div>
+
+                  <div className="col-12">
+                    <Form.Group>
+                      <Form.Label className="small fw-semibold mb-1">
+                        Observaciones (Opcional)
+                      </Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={2}
+                        placeholder="Ej. Descuento acordado, observaciones de liquidación..."
+                        value={formObservaciones}
+                        onChange={(e) => setFormObservaciones(e.target.value)}
+                        disabled={processing}
+                        className="fs-13"
+                      />
+                    </Form.Group>
+                  </div>
+                </div>
+              </div>
+
+              {/* RESUMEN DE CÁLCULO EN VIVO */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded">
+                <div className="row align-items-center">
+                  <div className="col-md-7 text-sm">
+                    <div className="d-flex justify-content-between py-1 border-bottom border-amber-200">
+                      <span className="text-muted">Subtotal antes de descuentos:</span>
+                      <strong>{calcSubtotalQQ.toFixed(2)} QQ</strong>
+                    </div>
+                    <div className="d-flex justify-content-between py-1 border-bottom border-amber-200 text-danger">
+                      <span>Total Descuentos (Humedad + Daño + Otros):</span>
+                      <strong>-{calcTotalDescQQ.toFixed(2)} QQ</strong>
+                    </div>
+                  </div>
+                  <div className="col-md-5 text-center mt-2 mt-md-0">
+                    <span className="text-xs uppercase text-coffee-800 fw-bold d-block">Peso Neto Final Liquidado</span>
+                    <span className="fs-22 fw-black text-coffee-800">
+                      {calcPesoNetoFinalQQ.toFixed(2)} <span className="fs-14 fw-semibold">QQ</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <h5 className="fw-bold">¿Confirmar Liquidación?</h5>
-            <p className="text-muted fs-13 mb-0">Se generará la Nota de Peso oficial y la carga pasará a inventario.</p>
-          </div>
-          <div className="d-flex gap-2">
-            <Button variant="light" className="w-100" onClick={() => setConfirmModal({ show: false, id: null })}>
-              No, Cancelar
-            </Button>
-            <Button variant="primary" className="w-100" onClick={handleLiquidar}>
-              Sí, Liquidar
-            </Button>
-          </div>
+          )}
         </Modal.Body>
+        <Modal.Footer className="border-top">
+          <Button 
+            variant="light" 
+            onClick={() => setLiquidarModal({ show: false, detalle: null })} 
+            disabled={processing}
+          >
+            Cancelar
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={handleLiquidar} 
+            disabled={processing}
+            className="d-flex align-items-center gap-2"
+          >
+            {processing ? (
+              <>
+                <Spinner animation="border" size="sm" />
+                Liquidando...
+              </>
+            ) : (
+              <>
+                <CheckCircle className="w-4 h-4" />
+                Confirmar y Generar Nota
+              </>
+            )}
+          </Button>
+        </Modal.Footer>
       </Modal>
 
       {/* MODAL DE IMPRESIÓN (ESTILO @FormatoNotaPeso.png) */}
@@ -300,9 +538,9 @@ export default function NotaPesoPage() {
                         <td className="py-3 font-bold">{selectedNota.detalles[0].cantidad_sacos}</td>
                         <td>{Number(selectedNota.detalles[0].peso_bruto).toFixed(2)}</td>
                         <td>{Number(selectedNota.detalles[0].tara).toFixed(3)}</td>
-                        <td>{Number(selectedNota.detalles[0].porcentaje_descuento_humedad).toFixed(2)}%</td>
-                        <td>{Number(selectedNota.detalles[0].porcentaje_descuento_dano).toFixed(2)}%</td>
-                        <td>0.00%</td>
+                        <td>{Number(selectedNota.detalles[0].porcentaje_descuento_humedad || 0).toFixed(2)}%</td>
+                        <td>{Number(selectedNota.detalles[0].porcentaje_descuento_dano || 0).toFixed(2)}%</td>
+                        <td>{Number(selectedNota.detalles[0].porcentaje_descuento_peso || 0).toFixed(2)}%</td>
                         <td className="font-bold bg-neutral-50">{Number(selectedNota.detalles[0].peso_neto).toFixed(2)}</td>
                         <td>*0.00*</td>
                         <td>*0.00*</td>
@@ -319,7 +557,7 @@ export default function NotaPesoPage() {
                 {/* OBSERVACIONES Y FIRMAS */}
                 <div className="grid grid-cols-2 gap-10 mt-10">
                    <div className="text-[10px] text-neutral-600 italic">
-                     Obs: NP#: {selectedNota.numero_nota_peso} - MUESTRA # {selectedNota.detalle_recepcion.analisis_calidad[0]?.numero_analisis || 'S/N'} REMISION # {selectedNota.detalle_recepcion.remision}<br/>
+                     Obs: NP#: {selectedNota.numero_nota_peso} {selectedNota.observaciones ? `- ${selectedNota.observaciones} ` : ''}- MUESTRA # {selectedNota.detalle_recepcion.analisis_calidad[0]?.numero_analisis || 'S/N'} REMISION # {selectedNota.detalle_recepcion.remision}<br/>
                      FURGON {selectedNota.detalle_recepcion.recepcion.placa_furgon?.placa || 'S/N'}
                    </div>
                    <div className="grid grid-cols-2 gap-4">

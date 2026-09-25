@@ -708,7 +708,7 @@ export class ReceptionService {
           some: {
             estado: true,
             id_tipo_remision: 2,
-            OR: [{ omitir_analisis: false }, { omitir_analisis: null }],
+            omitir_analisis: false,
           },
         },
       },
@@ -720,7 +720,7 @@ export class ReceptionService {
           where: {
             estado: true,
             id_tipo_remision: 2,
-            OR: [{ omitir_analisis: false }, { omitir_analisis: null }],
+            omitir_analisis: false,
           },
           include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
           orderBy: { id_detalle_recepcion: 'asc' },

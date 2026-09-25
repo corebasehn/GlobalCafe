@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model Licencia {
@@ -652,8 +653,9 @@ model DetalleRecepcion {
   id_tipo_empaque            Int?
   id_tipo_cafe               Int?
   id_tipo_remision           Int?
-  omitir_analisis            Boolean?          @default(false)
-  numero_muestra             String?           @db.VarChar(50)
+  id_posicion_cafe           Int?
+  numero_muestra             String            @default("N/A") @db.VarChar(50)
+  omitir_analisis            Boolean           @default(false)
   analisis_calidad           AnalisisCalidad[]
   cambios_cabezal            CambioCabezal[]
   bodega_descargada          Bodega?           @relation(fields: [id_bodega_descargada], references: [id_bodega])
@@ -663,6 +665,7 @@ model DetalleRecepcion {
   tipo_empaque               TipoEmpaque?      @relation(fields: [id_tipo_empaque], references: [id_tipo_empaque], onDelete: NoAction, onUpdate: NoAction)
   tipo_cafe                  TipoCafe?         @relation(fields: [id_tipo_cafe], references: [id_tipo_cafe], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_cafe")
   tipo_remision              TipoRemision?     @relation(fields: [id_tipo_remision], references: [id_tipo_remision], onDelete: NoAction, onUpdate: NoAction, map: "fk_detalle_recepcion_tipo_remision")
+  posicion_cafe              posicion_cafe?    @relation(fields: [id_posicion_cafe], references: [id_posicion_cafe], onDelete: NoAction, onUpdate: NoAction, map: "fk_posicion_cafe_recepcion_detalle")
   notas_patio                NotaDePatio[]
   notas_peso                 NotaDePeso[]
 
@@ -872,4 +875,15 @@ model TipoEmpaque {
   detalles_recepcion   DetalleRecepcion[]
 
   @@map("tipo_empaque")
+}
+
+model posicion_cafe {
+  id_posicion_cafe     Int                @id @default(autoincrement())
+  posicion_cafe        String             @db.VarChar(100)
+  estado               Boolean            @default(true)
+  usuario_creacion     Int?
+  fecha_creacion       DateTime           @default(now()) @db.Timestamptz(6)
+  usuario_modificacion Int?
+  fecha_modificacion   DateTime?          @db.Timestamptz(6)
+  detalle_recepcion    DetalleRecepcion[]
 }

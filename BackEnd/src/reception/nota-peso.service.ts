@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { LiquidarNotaPesoDto } from './dto/liquidar-nota-peso.dto';
 
 @Injectable()
 export class NotaPesoService {
@@ -40,7 +41,7 @@ export class NotaPesoService {
   }
 
   // 2. Crear la Nota de Peso (Liquidación)
-  async crearNotaPeso(idDetalle: number, usuarioId: number) {
+  async crearNotaPeso(idDetalle: number, usuarioId: number, dto?: LiquidarNotaPesoDto) {
     const detalle = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion: idDetalle },
       include: {
@@ -70,23 +71,34 @@ export class NotaPesoService {
     // 4. Peso Neto antes de descuentos
     const subtotalQQ = pesoBrutoQQ - taraQQ;
 
-    // 5. Obtener descuentos de Laboratorio
+    // 5. Obtener descuentos (del DTO editado por el usuario o de la muestra de laboratorio como fallback)
     const analisis = detalle.analisis_calidad[0];
-    const humedadPerc = analisis?.humedad ? Number(analisis.humedad) : 0;
-    const danoPerc = analisis?.dano ? Number(analisis.dano) : 0;
+    const humedadPerc = dto?.humedad !== undefined && dto?.humedad !== null
+      ? Number(dto.humedad)
+      : (analisis?.humedad ? Number(analisis.humedad) : 0);
+
+    const danoPerc = dto?.dano !== undefined && dto?.dano !== null
+      ? Number(dto.dano)
+      : (analisis?.dano ? Number(analisis.dano) : 0);
+
+    const otrosPerc = dto?.otros_descuentos !== undefined && dto?.otros_descuentos !== null
+      ? Number(dto.otros_descuentos)
+      : 0;
 
     // Lógica de Descuento de Humedad: Si es mayor a 12%, se descuenta el excedente
-    // Nota: Esta es una fórmula común, se puede ajustar si el cliente pide otra.
     let descuentoHumedadQQ = 0;
     if (humedadPerc > 12) {
-        descuentoHumedadQQ = subtotalQQ * ((humedadPerc - 12) / 100);
+      descuentoHumedadQQ = subtotalQQ * ((humedadPerc - 12) / 100);
     }
 
     // Descuento por Daño
     const descuentoDanoQQ = subtotalQQ * (danoPerc / 100);
 
+    // Descuento por Otros
+    const descuentoOtrosQQ = subtotalQQ * (otrosPerc / 100);
+
     // 6. Peso Neto Final
-    const pesoNetoFinalQQ = subtotalQQ - descuentoHumedadQQ - descuentoDanoQQ;
+    const pesoNetoFinalQQ = Math.max(0, subtotalQQ - descuentoHumedadQQ - descuentoDanoQQ - descuentoOtrosQQ);
 
     return this.prisma.$transaction(async (tx) => {
       // Generar Correlativo NP-0000001
@@ -97,6 +109,7 @@ export class NotaPesoService {
         data: {
           id_detalle_recepcion: idDetalle,
           numero_nota_peso: correlativo,
+          observaciones: dto?.observaciones?.trim() || null,
           usuario_creacion: usuarioId,
           detalles: {
             create: {
@@ -105,6 +118,7 @@ export class NotaPesoService {
               tara: taraQQ,
               porcentaje_descuento_humedad: humedadPerc,
               porcentaje_descuento_dano: danoPerc,
+              porcentaje_descuento_peso: otrosPerc,
               peso_neto: pesoNetoFinalQQ,
               usuario_creacion: usuarioId,
             },
