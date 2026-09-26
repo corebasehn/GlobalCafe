@@ -46,6 +46,7 @@ export class NotaPesoService {
       where: { id_detalle_recepcion: idDetalle },
       include: {
         recepcion: true,
+        tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
           take: 1,
@@ -64,9 +65,10 @@ export class NotaPesoService {
     // 2. Convertir a Quintales (QQ) -> 1 QQ = 100 LB
     const pesoBrutoQQ = pesoNetoLB / 100;
     
-    // 3. Calcular Tara de Sacos (0.50 LB por saco es estándar en muchas empresas)
-    // Según el formato: Tara (QQ) = (Sacos * 0.5) / 100
-    const taraQQ = (detalle.cantidad_sacos * 0.5) / 100;
+    // 3. Calcular Tara de Sacos según tipo de empaque (fallback a 0.50 LB si no está configurado)
+    // Según el formato: Tara (QQ) = (Sacos * taraUnitariaLB) / 100
+    const taraUnitariaLB = detalle.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
+    const taraQQ = (detalle.cantidad_sacos * taraUnitariaLB) / 100;
     
     // 4. Peso Neto antes de descuentos
     const subtotalQQ = pesoBrutoQQ - taraQQ;

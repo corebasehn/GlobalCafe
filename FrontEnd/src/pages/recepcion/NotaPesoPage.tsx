@@ -105,7 +105,10 @@ export default function NotaPesoPage() {
   const calcPesoNetoLB = Number(liquidarModal.detalle?.peso_neto || 0);
   const calcPesoBrutoQQ = calcPesoNetoLB / 100;
   const calcSacos = Number(liquidarModal.detalle?.cantidad_sacos || 0);
-  const calcTaraQQ = (calcSacos * 0.5) / 100;
+  const taraUnitariaLB = liquidarModal.detalle?.tipo_empaque?.tara != null
+    ? Number(liquidarModal.detalle.tipo_empaque.tara)
+    : 0.5;
+  const calcTaraQQ = (calcSacos * taraUnitariaLB) / 100;
   const calcSubtotalQQ = Math.max(0, calcPesoBrutoQQ - calcTaraQQ);
 
   const calcDescHumedadQQ = formHumedad > 12 ? calcSubtotalQQ * ((formHumedad - 12) / 100) : 0;
@@ -289,7 +292,7 @@ export default function NotaPesoPage() {
                     <strong>{calcPesoBrutoQQ.toFixed(2)} QQ</strong>
                   </div>
                   <div className="col-sm-3">
-                    <span className="text-muted small d-block">Tara Sacos (QQ)</span>
+                    <span className="text-muted small d-block">Tara Sacos ({taraUnitariaLB} LB/saco)</span>
                     <strong className="text-danger">-{calcTaraQQ.toFixed(3)} QQ</strong>
                   </div>
                 </div>

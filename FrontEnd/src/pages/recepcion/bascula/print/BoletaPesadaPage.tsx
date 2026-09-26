@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../auth/useAuth";
 import { getBoletaPesadaApi } from "../../../../api/reception.api";
@@ -155,7 +155,8 @@ export default function BoletaPesadaPage() {
     if (f.peso != null) pesoBruto += f.signo === "+" ? f.peso : -f.peso;
     totalSacos += f.signo === "+" ? f.sacos : -f.sacos;
   }
-  const tara = 0.5 * totalSacos;
+  const taraUnitaria = detalle?.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
+  const tara = taraUnitaria * totalSacos;
   const qNeto = (pesoBruto - tara)/100;
 
   return (
@@ -389,7 +390,7 @@ export default function BoletaPesadaPage() {
             </tr>
             {!esPrimera && (
               <tr>
-                <td><strong>TARA (0.5 × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
+                <td><strong>TARA ({taraUnitaria} × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
                 <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
               </tr>
             )}

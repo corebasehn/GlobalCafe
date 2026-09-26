@@ -1,6 +1,6 @@
-# Global Café - Sistema de Gestión de Recepciones y Control de Café
+# eCoffee Core - Sistema de Gestión de Recepciones y Control de Café
 
-Global Café es una solución integral diseñada para la gestión operativa y administrativa de beneficios y exportadoras de café. El sistema permite el control total desde la recepción del grano, análisis de calidad (catación), gestión de patios, pesaje automatizado y control de despacho.
+**eCoffee Core** es una solución integral diseñada para la gestión operativa y administrativa de beneficios y exportadoras de café, desarrollada e implementada para **Global Café S.A.** El sistema permite el control total desde la recepción del grano, análisis de calidad (catación), gestión de patios, pesaje automatizado y control de despacho.
 
 ---
 
