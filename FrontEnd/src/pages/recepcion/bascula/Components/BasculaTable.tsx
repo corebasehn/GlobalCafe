@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck, FileSpreadsheet, Printer } from "lucide-react";
 import { Card, Table, Badge, Button, Dropdown, Pagination } from "react-bootstrap";
 import * as XLSX from "xlsx";
+import ModalOpcionesImpresion from "./ModalOpcionesImpresion";
+
 export type ModalMode = "ENTRADA" | "SALIDA" | "SALIDA_CABEZAL" | "ENTRADA_CABEZAL";
 
 export interface BasculaTableProps {
@@ -25,12 +27,11 @@ function getBadgeVariant(estado: string) {
 }
 
 export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal, searchTerm, canReimprimir }: BasculaTableProps) {
-  const base = import.meta.env.BASE_URL;
-
-  const handleReimprimir = (carga: any) => {
-    const tipo = carga.pesada_salida != null ? "segunda" : "primera";
-    window.open(`${base}print/boleta-pesada/${carga.id_detalle_recepcion}/${tipo}?copia=true`, "_blank");
-  };
+  const [impresionModal, setImpresionModal] = useState<{
+    show: boolean;
+    carga: any | null;
+    recepcion: any | null;
+  }>({ show: false, carga: null, recepcion: null });
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -95,7 +96,8 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
   };
 
   return (
-    <Card>
+    <>
+      <Card>
       {!loading && recepciones.length > 0 && (
         <Card.Header className="d-flex justify-content-end py-2 bg-white border-bottom">
           <Button variant="outline-success" size="sm" onClick={exportarExcel} className="d-flex align-items-center gap-1">
@@ -264,13 +266,13 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                               )}
                                               {hasPesada && (
                                                 <Dropdown.Item
-                                                  onClick={() => canReimprimir && handleReimprimir(carga)}
+                                                  onClick={() => canReimprimir && setImpresionModal({ show: true, carga, recepcion: r })}
                                                   className="d-flex align-items-center gap-2"
                                                   disabled={!canReimprimir}
                                                   title={!canReimprimir ? "No tiene permiso para reimprimir pesadas" : undefined}
                                                 >
                                                   <Printer size={15} className={canReimprimir ? "text-secondary" : "text-muted"} />
-                                                  <span className={!canReimprimir ? "text-muted" : ""}>Reimprimir Pesada</span>
+                                                  <span className={!canReimprimir ? "text-muted" : ""}>Reimprimir / Documentos</span>
                                                 </Dropdown.Item>
                                               )}
                                             </Dropdown.Menu>
@@ -359,6 +361,14 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
           )}
         </div>
       )}
-    </Card>
+      </Card>
+
+      <ModalOpcionesImpresion
+        show={impresionModal.show}
+        carga={impresionModal.carga}
+        recepcion={impresionModal.recepcion}
+        onClose={() => setImpresionModal({ show: false, carga: null, recepcion: null })}
+      />
+    </>
   );
 }

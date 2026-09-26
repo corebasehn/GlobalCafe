@@ -35,8 +35,8 @@ export default function BoletaPesadaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fontFamily, setFontFamily] = useState<string>("Arial");
-  const [fontSize, setFontSize] = useState<string>("8pt");
+  const [fontFamily, setFontFamily] = useState<string>("Courier New");
+  const [fontSize, setFontSize] = useState<string>("9pt");
   const [leyendaCafeExterno, setLeyendaCafeExterno] = useState<string>("CAFÉ EXTERNO (SERVICIO DE MAQUILADO)");
 
   const esPrimera = tipo === "primera";
@@ -170,9 +170,10 @@ export default function BoletaPesadaPage() {
         }
 
         body {
-          font-family: ${fontFamily}, Helvetica, sans-serif;
+          font-family: ${fontFamily}, "Courier New", Courier, monospace;
           font-size: ${fontSize};
           background: white;
+          color: #000000;
         }
 
         @media screen {
@@ -208,6 +209,15 @@ export default function BoletaPesadaPage() {
         }
 
         @media print {
+          * {
+            -webkit-font-smoothing: none !important;
+            font-smooth: never !important;
+            text-rendering: geometricPrecision !important;
+            color: #000000 !important;
+          }
+          body {
+            color: #000000 !important;
+          }
           .boleta-paper { padding: 0; }
           .no-print { display: none !important; }
         }
@@ -248,7 +258,7 @@ export default function BoletaPesadaPage() {
           font-size: ${getFontSize(0.9375)};
         }
         .blt-peso-table th {
-          border-bottom: 1px solid #333;
+          border-bottom: 1px solid #000000;
           padding: 2px 6px;
           font-size: ${getFontSize(0.875)};
           font-weight: bold;
@@ -262,7 +272,7 @@ export default function BoletaPesadaPage() {
           border-collapse: collapse;
           margin-bottom: 4px;
           font-size: ${getFontSize(0.9375)};
-          border-top: 1px solid #333;
+          border-top: 1px solid #000000;
         }
         .blt-totales td {
           padding: 2px 0;
@@ -272,14 +282,14 @@ export default function BoletaPesadaPage() {
         .blt-totales strong { font-weight: bold; }
 
         .blt-footer {
-          border-top: 1px solid #333;
+          border-top: 1px solid #000000;
           padding-top: 4px;
           font-size: ${getFontSize(0.9375)};
         }
 
         .blt-leyenda-externa {
           background: #ffffff;
-          border: 2px solid #333;
+          border: 2px solid #000000;
           padding: 3px;
           text-align: center;
           font-weight: bold;

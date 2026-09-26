@@ -27,8 +27,8 @@ export default function PaseSalidaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fontFamily, setFontFamily] = useState<string>("Arial");
-  const [fontSize, setFontSize] = useState<string>("8.5pt");
+  const [fontFamily, setFontFamily] = useState<string>("Courier New");
+  const [fontSize, setFontSize] = useState<string>("9pt");
 
   // Función para calcular tamaños de fuente relativos
   const getFontSize = (multiplier: number) => {
@@ -94,9 +94,10 @@ export default function PaseSalidaPage() {
         }
 
         body {
-          font-family: ${fontFamily}, Helvetica, sans-serif;
+          font-family: ${fontFamily}, "Courier New", Courier, monospace;
           font-size: ${fontSize};
           background: white;
+          color: #000000;
         }
 
         @media screen {
@@ -132,6 +133,15 @@ export default function PaseSalidaPage() {
         }
 
         @media print {
+          * {
+            -webkit-font-smoothing: none !important;
+            font-smooth: never !important;
+            text-rendering: geometricPrecision !important;
+            color: #000000 !important;
+          }
+          body {
+            color: #000000 !important;
+          }
           .pase-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
           .no-print { display: none !important; }
         }
