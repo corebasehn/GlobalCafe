@@ -639,6 +639,40 @@ export class ReceptionService {
     });
   }
 
+  async getBoletaRecepcion(id: number) {
+    const recepcion = await this.prisma.recepcion.findUnique({
+      where: { id_recepcion: id },
+      include: {
+        cosecha: true,
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: {
+          include: { transporte: true },
+        },
+        municipio: {
+          include: { departamento: true },
+        },
+        detalles: {
+          where: { estado: true },
+          include: {
+            proveedor: true,
+            tipo_remision: true,
+            tipo_cafe: true,
+            tipo_empaque: true,
+            estado_transaccion: true,
+          },
+          orderBy: { id_detalle_recepcion: 'asc' },
+        },
+      },
+    });
+
+    if (!recepcion) {
+      throw new NotFoundException(`Recepción #${id} no encontrada`);
+    }
+
+    return recepcion;
+  }
+
   async getBoletaPesada(idDetalle: number) {
     const detalle = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion: idDetalle },

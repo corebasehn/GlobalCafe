@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Modal, Button, Card, Badge, Form } from "react-bootstrap";
-import { Printer, Scale, Truck, CheckCircle2, AlertCircle, FileText } from "lucide-react";
+import { Printer, Scale, Truck, CheckCircle2, FileText } from "lucide-react";
 
 export interface ModalOpcionesImpresionProps {
   show: boolean;
@@ -27,6 +27,7 @@ export default function ModalOpcionesImpresion({
 
   const idDetalle = carga.id_detalle_recepcion;
   const rec = recepcion || carga.recepcion;
+  const idRecepcion = rec?.id_recepcion || carga.id_recepcion;
 
   const noEntrada = rec?.numero_entrada ?? "—";
   const remision = carga.remision ?? "—";
@@ -45,6 +46,12 @@ export default function ModalOpcionesImpresion({
     estadoNombre === "En Bodega";
 
   const tienePaseSalida = tieneSalida || esDestarse || esCerrado;
+
+  const handlePrintBoletaRecepcion = () => {
+    if (!idRecepcion) return;
+    const copiaParam = esCopia ? "?copia=true" : "";
+    window.open(`${base}print/boleta-recepcion/${idRecepcion}${copiaParam}`, "_blank");
+  };
 
   const handlePrintBoleta = (tipo: "primera" | "segunda") => {
     if (!idDetalle) return;
@@ -89,7 +96,7 @@ export default function ModalOpcionesImpresion({
               </div>
             </div>
 
-            <div className="text-muted small d-flex flex-wrap gap-x-4 gap-y-1">
+            <div className="text-muted small d-flex flex-wrap gap-3">
               <div>
                 <strong>Proveedor:</strong> {proveedor}
               </div>
@@ -117,9 +124,45 @@ export default function ModalOpcionesImpresion({
           />
         </div>
 
-        {/* Listado de Tipos de Impresión */}
+        {/* Listado Ordenado de Impresiones */}
         <div className="d-flex flex-column gap-3">
-          {/* 1. Boleta de Primera Pesada (Peso Bruto) */}
+          
+          {/* 1. Boleta de Recepción / Remisión (PRIMERA EN EL ORDEN) */}
+          <Card className="border border-info-subtle">
+            <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className="p-2 rounded-circle bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center"
+                  style={{ width: "42px", height: "42px" }}
+                >
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <div className="fw-bold text-dark d-flex align-items-center gap-2">
+                    Boleta de Recepción / Remisión
+                    <Badge bg="info-transparent">Ingreso Portería</Badge>
+                  </div>
+                  <div className="text-muted small mt-1">
+                    Comprobante de ingreso en portería con todas las remisiones declaradas y datos del transporte.
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Button
+                  variant="outline-info"
+                  size="sm"
+                  className="d-flex align-items-center gap-1"
+                  disabled={!idRecepcion}
+                  onClick={handlePrintBoletaRecepcion}
+                >
+                  <Printer size={14} /> Imprimir Remisión
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* 2. Boleta de 1ª Pesada (Peso Bruto) */}
           <Card
             className={`border transition-all ${
               tieneEntrada ? "border-primary-subtle" : "border-muted opacity-60"
@@ -169,7 +212,7 @@ export default function ModalOpcionesImpresion({
             </Card.Body>
           </Card>
 
-          {/* 2. Boleta de Segunda Pesada (Tara / Neto) */}
+          {/* 3. Boleta de Segunda Pesada (Tara y Neto) */}
           <Card
             className={`border transition-all ${
               tieneSalida ? "border-success-subtle" : "border-muted opacity-60"
@@ -223,7 +266,7 @@ export default function ModalOpcionesImpresion({
             </Card.Body>
           </Card>
 
-          {/* 3. Pase de Salida del Vehículo */}
+          {/* 4. Pase de Salida del Vehículo */}
           <Card
             className={`border transition-all ${
               tienePaseSalida ? "border-warning-subtle" : "border-muted opacity-60"
@@ -264,7 +307,7 @@ export default function ModalOpcionesImpresion({
                   disabled={!tienePaseSalida && !tieneEntrada}
                   onClick={handlePrintPaseSalida}
                 >
-                  <FileText size={14} /> Imprimir Pase de Salida
+                  <Printer size={14} /> Imprimir Pase de Salida
                 </Button>
               </div>
             </Card.Body>

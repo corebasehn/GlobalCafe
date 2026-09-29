@@ -149,6 +149,11 @@ export async function getBoletaPesadaApi(idDetalle: number): Promise<any> {
   return data;
 }
 
+export async function getBoletaRecepcionApi(idRecepcion: number): Promise<any> {
+  const { data } = await http.get<any>(`/reception/boleta-recepcion/${idRecepcion}`);
+  return data;
+}
+
 export async function buscarPesadasApi(q: string): Promise<any[]> {
   const { data } = await http.get<any[]>('/reception/bascula/buscar', { params: { q } });
   return data;
