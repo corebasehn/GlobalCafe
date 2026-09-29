@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Warehouse, Search, MapPin, RefreshCcw } from "lucide-react";
+import { Warehouse, Search, RefreshCcw } from "lucide-react";
 import PageHeader from "../../../../components/layout/PageHeader";
-import { Card, Form, InputGroup } from 'react-bootstrap';
+import { Card, Form, InputGroup, Spinner } from 'react-bootstrap';
 import { moduleColors } from "../../../../config/colors.config";
 import toast from "react-hot-toast";
 
@@ -12,7 +12,7 @@ import {
   RecepcionPatio, 
   NotaPatioRequest 
 } from "../../../../api/patio.api";
-import { getEstibasApi, Estiba } from "../../../../api/catalogs.api";
+import { getEstibasApi, getTiposEmpaqueApi, Estiba, TipoEmpaque } from "../../../../api/catalogs.api";
 
 // Components
 import PatioPendingTable from "../Components/PatioPendingTable";
@@ -24,6 +24,7 @@ export default function WMSPatioPage() {
   const [loading, setLoading] = useState(true);
   const [pendientes, setPendientes] = useState<RecepcionPatio[]>([]);
   const [estibas, setEstibas] = useState<Estiba[]>([]);
+  const [tiposEmpaque, setTiposEmpaque] = useState<TipoEmpaque[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Modals
@@ -37,12 +38,14 @@ export default function WMSPatioPage() {
   const loadInitialData = async () => {
     try {
       setLoading(true);
-      const [pend, ests] = await Promise.all([
+      const [pend, ests, emps] = await Promise.all([
         getRecepcionesParaPatioApi(),
-        getEstibasApi()
+        getEstibasApi(),
+        getTiposEmpaqueApi()
       ]);
       setPendientes(pend);
       setEstibas(ests.filter(e => e.estado));
+      setTiposEmpaque(emps.filter(e => e.estado));
     } catch (error) {
       console.error("Error al cargar datos de patio:", error);
       toast.error("Error al conectar con el servidor");
@@ -103,10 +106,17 @@ export default function WMSPatioPage() {
             </div>
           </div>
 
-          <PatioPendingTable 
-            data={filteredPendientes} 
-            onAction={handleCrearNota} 
-          />
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="text-muted mt-2 mb-0">Cargando pendientes de patio...</p>
+            </div>
+          ) : (
+            <PatioPendingTable 
+              data={filteredPendientes} 
+              onAction={handleCrearNota} 
+            />
+          )}
         </Card.Body>
       </Card>
 
@@ -114,6 +124,7 @@ export default function WMSPatioPage() {
         show={showNotaModal}
         item={selectedItem}
         estibas={estibas}
+        tiposEmpaque={tiposEmpaque}
         onClose={() => setShowNotaModal(false)}
         onSubmit={onSubmitNota}
       />

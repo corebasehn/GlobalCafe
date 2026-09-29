@@ -1,21 +1,24 @@
 import { Modal, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import { Package, AlertTriangle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import Select from "react-select";
 import { RecepcionPatio, NotaPatioRequest } from "../../../../api/patio.api";
-import { Estiba } from "../../../../api/catalogs.api";
+import { Estiba, TipoEmpaque } from "../../../../api/catalogs.api";
 
 interface NotaPatioModalProps {
   show: boolean;
   item: RecepcionPatio | null;
   estibas: Estiba[];
+  tiposEmpaque: TipoEmpaque[];
   onClose: () => void;
   onSubmit: (payload: NotaPatioRequest) => void;
 }
 
-export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit }: NotaPatioModalProps) {
+export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onClose, onSubmit }: NotaPatioModalProps) {
   const [sacosBuenos, setSacosBuenos] = useState<number>(0);
   const [sacosFaltos, setSacosFaltos] = useState<number>(0);
   const [idEstiba, setIdEstiba] = useState<number>(0);
+  const [idTipoEmpaque, setIdTipoEmpaque] = useState<number>(0);
   const [observaciones, setObservaciones] = useState<string>("");
 
   useEffect(() => {
@@ -24,10 +27,18 @@ export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit 
       setSacosFaltos(0);
       setObservaciones("");
       setIdEstiba(0);
+      setIdTipoEmpaque(item.id_tipo_empaque || item.tipo_empaque?.id_tipo_empaque || 0);
     }
   }, [item, show]);
 
   if (!item) return null;
+
+  const tipoEmpaqueOptions = tiposEmpaque.map(t => ({
+    value: t.id_tipo_empaque.toString(),
+    label: `${t.tipo_empaque} (${Number(t.tara)} LB/saco)`
+  }));
+
+  const selectedEmpaqueOption = tipoEmpaqueOptions.find(o => o.value === idTipoEmpaque.toString()) || null;
 
   const totalSacos = sacosBuenos + sacosFaltos;
   const dif = totalSacos - item.cantidad_sacos;
@@ -46,7 +57,8 @@ export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit 
       id_estiba: idEstiba,
       cantidad_sacos_buenos: sacosBuenos,
       cantidad_sacos_faltos: sacosFaltos,
-      observaciones_faltos: observaciones
+      observaciones_faltos: observaciones,
+      id_tipo_empaque: idTipoEmpaque > 0 ? idTipoEmpaque : undefined
     });
   };
 
@@ -61,15 +73,19 @@ export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit 
         <Modal.Body className="p-4">
           <div className="bg-neutral-50 p-3 rounded-lg mb-4 border border-neutral-200">
             <Row>
-              <Col md={6}>
+              <Col md={4}>
                 <p className="mb-1 text-xs text-neutral-500 uppercase font-bold">Proveedor</p>
-                <p className="font-medium">{item.proveedor.nombre}</p>
+                <p className="font-medium text-truncate">{item.proveedor.nombre}</p>
               </Col>
               <Col md={3}>
                 <p className="mb-1 text-xs text-neutral-500 uppercase font-bold">Remisión</p>
                 <p className="font-medium">{item.remision}</p>
               </Col>
               <Col md={3}>
+                <p className="mb-1 text-xs text-neutral-500 uppercase font-bold">Empaque Remisión</p>
+                <p className="font-medium text-coffee-800">{item.tipo_empaque?.tipo_empaque || "N/A"}</p>
+              </Col>
+              <Col md={2}>
                 <p className="mb-1 text-xs text-neutral-500 uppercase font-bold">Sacos Remitidos</p>
                 <p className="font-bold text-lg text-coffee-700">{item.cantidad_sacos}</p>
               </Col>
@@ -112,21 +128,41 @@ export default function NotaPatioModal({ show, item, estibas, onClose, onSubmit 
             </Col>
           </Row>
 
-          <Form.Group className="mb-4">
-            <Form.Label className="font-bold">Ubicación (Estiba de Bodega)</Form.Label>
-            <Form.Select 
-              value={idEstiba} 
-              onChange={(e) => setIdEstiba(Number(e.target.value))}
-              required
-            >
-              <option value="">Seleccione la estiba donde se bajó el café</option>
-              {estibas.map(est => (
-                <option key={est.id_estibas} value={est.id_estibas}>
-                  {est.bodega?.nombre} - {est.nombre}
-                </option>
-              ))}
-            </Form.Select>
-          </Form.Group>
+          <Row className="mb-4">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="font-bold">Ubicación (Estiba de Bodega)</Form.Label>
+                <Form.Select 
+                  value={idEstiba} 
+                  onChange={(e) => setIdEstiba(Number(e.target.value))}
+                  required
+                >
+                  <option value="">Seleccione la estiba donde se bajó el café</option>
+                  {estibas.map(est => (
+                    <option key={est.id_estibas} value={est.id_estibas}>
+                      {est.bodega?.nombre} - {est.nombre}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Text className="text-muted">Estiba física donde se almacena el lote.</Form.Text>
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label className="font-bold">Tipo de Empaque (Verificado en Patio)</Form.Label>
+                <Select
+                  options={tipoEmpaqueOptions}
+                  value={selectedEmpaqueOption}
+                  onChange={(opt) => setIdTipoEmpaque(opt ? Number(opt.value) : 0)}
+                  placeholder="Seleccione tipo de empaque..."
+                  isClearable={false}
+                />
+                <Form.Text className="text-muted">
+                  Por defecto viene el de remisión. Cámbielo si físicamente llegó en otro empaque.
+                </Form.Text>
+              </Form.Group>
+            </Col>
+          </Row>
 
           {sacosFaltos > 0 && (
             <Alert variant="warning" className="border-2 border-warning-200">

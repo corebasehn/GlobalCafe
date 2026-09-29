@@ -33,6 +33,7 @@ export interface DetalleRecepcion {
   };
   proveedor?: { nombre: string };
   tipo_remision?: { nombre: string };
+  tipo_empaque?: { id_tipo_empaque: number; tipo_empaque: string; tara: number };
   recepcion?: any;
 }
 

@@ -816,14 +816,15 @@ export class ReceptionService {
           }
         },
         proveedor: true,
-        estado_transaccion: true
+        estado_transaccion: true,
+        tipo_empaque: true
       },
       orderBy: { fecha_entrada_bascula: 'asc' }
     });
   }
 
   async crearNotaPatio(dto: any, usuarioId: number) {
-    const { id_detalle_recepcion, id_estiba, cantidad_sacos_buenos, cantidad_sacos_faltos, observaciones_faltos } = dto;
+    const { id_detalle_recepcion, id_estiba, cantidad_sacos_buenos, cantidad_sacos_faltos, observaciones_faltos, id_tipo_empaque } = dto;
 
     const detalleOriginal = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion },
@@ -831,6 +832,8 @@ export class ReceptionService {
     });
 
     if (!detalleOriginal) throw new NotFoundException('Detalle de recepción no encontrado');
+
+    const empaqueFinalId = id_tipo_empaque ? Number(id_tipo_empaque) : detalleOriginal.id_tipo_empaque;
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Si hay faltos, creamos un nuevo detalle bloqueado
@@ -853,6 +856,7 @@ export class ReceptionService {
             remision: `${detalleOriginal.remision}-F`,
             numero_muestra: `MUE-${String(countMuestras + 1).padStart(5, '0')}`,
             observaciones: `Sacos Faltos: ${observaciones_faltos}`,
+            id_tipo_empaque: empaqueFinalId,
             estado: true, // Lo dejamos activo pero el estado_transaccion lo bloquea de báscula
             usuario_creacion: usuarioId
           }
@@ -869,6 +873,7 @@ export class ReceptionService {
         where: { id_detalle_recepcion },
         data: {
           cantidad_sacos: cantidad_sacos_buenos,
+          id_tipo_empaque: empaqueFinalId,
           // El peso se mantiene igual (es el peso bruto del equipo)
           id_estado_transaccion: estadoMuestreoGeneral?.id_estado_transaccion || detalleOriginal.id_estado_transaccion,
           usuario_modificacion: usuarioId,

@@ -41,7 +41,17 @@ export default function PatioPendingTable({ data, onAction }: PatioPendingTableP
               <td>
                 <div className="flex flex-col">
                   <span className="font-medium">{item.proveedor.nombre}</span>
-                  <span className="text-xs text-coffee-600 font-bold">Rem: {item.remision}</span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs text-coffee-600 font-bold">Rem: {item.remision}</span>
+                    {item.tipo_empaque && (
+                      <span 
+                        className="badge text-white font-semibold rounded shadow-sm"
+                        style={{ backgroundColor: '#0d6efd', fontSize: '11px', padding: '4px 8px' }}
+                      >
+                        {item.tipo_empaque.tipo_empaque}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </td>
               <td>
