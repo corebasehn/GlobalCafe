@@ -126,6 +126,7 @@ import OmitirAnalisisPage from "../pages/recepcion/bascula/Containers/OmitirAnal
 import WMSPatioPage from "../pages/recepcion/patio/Containers/WMSPatioPage";
 import NotaPesoPage from "../pages/recepcion/NotaPesoPage";
 import AprobacionGerenciaPage from '../pages/recepcion/aprobacion-gerencia/Containers/AprobacionGerenciaPage';
+import OtrosMovimientosPage from "../pages/recepcion/otros-movimientos/Containers/OtrosMovimientosPage";
 // Módulo 2: Comercial
 import ContratosPage from "../pages/comercial/ContratosPage";
 import LabPreembarquePage from "../pages/comercial/LabPreembarquePage";
@@ -304,6 +305,7 @@ export const Routingdata = [
   { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, element: <RequirePermission permission="VER_WMS_PATIO"><WMSPatioPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, element: <RequirePermission permission="VER_NOTA_PESO"><NotaPesoPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, element: <RequirePermission permission="VER_APROBACIONES"><AprobacionGerenciaPage /></RequirePermission> },
+  { path: `${import.meta.env.BASE_URL}recepcion/otros-movimientos`, element: <RequirePermission permission="VER_BASCULA"><OtrosMovimientosPage /></RequirePermission> },
   // Módulo 2: Comercial
   { path: `${import.meta.env.BASE_URL}comercial/contratos`, element: <RequirePermission permission="VER_CONTRATOS"><ContratosPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}comercial/lab-preembarque`, element: <RequirePermission permission="VER_LAB_PREEMBARQUE"><LabPreembarquePage /></RequirePermission> },
@@ -553,6 +555,7 @@ export const Sidebarcomponents = [
       { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, label: "WMS Patio", requirePermission: "VER_WMS_PATIO" },
       { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, label: "Nota de Peso", requirePermission: "VER_NOTA_PESO" },
       { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, label: "Aprobación Gerencia", requirePermission: "VER_APROBACIONES" },
+      { path: `${import.meta.env.BASE_URL}recepcion/otros-movimientos`, type: "link", active: false, label: "Pesada Otros Movimientos", requirePermission: "VER_BASCULA" },
     ]
   },
   // Módulo 2: Comercial

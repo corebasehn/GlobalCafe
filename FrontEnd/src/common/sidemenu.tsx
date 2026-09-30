@@ -327,6 +327,7 @@ export const MENUITEMS: Menuitemtype[] = [
       { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, selected: false, dirchange: false, title: "Nota de Peso", requirePermission: "VER_NOTA_PESO" },
       { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, selected: false, dirchange: false, title: "Aprobación Gerencia", requirePermission: "VER_APROBACIONES" },
       { path: `${import.meta.env.BASE_URL}recepcion/omitir-analisis`, type: "link", active: false, selected: false, dirchange: false, title: "Omitir Análisis Ext", requirePermission: "VER_OMITIR_ANALISIS" },
+      { path: `${import.meta.env.BASE_URL}recepcion/otros-movimientos`, type: "link", active: false, selected: false, dirchange: false, title: "Pesada Otros Movimientos", requirePermission: "VER_BASCULA" },
     ]
   },
   {

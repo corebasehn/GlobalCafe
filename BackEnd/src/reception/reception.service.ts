@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, InternalServerErrorException } from '@ne
 import { PrismaService } from '../prisma.service'; 
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
+import { CreateOtroMovimientoDto } from './dto/create-otro-movimiento.dto';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 @Injectable()
@@ -71,10 +72,16 @@ export class ReceptionService {
     return nuevaRecepcion;
   }
 
-  // 2. LEER TODOS
+  // 2. LEER TODOS (Solo Café)
   findAll() {
     return this.prisma.recepcion.findMany({
-      where: { estado: true },
+      where: { 
+        estado: true,
+        OR: [
+          { id_tipo_movimiento: 1 },
+          { id_tipo_movimiento: null }
+        ]
+      },
       include: { 
         detalles: {
           include: { 
@@ -343,11 +350,15 @@ export class ReceptionService {
   // MÓDULO BÁSCULA DE ENTRADA
   // ==========================================
 
-  // Obtiene los viajes completos que tienen al menos una carga lista para pesarse
+  // Obtiene los viajes completos que tienen al menos una carga lista para pesarse (Solo Café)
   async getPendientesBascula() {
     return this.prisma.recepcion.findMany({
       where: {
         estado: true,
+        OR: [
+          { id_tipo_movimiento: 1 },
+          { id_tipo_movimiento: null }
+        ],
         detalles: {
           some: {
             estado: true,
@@ -1015,5 +1026,292 @@ export class ReceptionService {
       }
       return { success: true };
     });
+  }
+
+  // ==========================================
+  // OTROS MOVIMIENTOS (CASULLA / SUBPRODUCTOS)
+  // Pesaje invertido: 1ra pesada = Tara (vacío), 2da pesada = Bruto (cargado)
+  // ==========================================
+
+  async createOtroMovimiento(dto: CreateOtroMovimientoDto, usuarioId: number) {
+    let idCosecha = dto.id_cosecha;
+    if (!idCosecha) {
+      const cosechaActiva = await this.prisma.cosecha.findFirst({
+        where: { estado: true },
+        orderBy: { id_cosecha: 'desc' }
+      });
+      idCosecha = cosechaActiva ? cosechaActiva.id_cosecha : 1;
+    }
+
+    let idMunicipio = dto.id_municipio;
+    if (!idMunicipio) {
+      const muni = await this.prisma.municipio.findFirst({
+        where: { estado: true }
+      });
+      idMunicipio = muni ? muni.id_municipio : 1;
+    }
+
+    let idProveedor = dto.id_proveedor;
+    if (!idProveedor) {
+      const prov = await this.prisma.proveedor.findFirst({
+        where: { estado: true }
+      });
+      idProveedor = prov ? prov.id_proveedor : 1;
+    }
+
+    const countOtros = await this.prisma.recepcion.count({
+      where: { id_tipo_movimiento: dto.id_tipo_movimiento || 2 }
+    });
+    const correlativo = `CAS-${String(countOtros + 1).padStart(5, '0')}`;
+
+    const estadoPesadaAbierta = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Abierta' }
+    });
+    const estadoPendiente = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pendiente de Muestrear' }
+    });
+
+    const tieneTaraInicial = dto.peso_tara_inicial !== undefined && dto.peso_tara_inicial !== null && dto.peso_tara_inicial > 0;
+    const estadoId = tieneTaraInicial 
+      ? (estadoPesadaAbierta?.id_estado_transaccion || 7) 
+      : (estadoPendiente?.id_estado_transaccion || 1);
+
+    const nuevaRecepcion = await this.prisma.recepcion.create({
+      data: {
+        numero_entrada: correlativo,
+        id_sucursal: dto.id_sucursal || 1,
+        id_cosecha: idCosecha,
+        tipo_vehiculo: dto.tipo_vehiculo,
+        id_placa_cabezal: dto.id_placa_cabezal,
+        id_placa_furgon: dto.id_placa_furgon || null,
+        id_conductor: dto.id_conductor,
+        id_municipio: idMunicipio,
+        id_tipo_movimiento: dto.id_tipo_movimiento || 2,
+        observaciones: dto.observaciones,
+        estado: true,
+        usuario_creacion: usuarioId,
+        detalles: {
+          create: [{
+            remision: dto.remision || correlativo,
+            id_proveedor: idProveedor,
+            id_estado_transaccion: estadoId,
+            cantidad_sacos: 0,
+            cantidad_qq: 0,
+            numero_muestra: 'N/A',
+            omitir_analisis: true,
+            pesada_entrada: tieneTaraInicial ? dto.peso_tara_inicial : null,
+            fecha_entrada_bascula: tieneTaraInicial ? new Date() : null,
+            observaciones: dto.observaciones,
+            usuario_creacion: usuarioId,
+          }]
+        }
+      },
+      include: {
+        detalles: {
+          include: {
+            proveedor: true,
+            estado_transaccion: true
+          }
+        },
+        conductor: { include: { transporte: true } },
+        placa_cabezal: true,
+        placa_furgon: true,
+        tipo_movimiento: true,
+      }
+    });
+
+    this.notifications.emitNotification('new_notification', {
+      title: 'Nuevo Movimiento de Casulla',
+      message: `Se registró el movimiento ${correlativo} para el transporte ${dto.tipo_vehiculo}.`,
+      type: 'info',
+      module: 'RECEPCION'
+    });
+
+    return nuevaRecepcion;
+  }
+
+  async findOtrosMovimientos(q?: string) {
+    const where: any = {
+      estado: true,
+      id_tipo_movimiento: { not: 1 }
+    };
+
+    if (q && q.trim().length > 0) {
+      const term = q.trim().toLowerCase();
+      where.OR = [
+        { numero_entrada: { contains: term, mode: 'insensitive' } },
+        { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
+        { placa_furgon: { placa: { contains: term, mode: 'insensitive' } } },
+        { conductor: { nombre: { contains: term, mode: 'insensitive' } } },
+        { detalles: { some: { remision: { contains: term, mode: 'insensitive' } } } },
+      ];
+    }
+
+    return this.prisma.recepcion.findMany({
+      where,
+      include: {
+        tipo_movimiento: true,
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: { include: { transporte: true } },
+        municipio: true,
+        detalles: {
+          where: { estado: true },
+          include: {
+            proveedor: true,
+            estado_transaccion: true,
+          },
+          orderBy: { id_detalle_recepcion: 'asc' }
+        }
+      },
+      orderBy: { id_recepcion: 'desc' }
+    });
+  }
+
+  async registrarPrimeraPesadaOtroMovimiento(idDetalle: number, peso: number, usuarioId?: number, observaciones?: string) {
+    if (!peso || peso <= 0) {
+      throw new InternalServerErrorException('El peso de la tara (vacío) debe ser mayor a 0');
+    }
+
+    const estadoPesadaAbierta = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Abierta' }
+    });
+    if (!estadoPesadaAbierta) throw new InternalServerErrorException('El estado "Pesada Abierta" no existe en BD');
+
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: { recepcion: true }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
+
+    const dataUpdate: any = {
+      pesada_entrada: peso,
+      fecha_entrada_bascula: new Date(),
+      id_estado_transaccion: estadoPesadaAbierta.id_estado_transaccion,
+      usuario_modificacion: usuarioId,
+      fecha_modificacion: new Date(),
+    };
+    if (observaciones && observaciones.trim().length > 0) {
+      dataUpdate.observaciones = detalle.observaciones
+        ? `${detalle.observaciones} | ${observaciones.trim()}`
+        : observaciones.trim();
+    }
+
+    const detalleActualizado = await this.prisma.detalleRecepcion.update({
+      where: { id_detalle_recepcion: idDetalle },
+      data: dataUpdate,
+      include: {
+        recepcion: {
+          include: {
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: true,
+            tipo_movimiento: true
+          }
+        },
+        proveedor: true,
+        estado_transaccion: true
+      }
+    });
+
+    this.notifications.emitNotification('new_notification', {
+      title: 'Báscula Casulla: 1ra Pesada Realizada',
+      message: `Vehículo ${detalleActualizado.recepcion.numero_entrada} pesó tara de ${peso.toLocaleString()} LB. Pasa a carga.`,
+      type: 'info',
+      module: 'RECEPCION'
+    });
+
+    return detalleActualizado;
+  }
+
+  async registrarSegundaPesadaOtroMovimiento(idDetalle: number, peso: number, usuarioId?: number, observaciones?: string) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: { recepcion: true }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
+    if (!detalle.pesada_entrada) {
+      throw new InternalServerErrorException('No se ha registrado la primera pesada (Tara / vacío) para este movimiento.');
+    }
+
+    const tara = Number(detalle.pesada_entrada);
+    const bruto = Number(peso);
+
+    if (bruto <= tara) {
+      throw new InternalServerErrorException(`El peso cargado (${bruto.toLocaleString()} LB) debe ser mayor a la tara registrada (${tara.toLocaleString()} LB).`);
+    }
+
+    const estadoPesadaCerrada = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Cerrada' }
+    });
+    if (!estadoPesadaCerrada) throw new InternalServerErrorException('El estado "Pesada Cerrada" no existe en BD');
+
+    const pesoNeto = bruto - tara;
+
+    const dataUpdate: any = {
+      pesada_salida: bruto,
+      fecha_salida_bascula: new Date(),
+      peso_neto: pesoNeto,
+      id_estado_transaccion: estadoPesadaCerrada.id_estado_transaccion,
+      usuario_modificacion: usuarioId,
+      fecha_modificacion: new Date()
+    };
+    if (observaciones && observaciones.trim().length > 0) {
+      dataUpdate.observaciones = detalle.observaciones
+        ? `${detalle.observaciones} | ${observaciones.trim()}`
+        : observaciones.trim();
+    }
+
+    const detalleActualizado = await this.prisma.detalleRecepcion.update({
+      where: { id_detalle_recepcion: idDetalle },
+      data: dataUpdate,
+      include: {
+        recepcion: {
+          include: {
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: true,
+            tipo_movimiento: true
+          }
+        },
+        proveedor: true,
+        estado_transaccion: true
+      }
+    });
+
+    this.notifications.emitNotification('new_notification', {
+      title: 'Báscula Casulla: Pesada Cerrada',
+      message: `Vehículo ${detalleActualizado.recepcion.numero_entrada} finalizó pesaje. Neto: ${pesoNeto.toLocaleString()} LB.`,
+      type: 'success',
+      module: 'RECEPCION'
+    });
+
+    return detalleActualizado;
+  }
+
+  async getBoletaPesadaOtroMovimiento(idDetalle: number) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: {
+        proveedor: true,
+        estado_transaccion: true,
+        recepcion: {
+          include: {
+            cosecha: true,
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: { include: { transporte: true } },
+            tipo_movimiento: true,
+            municipio: { include: { departamento: true } },
+            sucursal: true
+          }
+        }
+      }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle de pesaje #${idDetalle} no encontrado`);
+    return detalle;
   }
 }

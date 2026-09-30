@@ -618,7 +618,9 @@ model Recepcion {
   usuario_creacion     Int?
   usuario_modificacion Int?
   cantidad_impresiones Int                @default(0)
+  id_tipo_movimiento   Int?               @default(1)
   detalles             DetalleRecepcion[]
+  tipo_movimiento      tipo_movimiento?   @relation(fields: [id_tipo_movimiento], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_recepcion_tipo_movimiento")
   conductor            Conductor          @relation(fields: [id_conductor], references: [id_conductor])
   cosecha              Cosecha            @relation(fields: [id_cosecha], references: [id_cosecha])
   municipio            Municipio          @relation(fields: [id_municipio], references: [id_municipio])
@@ -886,4 +888,15 @@ model posicion_cafe {
   usuario_modificacion Int?
   fecha_modificacion   DateTime?          @db.Timestamptz(6)
   detalle_recepcion    DetalleRecepcion[]
+}
+
+model tipo_movimiento {
+  id             Int         @id @default(autoincrement())
+  codigo         String      @unique @db.VarChar(50)
+  nombre         String      @db.VarChar(100)
+  descripcion    String?     @db.VarChar(255)
+  sentido_pesaje String      @default("BRUTO_PRIMERO") @db.VarChar(20)
+  activo         Boolean     @default(true)
+  created_at     DateTime?   @default(now()) @db.Timestamp(6)
+  recepcion      Recepcion[]
 }

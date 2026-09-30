@@ -2,6 +2,7 @@ import { Controller, Get, Post, Put, Body, Patch, Param, Delete, Query, UseGuard
 import { ReceptionService } from './reception.service';
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
+import { CreateOtroMovimientoDto } from './dto/create-otro-movimiento.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
@@ -34,6 +35,56 @@ export class ReceptionController {
   @Get('resumen-hoy')
   getResumen() {
     return this.receptionService.getResumenHoy();
+  }
+
+  // ==========================================
+  // RUTAS PARA OTROS MOVIMIENTOS (CASULLA)
+  // Deben declararse ANTES de @Get(':id') para evitar colisión de rutas en NestJS
+  // ==========================================
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('CREAR_RECEPCION', 'PESAR_EQUIPO', 'VER_BASCULA')
+  @Post('otros-movimientos')
+  createOtroMovimiento(@Body() dto: CreateOtroMovimientoDto, @Request() req) {
+    return this.receptionService.createOtroMovimiento(dto, req.user?.id);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_RECEPCION', 'VER_BASCULA')
+  @Get('otros-movimientos')
+  findOtrosMovimientos(@Query('q') q?: string) {
+    return this.receptionService.findOtrosMovimientos(q);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_RECEPCION', 'VER_BASCULA')
+  @Get('otros-movimientos/boleta-pesada/:id')
+  getBoletaPesadaOtroMovimiento(@Param('id') id: string) {
+    return this.receptionService.getBoletaPesadaOtroMovimiento(+id);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('PESAR_EQUIPO', 'VER_BASCULA')
+  @Put('otros-movimientos/primera-pesada/:id')
+  registrarPrimeraPesadaOtroMovimiento(
+    @Param('id') id: string,
+    @Body('peso') peso: number,
+    @Body('observaciones') observaciones: string,
+    @Request() req
+  ) {
+    return this.receptionService.registrarPrimeraPesadaOtroMovimiento(+id, peso, req.user?.id, observaciones);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('PESAR_EQUIPO', 'VER_BASCULA')
+  @Put('otros-movimientos/segunda-pesada/:id')
+  registrarSegundaPesadaOtroMovimiento(
+    @Param('id') id: string,
+    @Body('peso') peso: number,
+    @Body('observaciones') observaciones: string,
+    @Request() req
+  ) {
+    return this.receptionService.registrarSegundaPesadaOtroMovimiento(+id, peso, req.user?.id, observaciones);
   }
 
   @UseGuards(AuthGuard, PermissionsGuard)
