@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Save, Loader2 } from "lucide-react";
-import { Modal, Form, Button, Row, Col } from "react-bootstrap";
+import { Modal, Form, Button, Row, Col, Badge } from "react-bootstrap";
 import Select from "react-select";
 import toast from "react-hot-toast";
 import type { MuestraPendiente } from "../Containers/LaboratorioPage";
 import type { CreateAnalisisRequest } from "../../../../api/analisis.api";
-import type { Catador, Calidad, Defecto, Zaranda, Taza } from "../../../../api/catalogs.api";
+import type { Catador, Calidad, Defecto, Zaranda, Taza, TipoCafe } from "../../../../api/catalogs.api";
 
 interface CatacionModalProps {
   muestra: MuestraPendiente | null;
@@ -14,6 +14,7 @@ interface CatacionModalProps {
   defectos: Defecto[];
   zarandas: Zaranda[];
   tazas: Taza[];
+  tiposCafe?: TipoCafe[];
   submitting: boolean;
   onClose: () => void;
   onSubmit: (payload: CreateAnalisisRequest) => Promise<void>;
@@ -45,7 +46,7 @@ const EMPTY_FORM: FormData = {
   tazas: {},
 };
 
-export default function CatacionModal({ muestra, catadores, calidades, defectos, zarandas, tazas, submitting, onClose, onSubmit }: CatacionModalProps) {
+export default function CatacionModal({ muestra, catadores, calidades, defectos, zarandas, tazas, tiposCafe = [], submitting, onClose, onSubmit }: CatacionModalProps) {
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
@@ -55,11 +56,18 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
     onClose();
   };
 
-  // Determinar si los rendimientos son opcionales según la calidad seleccionada
+  // Determinar el tipo de café de la recepción
+  const tipoCafeEncontrado = muestra?.tipo_cafe?.tipo_cafe || 
+    tiposCafe.find(t => t.id_tipo_cafe === muestra?.id_tipo_cafe)?.tipo_cafe || "";
+  const esTipoCafeOro = tipoCafeEncontrado.toLowerCase().includes("oro");
+
+  // Determinar si los rendimientos son opcionales según el tipo de café o la calidad seleccionada
   const calidadSeleccionada = calidades.find(c => c.id_calidad.toString() === formData.id_calidad);
-  const rendimientosOpcionales = calidadSeleccionada?.nombre === "Oro Corriente" || 
-                                  calidadSeleccionada?.nombre === "Stock Lot" || 
-                                  calidadSeleccionada?.nombre === "Oro Exportable";
+  const esCalidadOro = calidadSeleccionada?.nombre === "Oro Corriente" || 
+                       calidadSeleccionada?.nombre === "Stock Lot" || 
+                       calidadSeleccionada?.nombre === "Oro Exportable";
+
+  const rendimientosOpcionales = esTipoCafeOro || esCalidadOro;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,7 +93,7 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
       return;
     }
 
-    const tipoAnalisis = muestra.estado_transaccion?.nombre === "Muestra General Recibida" 
+    const tipoAnalisis = (muestra.estado_transaccion?.nombre === "Muestra General Recibida" || muestra.esMuestraGeneralPendiente)
       ? "Muestra General" 
       : "Muestra Previa";
 
@@ -120,9 +128,16 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
           <Modal.Header closeButton className="border-bottom">
             <div>
               <Modal.Title className="fs-5 fw-bold">Ingreso de Resultados de Catación</Modal.Title>
-              <small className="text-muted">
-                {muestra.numero_entrada} — {muestra.remision} — {muestra.proveedor_nombre}
-              </small>
+              <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
+                <small className="text-muted">
+                  {muestra.numero_entrada} — {muestra.remision} — {muestra.proveedor_nombre}
+                </small>
+                {tipoCafeEncontrado && (
+                  <Badge bg={esTipoCafeOro ? "warning-transparent" : "light"} className={`rounded-pill ${esTipoCafeOro ? "text-warning border border-warning" : "text-muted border"}`} style={{ fontSize: "0.72rem" }}>
+                    Café: {tipoCafeEncontrado} {esTipoCafeOro && "— Rendimientos opcionales"}
+                  </Badge>
+                )}
+              </div>
             </div>
           </Modal.Header>
 
@@ -159,12 +174,12 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
                       value={formData.id_calidad ? { value: formData.id_calidad, label: calidades.find(c => c.id_calidad.toString() === formData.id_calidad)?.nombre || "" } : null}
                       onChange={(opt) => { 
                         setFormData(prev => ({ ...prev, id_calidad: opt?.value || "" })); 
-                        // Limpiar errores de rendimiento si la nueva calidad los hace opcionales
+                        // Limpiar errores de rendimiento si el tipo de café o la nueva calidad los hace opcionales
                         const nuevaCalidad = calidades.find(c => c.id_calidad.toString() === opt?.value);
-                        const esOpcional = nuevaCalidad?.nombre === "Oro Corriente" || 
-                                          nuevaCalidad?.nombre === "Stock Lot" || 
-                                          nuevaCalidad?.nombre === "Oro Exportable";
-                        if (esOpcional) {
+                        const esCalidadOpcional = nuevaCalidad?.nombre === "Oro Corriente" || 
+                                                  nuevaCalidad?.nombre === "Stock Lot" || 
+                                                  nuevaCalidad?.nombre === "Oro Exportable";
+                        if (esTipoCafeOro || esCalidadOpcional) {
                           setFieldErrors(fe => ({ ...fe, _calidad: "", primer_rendimiento: "", segundo_rendimiento: "" }));
                         } else {
                           setFieldErrors(fe => ({ ...fe, _calidad: "" }));
@@ -219,7 +234,7 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
                 <Col md={2}>
                   <Form.Group>
                     <Form.Label className="small fw-medium">
-                      1er Rendimiento {!rendimientosOpcionales && <span className="text-danger">*</span>}
+                      1er Rendimiento {!rendimientosOpcionales ? <span className="text-danger">*</span> : <span className="text-muted fw-normal">(Opcional)</span>}
                     </Form.Label>
                     <Form.Control
                       size="sm" type="number" step="0.01" placeholder="0.00"
@@ -227,14 +242,16 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
                       value={formData.primer_rendimiento}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        setFormData((f) => ({ ...f, primer_rendimiento: e.target.value }));
+                        const val = e.target.value;
+                        const v = parseFloat(val);
+                        setFormData((f) => ({ ...f, primer_rendimiento: val }));
                         if (!rendimientosOpcionales) {
-                          if (e.target.value === "") setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "Campo requerido" }));
+                          if (val === "") setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "Campo requerido" }));
                           else if (isNaN(v) || v <= 0) setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "Debe ser mayor a 0" }));
                           else setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "" }));
                         } else {
-                          setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "" }));
+                          if (val !== "" && (isNaN(v) || v <= 0)) setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "Debe ser mayor a 0" }));
+                          else setFieldErrors((fe) => ({ ...fe, primer_rendimiento: "" }));
                         }
                       }}
                     />
@@ -244,7 +261,7 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
                 <Col md={2}>
                   <Form.Group>
                     <Form.Label className="small fw-medium">
-                      2do Rendimiento {!rendimientosOpcionales && <span className="text-danger">*</span>}
+                      2do Rendimiento {!rendimientosOpcionales ? <span className="text-danger">*</span> : <span className="text-muted fw-normal">(Opcional)</span>}
                     </Form.Label>
                     <Form.Control
                       size="sm" type="number" step="0.01" placeholder="0.00"
@@ -252,14 +269,16 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
                       value={formData.segundo_rendimiento}
                       onWheel={(e) => e.currentTarget.blur()}
                       onChange={(e) => {
-                        const v = parseFloat(e.target.value);
-                        setFormData((f) => ({ ...f, segundo_rendimiento: e.target.value }));
+                        const val = e.target.value;
+                        const v = parseFloat(val);
+                        setFormData((f) => ({ ...f, segundo_rendimiento: val }));
                         if (!rendimientosOpcionales) {
-                          if (e.target.value === "") setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "Campo requerido" }));
+                          if (val === "") setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "Campo requerido" }));
                           else if (isNaN(v) || v <= 0) setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "Debe ser mayor a 0" }));
                           else setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "" }));
                         } else {
-                          setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "" }));
+                          if (val !== "" && (isNaN(v) || v <= 0)) setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "Debe ser mayor a 0" }));
+                          else setFieldErrors((fe) => ({ ...fe, segundo_rendimiento: "" }));
                         }
                       }}
                     />

@@ -69,7 +69,15 @@ export default function BoletaModal({ muestra, onClose, esCopia = false }: Bolet
               {/* Encabezado */}
               <div style={{ textAlign: "center", borderBottom: "2px solid black", paddingBottom: "12px", marginBottom: "16px" }}>
                 <p style={{ fontSize: "20px", fontWeight: "bold", margin: "0 0 2px" }}>GLOBAL COFFEE GROUP</p>
-                <p style={{ fontSize: "13px", fontWeight: "600", margin: 0, letterSpacing: "0.05em" }}>BOLETA DE MUESTRA PREVIA</p>
+                <p style={{ fontSize: "13px", fontWeight: "600", margin: 0, letterSpacing: "0.05em" }}>
+                  {muestra.analisis.tipo_analisis?.toUpperCase().includes("GENERAL")
+                    ? "BOLETA DE MUESTRA GENERAL"
+                    : muestra.analisis.tipo_analisis?.toUpperCase().includes("PREVIA")
+                    ? "BOLETA DE MUESTRA PREVIA"
+                    : muestra.analisis.tipo_analisis
+                    ? `BOLETA DE ${muestra.analisis.tipo_analisis.toUpperCase()}`
+                    : "BOLETA DE MUESTRA PREVIA"}
+                </p>
               </div>
 
               {/* Datos — cuadrícula 2 columnas */}

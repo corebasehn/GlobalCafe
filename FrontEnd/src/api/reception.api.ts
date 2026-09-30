@@ -34,6 +34,7 @@ export interface DetalleRecepcion {
   proveedor?: { nombre: string };
   tipo_remision?: { nombre: string };
   tipo_empaque?: { id_tipo_empaque: number; tipo_empaque: string; tara: number };
+  tipo_cafe?: { id_tipo_cafe: number; tipo_cafe: string };
   recepcion?: any;
 }
 
@@ -152,6 +153,11 @@ export async function getBoletaPesadaApi(idDetalle: number): Promise<any> {
 
 export async function getBoletaRecepcionApi(idRecepcion: number): Promise<any> {
   const { data } = await http.get<any>(`/reception/boleta-recepcion/${idRecepcion}`);
+  return data;
+}
+
+export async function getBoletaDevolucionApi(idDetalle: number): Promise<any> {
+  const { data } = await http.get<any>(`/reception/boleta-devolucion/${idDetalle}`);
   return data;
 }
 

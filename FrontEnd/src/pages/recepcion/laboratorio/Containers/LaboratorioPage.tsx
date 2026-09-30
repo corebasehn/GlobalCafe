@@ -1,5 +1,5 @@
 import { useState, useEffect, KeyboardEvent } from "react";
-import { Search, Printer } from "lucide-react";
+import { Search, Printer, GitCompare } from "lucide-react";
 import { Badge, Button, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../../auth/useAuth";
@@ -7,7 +7,7 @@ import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 
 // APIs
 import { getReceptionsApi, DetalleRecepcion } from "../../../../api/reception.api";
-import { getProveedoresApi, getCatadoresApi, getCalidadesApi, getDefectosApi, getZarandasApi, getTazasApi, Catador, Calidad, Defecto, Zaranda, Taza } from "../../../../api/catalogs.api";
+import { getProveedoresApi, getCatadoresApi, getCalidadesApi, getDefectosApi, getZarandasApi, getTazasApi, getTiposCafeApi, Catador, Calidad, Defecto, Zaranda, Taza, TipoCafe } from "../../../../api/catalogs.api";
 import { createAnalisisApi, getAnalisisPendientesApi, CreateAnalisisRequest, AnalisisResponse } from "../../../../api/analisis.api";
 
 // Components
@@ -15,11 +15,13 @@ import LabTable from "../Components/LabTable";
 import CatacionModal from "../Components/CatacionModal";
 import BoletaModal from "../Components/BoletaModal";
 import ModalReimpresionAnalisis from "../Components/ModalReimpresionAnalisis";
+import ModalComparativoAnalisis from "../Components/ModalComparativoAnalisis";
 
 export interface MuestraPendiente extends DetalleRecepcion {
   numero_entrada: string;
   proveedor_nombre: string;
   analisis?: AnalisisResponse;
+  esMuestraGeneralPendiente?: boolean;
 }
 
 export default function LaboratorioPage() {
@@ -41,6 +43,7 @@ export default function LaboratorioPage() {
   const [defectos, setDefectos] = useState<Defecto[]>([]);
   const [zarandas, setZarandas] = useState<Zaranda[]>([]);
   const [tazas, setTazas] = useState<Taza[]>([]);
+  const [tiposCafe, setTiposCafe] = useState<TipoCafe[]>([]);
 
   useEffect(() => {
     loadData();
@@ -49,11 +52,11 @@ export default function LaboratorioPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [recepciones, provs, cat, cal, def, zar, taz, analisisPendientes] = await Promise.all([
-        getReceptionsApi(), getProveedoresApi(), getCatadoresApi(), getCalidadesApi(), getDefectosApi(), getZarandasApi(), getTazasApi(), getAnalisisPendientesApi()
+      const [recepciones, provs, cat, cal, def, zar, taz, analisisPendientes, tc] = await Promise.all([
+        getReceptionsApi(), getProveedoresApi(), getCatadoresApi(), getCalidadesApi(), getDefectosApi(), getZarandasApi(), getTazasApi(), getAnalisisPendientesApi(), getTiposCafeApi()
       ]);
 
-      setCatadores(cat); setCalidades(cal); setDefectos(def); setZarandas(zar); setTazas(taz);
+      setCatadores(cat); setCalidades(cal); setDefectos(def); setZarandas(zar); setTazas(taz); setTiposCafe(tc);
 
       const pendientes: MuestraPendiente[] = [];
       recepciones.forEach(rec => {
@@ -61,13 +64,27 @@ export default function LaboratorioPage() {
         rec.detalles.forEach(det => {
           // Filtramos: 
           // 1. "Muestreado" (Muestra previa tomada en patio antes de descargar)
-          // 2. "Muestra General Recibida" (Muestra general enviada después de la Nota de Patio / Descarga)
+          // 2. Muestra General Pendiente:
+          //    - Está en "Muestra General Recibida"
+          //    - O bien: ya tiene Nota de Patio (o pesada cerrada) y aún NO tiene el análisis general en analisis_calidad
           const nombreEstado = det.estado_transaccion?.nombre || "";
-          if (det.estado && (nombreEstado === "Muestreado" || nombreEstado === "Muestra General Recibida")) {
+          const tieneNotaPatio = (det as any).notas_patio && (det as any).notas_patio.length > 0;
+          const tieneGeneralHecha = (det as any).analisis_calidad?.some(
+            (a: any) => (a.tipo_analisis || "").toLowerCase().includes("general")
+          );
+
+          const esPreviaPendiente = nombreEstado === "Muestreado";
+          const esGeneralPendiente = (
+            nombreEstado === "Muestra General Recibida" ||
+            (tieneNotaPatio && (nombreEstado === "Pesada Cerrada" || nombreEstado === "Pesaje Completado"))
+          ) && !tieneGeneralHecha;
+
+          if (det.estado && (esPreviaPendiente || esGeneralPendiente)) {
             pendientes.push({
               ...det,
               numero_entrada: rec.numero_entrada,
-              proveedor_nombre: provs.find(p => p.id_proveedor === det.id_proveedor)?.nombre || "N/A"
+              proveedor_nombre: provs.find(p => p.id_proveedor === det.id_proveedor)?.nombre || "N/A",
+              esMuestraGeneralPendiente: esGeneralPendiente,
             });
           }
         });
@@ -97,6 +114,7 @@ export default function LaboratorioPage() {
   };
 
   const [showReimpresion, setShowReimpresion] = useState(false);
+  const [showComparativo, setShowComparativo] = useState(false);
   const canReimprimir = hasPermission("REIMPRESION_ANALISIS_INGRESO");
 
   const handleOpenModal = (muestra: MuestraPendiente) => setSelectedMuestra(muestra);
@@ -131,7 +149,7 @@ export default function LaboratorioPage() {
   const countByStatus = (name: string) =>
     muestras.filter(m => m.estado_transaccion?.nombre === name).length;
   const cntMuestreado       = countByStatus("Muestreado");
-  const cntGeneralRecibida  = countByStatus("Muestra General Recibida");
+  const cntGeneralRecibida  = muestras.filter(m => m.estado_transaccion?.nombre === "Muestra General Recibida" || m.esMuestraGeneralPendiente).length;
   const cntPendPrevia       = countByStatus("Muestra Previa Pendiente de Aprobacion");
   const cntPendGeneral      = countByStatus("Muestra General Pendiente de Aprobacion");
 
@@ -161,14 +179,27 @@ export default function LaboratorioPage() {
               </InputGroup>
             </div>
 
-            <Button
-              variant="outline-secondary"
-              size="sm"
-              className="d-flex align-items-center gap-1"
-              onClick={() => setShowReimpresion(true)}
-            >
-              <Printer size={14} /> Reimpresiones
-            </Button>
+            {canReimprimir && (
+              <>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  className="d-flex align-items-center gap-1"
+                  onClick={() => setShowReimpresion(true)}
+                >
+                  <Printer size={14} /> Reimpresiones
+                </Button>
+
+                <Button
+                  variant="outline-primary"
+                  size="sm"
+                  className="d-flex align-items-center gap-1"
+                  onClick={() => setShowComparativo(true)}
+                >
+                  <GitCompare size={14} /> Comparativo
+                </Button>
+              </>
+            )}
 
             {/* Indicadores de estado */}
             {!loading && (
@@ -220,6 +251,7 @@ export default function LaboratorioPage() {
         defectos={defectos}
         zarandas={zarandas}
         tazas={tazas}
+        tiposCafe={tiposCafe}
         submitting={submitting}
         onClose={handleCloseModal}
         onSubmit={handleSubmit}
@@ -233,6 +265,11 @@ export default function LaboratorioPage() {
       <ModalReimpresionAnalisis
         show={showReimpresion}
         onClose={() => setShowReimpresion(false)}
+      />
+
+      <ModalComparativoAnalisis
+        show={showComparativo}
+        onClose={() => setShowComparativo(false)}
       />
     </div>
   );

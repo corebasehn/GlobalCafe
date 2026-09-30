@@ -18,6 +18,12 @@ function fmt(n: number) {
   return n.toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function fmtDiferencia(dif: number | null) {
+  if (dif == null) return "—";
+  const signo = dif > 0 ? "+" : "";
+  return `${signo}${fmt(dif)} LB`;
+}
+
 function fmtFecha(d: Date | null) {
   if (!d || isNaN(d.getTime())) return "—";
   return (
@@ -158,6 +164,8 @@ export default function BoletaPesadaPage() {
   const taraUnitaria = detalle?.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
   const tara = taraUnitaria * totalSacos;
   const qNeto = (pesoBruto - tara)/100;
+  const pesoRemision = detalle?.cantidad_qq != null ? Number(detalle.cantidad_qq) * 100 : null;
+  const diferencia = pesoRemision != null ? pesoBruto - pesoRemision : null;
 
   return (
     <>
@@ -275,9 +283,8 @@ export default function BoletaPesadaPage() {
           border-top: 1px solid #000000;
         }
         .blt-totales td {
-          padding: 2px 0;
+          padding: 2px 4px 2px 0;
           white-space: nowrap;
-          width: 50%;
         }
         .blt-totales strong { font-weight: bold; }
 
@@ -367,7 +374,7 @@ export default function BoletaPesadaPage() {
 
         <div className="blt-pergamino">{detalle.tipo_cafe?.tipo_cafe?.toUpperCase() ?? "N/A"}</div>
 
-        <div className="blt-section-title">NOTA DE PESO DEL CAMION</div>
+        <div className="blt-section-title">PESO DETALLE DEL CAMION</div>
 
         <table className="blt-peso-table">
           <thead>
@@ -383,7 +390,9 @@ export default function BoletaPesadaPage() {
               <tr key={i}>
                 <td>{fila.concepto}</td>
                 <td className="tr">
-                  {fila.peso != null ? `${fila.signo}${fmt(fila.peso)}` : "—"}
+                  {esPrimera
+                    ? (fila.peso != null ? "******" : "—")
+                    : (fila.peso != null ? `${fila.signo}${fmt(fila.peso)}` : "—")}
                 </td>
                 <td className="tr">{fila.sacos === 0 ? "0" : `${fila.signo}${fila.sacos}`}</td>
                 <td>{fmtFecha(fila.fecha)}</td>
@@ -395,13 +404,29 @@ export default function BoletaPesadaPage() {
         <table className="blt-totales">
           <tbody>
             <tr>
-              <td><strong>PESO BRUTO:</strong>&nbsp;{fmt(pesoBruto)} LB</td>
-              <td><strong>TOTAL SACOS:</strong>&nbsp;{totalSacos}</td>
+              <td style={{ width: "30%" }}>
+                <strong>PESO BRUTO:</strong>&nbsp;{esPrimera ? "****** LB" : `${fmt(pesoBruto)} LB`}
+              </td>
+              <td style={{ width: "32%" }}>
+                <strong>TOTAL SACOS:</strong>&nbsp;{totalSacos}
+              </td>
+              <td style={{ width: "38%" }}>
+                {!esPrimera && (
+                  <><strong>PESO REMISIÓN:</strong>&nbsp;{pesoRemision != null ? `${fmt(pesoRemision)} LB` : "—"}</>
+                )}
+              </td>
             </tr>
             {!esPrimera && (
               <tr>
-                <td><strong>TARA ({taraUnitaria} × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
-                <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
+                <td>
+                  <strong>TARA ({taraUnitaria} × sacos):</strong>&nbsp;{fmt(tara)} LB
+                </td>
+                <td>
+                  <strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ
+                </td>
+                <td>
+                  <strong>DIFERENCIA (BRUTO - REMISIÓN):</strong>&nbsp;{fmtDiferencia(diferencia)}
+                </td>
               </tr>
             )}
           </tbody>

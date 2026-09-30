@@ -34,6 +34,7 @@ import { Toaster } from 'react-hot-toast';
 import BoletaPesadaPage from './pages/recepcion/bascula/print/BoletaPesadaPage';
 import PaseSalidaPage from './pages/recepcion/bascula/print/PaseSalidaPage';
 import BoletaRecepcionPage from './pages/recepcion/bascula/print/BoletaRecepcionPage';
+import BoletaDevolucionPage from './pages/recepcion/bascula/print/BoletaDevolucionPage';
 
 //Form
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -59,6 +60,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path={`${import.meta.env.BASE_URL}print/boleta-recepcion/:idRecepcion`} element={<BoletaRecepcionPage />} />
           <Route path={`${import.meta.env.BASE_URL}print/boleta-pesada/:idDetalle/:tipo`} element={<BoletaPesadaPage />} />
           <Route path={`${import.meta.env.BASE_URL}print/pase-salida/:idDetalle`} element={<PaseSalidaPage />} />
+          <Route path={`${import.meta.env.BASE_URL}print/boleta-devolucion/:idDetalle`} element={<BoletaDevolucionPage />} />
 
         </Routes>
       </BrowserRouter>

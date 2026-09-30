@@ -81,7 +81,14 @@ export class ReceptionService {
             estado_transaccion: true,
             tipo_remision: true,
             tipo_cafe: true,
-            tipo_empaque: true
+            tipo_empaque: true,
+            notas_patio: true,
+            analisis_calidad: {
+              select: {
+                id_analisis_calidad: true,
+                tipo_analisis: true,
+              }
+            }
           }
         } 
       },
@@ -671,6 +678,39 @@ export class ReceptionService {
     }
 
     return recepcion;
+  }
+
+  async getBoletaDevolucion(idDetalle: number) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: {
+        proveedor: true,
+        estado_transaccion: true,
+        tipo_cafe: true,
+        recepcion: {
+          include: {
+            cosecha: true,
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: { include: { transporte: true } },
+          },
+        },
+        analisis_calidad: {
+          include: {
+            catador: true,
+            estado_transaccion: true,
+          },
+          orderBy: { id_analisis_calidad: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!detalle) {
+      throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
+    }
+
+    return detalle;
   }
 
   async getBoletaPesada(idDetalle: number) {

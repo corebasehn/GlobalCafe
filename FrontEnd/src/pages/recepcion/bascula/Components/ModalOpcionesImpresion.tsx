@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Modal, Button, Card, Badge, Form } from "react-bootstrap";
-import { Printer, Scale, Truck, CheckCircle2, FileText } from "lucide-react";
+import { Printer, Scale, Truck, CheckCircle2, FileText, XCircle } from "lucide-react";
 
 export interface ModalOpcionesImpresionProps {
   show: boolean;
@@ -47,6 +47,12 @@ export default function ModalOpcionesImpresion({
 
   const tienePaseSalida = tieneSalida || esDestarse || esCerrado;
 
+  const esDevolucion =
+    estadoNombre.toLowerCase().includes("rechazada") ||
+    estadoNombre.toLowerCase().includes("devoluci") ||
+    carga.estado_transaccion?.nombre?.toLowerCase().includes("rechazada") ||
+    carga.estado_transaccion?.nombre?.toLowerCase().includes("devoluci");
+
   const handlePrintBoletaRecepcion = () => {
     if (!idRecepcion) return;
     const copiaParam = esCopia ? "?copia=true" : "";
@@ -62,6 +68,12 @@ export default function ModalOpcionesImpresion({
   const handlePrintPaseSalida = () => {
     if (!idDetalle) return;
     window.open(`${base}print/pase-salida/${idDetalle}`, "_blank");
+  };
+
+  const handlePrintBoletaDevolucion = () => {
+    if (!idDetalle) return;
+    const copiaParam = esCopia ? "?copia=true" : "";
+    window.open(`${base}print/boleta-devolucion/${idDetalle}${copiaParam}`, "_blank");
   };
 
   return (
@@ -308,6 +320,53 @@ export default function ModalOpcionesImpresion({
                   onClick={handlePrintPaseSalida}
                 >
                   <Printer size={14} /> Imprimir Pase de Salida
+                </Button>
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* 5. Boleta de Devolución de Café */}
+          <Card
+            className={`border transition-all ${
+              esDevolucion ? "border-danger-subtle bg-danger-subtle bg-opacity-10" : "border-muted opacity-60"
+            }`}
+          >
+            <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
+              <div className="d-flex align-items-center gap-3">
+                <div
+                  className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
+                    esDevolucion ? "bg-danger bg-opacity-10 text-danger" : "bg-secondary bg-opacity-10 text-muted"
+                  }`}
+                  style={{ width: "42px", height: "42px" }}
+                >
+                  <XCircle size={20} />
+                </div>
+                <div>
+                  <div className="fw-bold text-dark d-flex align-items-center gap-2">
+                    Boleta de Devolución de Café
+                    {esDevolucion ? (
+                      <Badge bg="danger-transparent">Devolución / Rechazo</Badge>
+                    ) : (
+                      <Badge bg="secondary-transparent">No Aplica (Carga Aceptada)</Badge>
+                    )}
+                  </div>
+                  <div className="text-muted small mt-1">
+                    {esDevolucion
+                      ? "Carga con dictamen de rechazo o devolución de Gerencia. Imprimir comprobante para el transportista."
+                      : "Comprobante emitido únicamente cuando una carga es rechazada o devuelta por Gerencia."}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Button
+                  variant="outline-danger"
+                  size="sm"
+                  className="d-flex align-items-center gap-1"
+                  disabled={!idDetalle || !esDevolucion}
+                  onClick={handlePrintBoletaDevolucion}
+                >
+                  <Printer size={14} /> Imprimir Boleta Devolución
                 </Button>
               </div>
             </Card.Body>

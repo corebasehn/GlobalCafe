@@ -323,7 +323,7 @@ export const MENUITEMS: Menuitemtype[] = [
       { path: `${import.meta.env.BASE_URL}recepcion/muestreo`, type: "link", active: false, selected: false, dirchange: false, title: "Muestreo en Patio", requirePermission: "VER_MUESTREO" },
       { path: `${import.meta.env.BASE_URL}recepcion/laboratorio`, type: "link", active: false, selected: false, dirchange: false, title: "Laboratorio", requirePermission: "VER_MUESTRA" },
       { path: `${import.meta.env.BASE_URL}recepcion/bascula-entrada`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula de Entrada", requirePermission: "VER_BASCULA" },
-      { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, selected: false, dirchange: false, title: "WMS Patio", requirePermission: "VER_WMS_PATIO" },
+      { path: `${import.meta.env.BASE_URL}recepcion/wms-patio`, type: "link", active: false, selected: false, dirchange: false, title: "Nota de Patio", requirePermission: "VER_WMS_PATIO" },
       { path: `${import.meta.env.BASE_URL}recepcion/nota-peso`, type: "link", active: false, selected: false, dirchange: false, title: "Nota de Peso", requirePermission: "VER_NOTA_PESO" },
       { path: `${import.meta.env.BASE_URL}recepcion/gerencia`, type: "link", active: false, selected: false, dirchange: false, title: "Aprobación Gerencia", requirePermission: "VER_APROBACIONES" },
       { path: `${import.meta.env.BASE_URL}recepcion/omitir-analisis`, type: "link", active: false, selected: false, dirchange: false, title: "Omitir Análisis Ext", requirePermission: "VER_OMITIR_ANALISIS" },

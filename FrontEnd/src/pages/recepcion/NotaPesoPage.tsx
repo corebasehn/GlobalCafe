@@ -129,7 +129,7 @@ export default function NotaPesoPage() {
                 <InputGroup.Text className="bg-white border-end-0"><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
                 <Form.Control 
                   className="border-start-0 ps-0"
-                  placeholder="Buscar por proveedor o remisión..." 
+                  placeholder="Buscar por entrada, remisión o proveedor..." 
                   value={searchTerm} 
                   onChange={(e) => setSearchTerm(e.target.value)} 
                 />
@@ -155,7 +155,13 @@ export default function NotaPesoPage() {
                     <tr><td colSpan={6} className="text-center py-5 text-neutral-500">No hay entregas pendientes de liquidación</td></tr>
                   ) : (
                     pendientes
-                      .filter(p => p.proveedor.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || p.remision.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .filter((p) => {
+                        const term = searchTerm.toLowerCase();
+                        const proveedor = p.proveedor?.nombre?.toLowerCase() || "";
+                        const remision = p.remision?.toLowerCase() || "";
+                        const entrada = p.recepcion?.numero_entrada?.toLowerCase() || "";
+                        return proveedor.includes(term) || remision.includes(term) || entrada.includes(term);
+                      })
                       .map((p) => (
                         <tr key={p.id_detalle_recepcion}>
                           <td className="px-4">
@@ -193,7 +199,7 @@ export default function NotaPesoPage() {
                 <InputGroup.Text className="bg-white border-end-0"><Search className="w-4 h-4 text-neutral-400" /></InputGroup.Text>
                 <Form.Control 
                   className="border-start-0 ps-0"
-                  placeholder="Buscar por No. Nota o Proveedor..." 
+                  placeholder="Buscar por No. Nota, Entrada, Remisión o Proveedor..." 
                   value={searchTerm} 
                   onChange={(e) => setSearchTerm(e.target.value)} 
                 />
@@ -207,6 +213,7 @@ export default function NotaPesoPage() {
                 <thead className="bg-neutral-50">
                   <tr>
                     <th className="px-4 py-3">No. Nota</th>
+                    <th>Ingreso / Remisión</th>
                     <th>Fecha</th>
                     <th>Proveedor</th>
                     <th className="text-end">Peso Neto (QQ)</th>
@@ -216,15 +223,35 @@ export default function NotaPesoPage() {
                 </thead>
                 <tbody>
                   {notasEmitidas.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-5 text-neutral-500">No se han emitido notas de peso</td></tr>
+                    <tr><td colSpan={7} className="text-center py-5 text-neutral-500">No se han emitido notas de peso</td></tr>
                   ) : (
                     notasEmitidas
-                      .filter(n => n.numero_nota_peso.toLowerCase().includes(searchTerm.toLowerCase()) || n.detalle_recepcion.proveedor.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+                      .filter((n) => {
+                        const term = searchTerm.toLowerCase();
+                        const noNota = n.numero_nota_peso?.toLowerCase() || "";
+                        const proveedor = n.detalle_recepcion?.proveedor?.nombre?.toLowerCase() || "";
+                        const entrada = n.detalle_recepcion?.recepcion?.numero_entrada?.toLowerCase() || "";
+                        const remision = n.detalle_recepcion?.remision?.toLowerCase() || "";
+                        return (
+                          noNota.includes(term) ||
+                          proveedor.includes(term) ||
+                          entrada.includes(term) ||
+                          remision.includes(term)
+                        );
+                      })
                       .map((nota) => (
                         <tr key={nota.id_nota_peso}>
                           <td className="px-4 font-bold text-coffee-800">{nota.numero_nota_peso}</td>
+                          <td>
+                            <div className="font-semibold text-coffee-700">
+                              {nota.detalle_recepcion?.recepcion?.numero_entrada || "-"}
+                            </div>
+                            <div className="text-xs text-neutral-500">
+                              Rem: {nota.detalle_recepcion?.remision || "-"}
+                            </div>
+                          </td>
                           <td>{new Date(nota.fecha_nota_peso).toLocaleDateString()}</td>
-                          <td>{nota.detalle_recepcion.proveedor.nombre}</td>
+                          <td>{nota.detalle_recepcion?.proveedor?.nombre || "-"}</td>
                           <td className="text-end font-bold">{Number(nota.detalles[0]?.peso_neto || 0).toFixed(2)} QQ</td>
                           <td className="text-center"><Badge bg="success">EMITIDA</Badge></td>
                           <td className="text-center">

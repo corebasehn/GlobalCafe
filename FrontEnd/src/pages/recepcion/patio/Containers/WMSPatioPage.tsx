@@ -80,7 +80,7 @@ export default function WMSPatioPage() {
   return (
     <div className="space-y-6">
       <PageHeader 
-        title="WMS & Patio" 
+        title="Nota de Patio" 
         subtitle="Control de descarga, pesaje bruto y gestión de faltos" 
         icon={Warehouse} 
         iconBg={colors.bg} 

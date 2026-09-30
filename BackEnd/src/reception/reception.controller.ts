@@ -96,6 +96,13 @@ export class ReceptionController {
   }
 
   @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('VER_RECEPCION', 'VER_BASCULA')
+  @Get('boleta-devolucion/:id')
+  getBoletaDevolucion(@Param('id') id: string) {
+    return this.receptionService.getBoletaDevolucion(+id);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('VER_BASCULA')
   @Get('bascula/boleta-pesada/:id')
   getBoletaPesada(@Param('id') id: string) {
