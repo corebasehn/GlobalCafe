@@ -33,10 +33,13 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
     const filas = muestras.map(m => ({
       "N° Ingreso": m.numero_entrada,
       "Remisión Física": m.remision,
-      "Proveedor / Finca": m.proveedor_nombre,      "Tipo Análisis": m.analisis?.tipo_analisis ||
+      "Tipo de Café": m.tipo_cafe?.tipo_cafe || "—",
+      "Proveedor / Finca": m.proveedor_nombre,
+      "Tipo Análisis": m.analisis?.tipo_analisis ||
         (m.estado_transaccion?.nombre === "Muestra General Recibida" ||
          m.estado_transaccion?.nombre === "Muestra General Pendiente de Aprobacion"
-          ? "GENERAL" : "PREVIA"),      "Quintales (QQ)": Number(Number(m.cantidad_qq).toFixed(2)),
+          ? "GENERAL" : "PREVIA"),
+      "Quintales (QQ)": Number(Number(m.cantidad_qq).toFixed(2)),
       "Estado": m.estado_transaccion?.nombre || "",
     }));
     const ws = XLSX.utils.json_to_sheet(filas);
@@ -60,6 +63,7 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
             {hasRowActions && <th className="text-center" style={{ width: "100px" }}>Acción</th>}
             <th>No. Ingreso</th>
             <th>Remisión Física</th>
+            <th>Tipo de Café</th>
             <th>Proveedor / Productor</th>
             <th className="text-center">Tipo Análisis</th>
             <th className="text-end">Volumen</th>
@@ -69,14 +73,14 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={hasRowActions ? 7 : 6} className="text-center py-8">
+              <td colSpan={hasRowActions ? 8 : 7} className="text-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin inline-block text-neutral-400 mr-2" />
                 Cargando bandeja de laboratorio...
               </td>
             </tr>
           ) : muestras.length === 0 ? (
             <tr>
-              <td colSpan={hasRowActions ? 7 : 6} className="text-center py-8 text-neutral-500">
+              <td colSpan={hasRowActions ? 8 : 7} className="text-center py-8 text-neutral-500">
                 {searchTerm.trim().length === 0
                   ? "Ingrese un No. Ingreso o Remisi\u00f3n F\u00edsica para buscar."
                   : "No se encontraron resultados para la b\u00fasqueda."}
@@ -138,6 +142,11 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
                   )}
                   <td className="font-medium text-neutral-600">{m.numero_entrada}</td>
                   <td className="font-bold text-coffee-700">{m.remision}</td>
+                  <td>
+                    <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                      {m.tipo_cafe?.tipo_cafe || "—"}
+                    </Badge>
+                  </td>
                   <td>{m.proveedor_nombre}</td>
                   <td className="text-center">
                     <Badge bg={tipoAnalisis === "GENERAL" ? "dark-transparent" : "light-transparent"}>
@@ -161,7 +170,7 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
         {!loading && muestras.length > 0 && (
           <tfoot className="table-light border-top border-2">
             <tr>
-              <td colSpan={hasRowActions ? 5 : 4} className="text-end fw-bold text-neutral-600 py-2">
+              <td colSpan={hasRowActions ? 6 : 5} className="text-end fw-bold text-neutral-600 py-2">
                 Total ({muestras.length} {muestras.length === 1 ? "muestra" : "muestras"}):
               </td>
               <td className="text-end fw-bold">{totalQq.toFixed(2)} QQ</td>

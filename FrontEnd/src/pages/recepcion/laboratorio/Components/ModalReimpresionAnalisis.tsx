@@ -116,6 +116,7 @@ export default function ModalReimpresionAnalisis({ show, onClose }: Props) {
                   <th>No. Análisis</th>
                   <th>No. Ingreso</th>
                   <th>Remisión</th>
+                  <th>Tipo de Café</th>
                   <th>Proveedor / Finca</th>
                   <th className="text-center">Tipo</th>
                   <th>Catador</th>
@@ -132,6 +133,11 @@ export default function ModalReimpresionAnalisis({ show, onClose }: Props) {
                       {ana.detalle_recepcion?.recepcion?.numero_entrada ?? "—"}
                     </td>
                     <td>{ana.detalle_recepcion?.remision ?? "—"}</td>
+                    <td>
+                      <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                        {(ana.detalle_recepcion as any)?.tipo_cafe?.tipo_cafe ?? "—"}
+                      </Badge>
+                    </td>
                     <td>{ana.detalle_recepcion?.proveedor?.nombre ?? "—"}</td>
                     <td className="text-center">
                       <Badge bg="primary-transparent">{ana.tipo_analisis}</Badge>

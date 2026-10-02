@@ -127,21 +127,51 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
         <Form onSubmit={handleSubmit}>
           <Modal.Header closeButton className="border-bottom">
             <div>
-              <Modal.Title className="fs-5 fw-bold">Ingreso de Resultados de Catación</Modal.Title>
-              <div className="d-flex align-items-center gap-2 mt-1 flex-wrap">
-                <small className="text-muted">
-                  {muestra.numero_entrada} — {muestra.remision} — {muestra.proveedor_nombre}
-                </small>
+              <div className="d-flex align-items-center gap-3 flex-wrap">
+                <Modal.Title className="fs-5 fw-bold mb-0">Ingreso de Resultados de Catación</Modal.Title>
                 {tipoCafeEncontrado && (
-                  <Badge bg={esTipoCafeOro ? "warning-transparent" : "light"} className={`rounded-pill ${esTipoCafeOro ? "text-warning border border-warning" : "text-muted border"}`} style={{ fontSize: "0.72rem" }}>
-                    Café: {tipoCafeEncontrado} {esTipoCafeOro && "— Rendimientos opcionales"}
+                  <Badge
+                    bg={esTipoCafeOro ? "warning-transparent" : "secondary-transparent"}
+                    className={`rounded-pill px-3 py-1 fs-12 fw-bold ${esTipoCafeOro ? "text-warning border border-warning" : "text-secondary"}`}
+                  >
+                    ☕ Tipo de Café: {tipoCafeEncontrado} {esTipoCafeOro && "(Rendimientos opcionales)"}
                   </Badge>
                 )}
+              </div>
+              <div className="d-flex align-items-center gap-2 mt-1 flex-wrap text-muted small">
+                <span><strong>No. Ingreso:</strong> {muestra.numero_entrada}</span>
+                <span>•</span>
+                <span><strong>Remisión:</strong> {muestra.remision}</span>
+                <span>•</span>
+                <span><strong>Proveedor:</strong> {muestra.proveedor_nombre}</span>
               </div>
             </div>
           </Modal.Header>
 
           <Modal.Body className="p-4" style={{ maxHeight: "70vh" , overflowY: "auto" }}>
+            {/* Banner Informativo de la Carga */}
+            <div className="bg-light p-3 rounded border mb-3">
+              <Row className="g-2 text-dark small align-items-center">
+                <Col xs={6} md={3}>
+                  <span className="text-muted">No. Ingreso:</span> <strong>{muestra.numero_entrada}</strong>
+                </Col>
+                <Col xs={6} md={3}>
+                  <span className="text-muted">Remisión:</span> <strong>{muestra.remision}</strong>
+                </Col>
+                <Col xs={6} md={3}>
+                  <span className="text-muted">Tipo de Café:</span>{" "}
+                  <Badge bg="secondary-transparent" className="text-secondary fw-bold fs-12">
+                    {tipoCafeEncontrado || "—"}
+                  </Badge>
+                </Col>
+                <Col xs={6} md={3}>
+                  <span className="text-muted">Volumen:</span> <strong>{Number(muestra.cantidad_qq).toFixed(2)} QQ</strong>
+                </Col>
+                <Col xs={12}>
+                  <span className="text-muted">Proveedor / Finca:</span> <strong>{muestra.proveedor_nombre}</strong>
+                </Col>
+              </Row>
+            </div>
 
             {/* 1. Datos Generales */}
             <div className="bg-white rounded border p-3 mb-3">

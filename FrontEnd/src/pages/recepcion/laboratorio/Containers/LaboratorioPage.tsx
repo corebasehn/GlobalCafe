@@ -143,7 +143,9 @@ export default function LaboratorioPage() {
     ? []
     : muestras.filter(m =>
         m.numero_entrada.toLowerCase().includes(trimmed) ||
-        m.remision.toLowerCase().includes(trimmed)
+        m.remision.toLowerCase().includes(trimmed) ||
+        m.proveedor_nombre.toLowerCase().includes(trimmed) ||
+        (m.tipo_cafe?.tipo_cafe || "").toLowerCase().includes(trimmed)
       );
 
   const countByStatus = (name: string) =>
@@ -170,7 +172,7 @@ export default function LaboratorioPage() {
                 <InputGroup.Text><Search className="w-3 h-3 text-neutral-400" /></InputGroup.Text>
                 <Form.Control
                   size="sm"
-                  placeholder="Buscar por No. Ingreso o Remisión Física..."
+                  placeholder="Buscar por No. Ingreso, Remisión, Proveedor o Tipo de Café..."
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyDown={handleSearchKeyDown}
