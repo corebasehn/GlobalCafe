@@ -83,6 +83,8 @@ export default function PesadaModal({
               <Row className="g-2 text-sm">
                 <Col xs={5} className="text-muted fw-medium">Ingreso / Remisión:</Col>
                 <Col xs={7} className="fw-bold text-end">{selectedRecepcion.numero_entrada} / {selectedCarga.remision}</Col>
+                <Col xs={5} className="text-muted fw-medium">Tipo de Café:</Col>
+                <Col xs={7} className="fw-bold text-end text-coffee-700">{selectedCarga.tipo_cafe?.tipo_cafe || "N/A"}</Col>
                 <Col xs={5} className="text-muted fw-medium">Proveedor:</Col>
                 <Col xs={7} className="fw-semibold text-end text-truncate">{selectedCarga.proveedor?.nombre}</Col>
                 <Col xs={5} className="text-muted fw-medium">Sacos Declarados:</Col>

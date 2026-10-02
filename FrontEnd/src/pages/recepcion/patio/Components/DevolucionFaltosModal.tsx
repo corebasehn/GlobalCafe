@@ -65,6 +65,7 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
               <Col xs={6}>
                 <p className="mb-1"><strong>N° Ingreso:</strong> {item.recepcion.numero_entrada}</p>
                 <p className="mb-1"><strong>Remisión:</strong> {item.remision}</p>
+                <p className="mb-1"><strong>Tipo de Café:</strong> {item.tipo_cafe?.tipo_cafe || "N/A"}</p>
                 <p className="mb-1"><strong>Fecha:</strong> {new Date().toLocaleString()}</p>
               </Col>
               <Col xs={6}>
@@ -120,7 +121,9 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
             <span className="fw-bold fs-14 text-primary">{item.recepcion.numero_entrada}</span>
             <Badge bg="danger-transparent" className="rounded-pill px-3 fs-12">{item.cantidad_sacos} Sacos Faltos</Badge>
           </div>
-          <p className="fs-12 text-muted mb-0">{item.proveedor.nombre}</p>
+          <p className="fs-12 text-muted mb-0">
+            {item.proveedor?.nombre || "N/A"}{item.tipo_cafe?.tipo_cafe ? ` • ${item.tipo_cafe.tipo_cafe}` : ""}
+          </p>
         </Alert>
 
         <div className="mb-4">

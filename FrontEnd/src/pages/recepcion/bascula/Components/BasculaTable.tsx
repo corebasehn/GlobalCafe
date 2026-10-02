@@ -79,6 +79,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
             "Conductor": idx === 0 ? conductorName : "",
             "Teléfono": idx === 0 ? conductorTelefono : "",
             "Remisión": carga.remision,
+            "Tipo de Café": carga.tipo_cafe?.tipo_cafe || "N/A",
             "Proveedor / Finca": carga.proveedor?.nombre || "",
             "Sacos": carga.cantidad_sacos,
             "Pesada Entrada (LB)": carga.pesada_entrada ? Number(carga.pesada_entrada) : "",
@@ -185,6 +186,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                 <tr>
                                   <th className="text-center" style={{ width: "80px" }}>Acciones</th>
                                   <th>Remisión</th>
+                                  <th>Tipo de Café</th>
                                   <th>Proveedor / Finca</th>
                                   <th className="text-center">Sacos</th>
                                   <th className="text-end">Pesada Entrada (Bruto)</th>
@@ -288,6 +290,11 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                         )}
                                       </td>
                                       <td className="font-medium text-neutral-700">{carga.remision}</td>
+                                      <td>
+                                        <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                                          {carga.tipo_cafe?.tipo_cafe || "---"}
+                                        </Badge>
+                                      </td>
                                       <td>{carga.proveedor?.nombre}</td>
                                       <td className="text-center">{carga.cantidad_sacos}</td>
                                       <td className="text-end font-monospace">{carga.pesada_entrada ? Number(carga.pesada_entrada).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---"} LB</td>
@@ -304,7 +311,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                               </tbody>
                               <tfoot className="table-light border-top border-2">
                                 <tr>
-                                  <td colSpan={3} className="text-end fw-bold text-neutral-600 py-1">
+                                  <td colSpan={4} className="text-end fw-bold text-neutral-600 py-1">
                                     Total ({detalles.length} {detalles.length === 1 ? "carga" : "cargas"}):
                                   </td>
                                   <td className="text-center fw-bold">{sumSacos.toLocaleString()}</td>

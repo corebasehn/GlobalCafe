@@ -32,6 +32,7 @@ export default function ModalOpcionesImpresion({
   const noEntrada = rec?.numero_entrada ?? "—";
   const remision = carga.remision ?? "—";
   const proveedor = carga.proveedor?.nombre ?? "—";
+  const tipoCafe = carga.tipo_cafe?.tipo_cafe;
   const placaCabezal = rec?.placa_cabezal?.placa ?? carga.placa_cabezal?.placa ?? "—";
   const placaFurgon = rec?.placa_furgon?.placa ?? carga.placa_furgon?.placa ?? "";
   const estadoNombre = carga.estado_transaccion?.nombre ?? "—";
@@ -47,11 +48,23 @@ export default function ModalOpcionesImpresion({
 
   const tienePaseSalida = tieneSalida || esDestarse || esCerrado;
 
+  // Detección de devolución directa o por sacos faltos autorizados por Gerencia
+  const devFaltoDeRecepcion = rec?.detalles?.find(
+    (d: any) =>
+      d.remision === `${remision}-F` ||
+      (d.remision?.startsWith(remision) && d.remision?.endsWith("-F"))
+  );
+  const devolucionData = carga.devolucion || devFaltoDeRecepcion;
+  const tieneDevolucionFaltos = Boolean(devolucionData);
+  const idDetalleDevolucion = devolucionData?.id_detalle_recepcion || idDetalle;
+
   const esDevolucion =
     estadoNombre.toLowerCase().includes("rechazada") ||
     estadoNombre.toLowerCase().includes("devoluci") ||
     carga.estado_transaccion?.nombre?.toLowerCase().includes("rechazada") ||
     carga.estado_transaccion?.nombre?.toLowerCase().includes("devoluci");
+
+  const puedeImprimirDevolucion = esDevolucion || tieneDevolucionFaltos;
 
   const handlePrintBoletaRecepcion = () => {
     if (!idRecepcion) return;
@@ -71,9 +84,9 @@ export default function ModalOpcionesImpresion({
   };
 
   const handlePrintBoletaDevolucion = () => {
-    if (!idDetalle) return;
+    if (!idDetalleDevolucion) return;
     const copiaParam = esCopia ? "?copia=true" : "";
-    window.open(`${base}print/boleta-devolucion/${idDetalle}${copiaParam}`, "_blank");
+    window.open(`${base}print/boleta-devolucion/${idDetalleDevolucion}${copiaParam}`, "_blank");
   };
 
   return (
@@ -112,6 +125,11 @@ export default function ModalOpcionesImpresion({
               <div>
                 <strong>Proveedor:</strong> {proveedor}
               </div>
+              {tipoCafe && (
+                <div>
+                  <strong>Tipo Café:</strong> {tipoCafe}
+                </div>
+              )}
               <div>
                 <strong>Cabezal:</strong> {placaCabezal}
               </div>
@@ -328,14 +346,14 @@ export default function ModalOpcionesImpresion({
           {/* 5. Boleta de Devolución de Café */}
           <Card
             className={`border transition-all ${
-              esDevolucion ? "border-danger-subtle bg-danger-subtle bg-opacity-10" : "border-muted opacity-60"
+              puedeImprimirDevolucion ? "border-danger-subtle bg-danger-subtle bg-opacity-10" : "border-muted opacity-60"
             }`}
           >
             <Card.Body className="p-3 d-flex align-items-center justify-content-between flex-wrap gap-3">
               <div className="d-flex align-items-center gap-3">
                 <div
                   className={`p-2 rounded-circle d-flex align-items-center justify-content-center ${
-                    esDevolucion ? "bg-danger bg-opacity-10 text-danger" : "bg-secondary bg-opacity-10 text-muted"
+                    puedeImprimirDevolucion ? "bg-danger bg-opacity-10 text-danger" : "bg-secondary bg-opacity-10 text-muted"
                   }`}
                   style={{ width: "42px", height: "42px" }}
                 >
@@ -344,16 +362,26 @@ export default function ModalOpcionesImpresion({
                 <div>
                   <div className="fw-bold text-dark d-flex align-items-center gap-2">
                     Boleta de Devolución de Café
-                    {esDevolucion ? (
+                    {tieneDevolucionFaltos ? (
+                      <Badge bg="danger-transparent">
+                        Devolución de Faltos ({devolucionData.cantidad_sacos} {devolucionData.cantidad_sacos === 1 ? "saco" : "sacos"})
+                      </Badge>
+                    ) : esDevolucion ? (
                       <Badge bg="danger-transparent">Devolución / Rechazo</Badge>
                     ) : (
                       <Badge bg="secondary-transparent">No Aplica (Carga Aceptada)</Badge>
                     )}
                   </div>
                   <div className="text-muted small mt-1">
-                    {esDevolucion
-                      ? "Carga con dictamen de rechazo o devolución de Gerencia. Imprimir comprobante para el transportista."
-                      : "Comprobante emitido únicamente cuando una carga es rechazada o devuelta por Gerencia."}
+                    {tieneDevolucionFaltos ? (
+                      <>
+                        Comprobante de devolución de {devolucionData.cantidad_sacos} saco(s) falto(s) autorizado por Gerencia ({devolucionData.remision}).
+                      </>
+                    ) : esDevolucion ? (
+                      "Carga con dictamen de rechazo o devolución de Gerencia. Imprimir comprobante para el transportista."
+                    ) : (
+                      "Comprobante emitido únicamente cuando una carga o sus faltos son devueltos por Gerencia."
+                    )}
                   </div>
                 </div>
               </div>
@@ -363,7 +391,7 @@ export default function ModalOpcionesImpresion({
                   variant="outline-danger"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  disabled={!idDetalle || !esDevolucion}
+                  disabled={!idDetalleDevolucion || !puedeImprimirDevolucion}
                   onClick={handlePrintBoletaDevolucion}
                 >
                   <Printer size={14} /> Imprimir Boleta Devolución

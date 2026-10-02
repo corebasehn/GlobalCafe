@@ -631,14 +631,14 @@ export class ReceptionService {
   async buscarPesadas(q: string) {
     if (!q || q.trim().length < 2) return [];
     const term = q.trim().toLowerCase();
-    return this.prisma.recepcion.findMany({
+    const recepciones = await this.prisma.recepcion.findMany({
       where: {
         estado: true,
         OR: [
           { numero_entrada: { contains: term, mode: 'insensitive' } },
           { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
           { placa_furgon: { placa: { contains: term, mode: 'insensitive' } } },
-          { detalles: { some: { remision: { contains: term, mode: 'insensitive' }, estado: true } } },
+          { detalles: { some: { remision: { contains: term, mode: 'insensitive' } } } },
         ],
         detalles: { some: { estado: true, pesada_entrada: { not: null } } },
       },
@@ -648,12 +648,48 @@ export class ReceptionService {
         conductor: { include: { transporte: true } },
         detalles: {
           where: { estado: true, pesada_entrada: { not: null } },
-          include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
+          include: { proveedor: true, estado_transaccion: true, tipo_remision: true, tipo_cafe: true },
           orderBy: { id_detalle_recepcion: 'asc' },
         },
       },
       orderBy: { id_recepcion: 'desc' },
       take: 30,
+    });
+
+    if (recepciones.length === 0) return [];
+
+    const recepcionIds = recepciones.map(r => r.id_recepcion);
+    const devoluciones = await this.prisma.detalleRecepcion.findMany({
+      where: {
+        id_recepcion: { in: recepcionIds },
+        OR: [
+          { remision: { contains: '-F' } },
+          { estado_transaccion: { nombre: { contains: 'Devolucion', mode: 'insensitive' } } },
+        ],
+      },
+      include: {
+        tipo_cafe: true,
+        estado_transaccion: true,
+      },
+    });
+
+    return recepciones.map(rec => {
+      const recDevoluciones = devoluciones.filter(d => d.id_recepcion === rec.id_recepcion);
+      const detallesConDevolucion = rec.detalles.map(detalle => {
+        const devFalto = recDevoluciones.find(d => d.remision === `${detalle.remision}-F`);
+        if (devFalto && !devFalto.tipo_cafe && detalle.tipo_cafe) {
+          devFalto.tipo_cafe = detalle.tipo_cafe;
+        }
+        return {
+          ...detalle,
+          devolucion: devFalto || null,
+        };
+      });
+
+      return {
+        ...rec,
+        detalles: detallesConDevolucion,
+      };
     });
   }
 
@@ -721,6 +757,18 @@ export class ReceptionService {
       throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
     }
 
+    // Si no tiene tipo_cafe asignado directamente y es un falto (-F), heredar del original
+    if (!detalle.tipo_cafe && detalle.remision?.endsWith('-F')) {
+      const remisionBase = detalle.remision.replace(/-F$/, '');
+      const original = await this.prisma.detalleRecepcion.findFirst({
+        where: { id_recepcion: detalle.id_recepcion, remision: remisionBase },
+        include: { tipo_cafe: true },
+      });
+      if (original?.tipo_cafe) {
+        detalle.tipo_cafe = original.tipo_cafe;
+      }
+    }
+
     return detalle;
   }
 
@@ -742,7 +790,7 @@ export class ReceptionService {
             cosecha: true,
             placa_cabezal: true,
             placa_furgon: true,
-            conductor: true,
+            conductor: { include: { transporte: true } },
           }
         }
       }
@@ -755,7 +803,6 @@ export class ReceptionService {
       where: {
         id_recepcion: detalle.id_recepcion,
         remision: detalle.remision + '-F',
-        estado: true,
       },
       select: {
         id_detalle_recepcion: true,
@@ -908,6 +955,8 @@ export class ReceptionService {
             numero_muestra: `MUE-${String(countMuestras + 1).padStart(5, '0')}`,
             observaciones: `Sacos Faltos: ${observaciones_faltos}`,
             id_tipo_empaque: empaqueFinalId,
+            id_tipo_cafe: detalleOriginal.id_tipo_cafe,
+            id_tipo_remision: detalleOriginal.id_tipo_remision,
             estado: true, // Lo dejamos activo pero el estado_transaccion lo bloquea de báscula
             usuario_creacion: usuarioId
           }
@@ -963,17 +1012,41 @@ export class ReceptionService {
   }
 
   async getPendientesAprobacionFaltos() {
-    return this.prisma.detalleRecepcion.findMany({
+    const faltos = await this.prisma.detalleRecepcion.findMany({
       where: {
         estado: true,
         estado_transaccion: { nombre: 'Pendiente de Aprobación por Faltos' }
       },
       include: {
-        recepcion: { include: { placa_cabezal: true, conductor: true } },
+        recepcion: {
+          include: {
+            placa_cabezal: true,
+            conductor: true,
+            detalles: {
+              include: { tipo_cafe: true }
+            }
+          }
+        },
         proveedor: true,
-        estado_transaccion: true
+        estado_transaccion: true,
+        tipo_cafe: true
       },
       orderBy: { fecha_creacion: 'asc' }
+    });
+
+    return faltos.map((f: any) => {
+      let tipoCafe = f.tipo_cafe;
+      if (!tipoCafe && f.remision?.endsWith('-F')) {
+        const remisionBase = f.remision.replace(/-F$/, '');
+        const original = f.recepcion?.detalles?.find((d: any) => d.remision === remisionBase && d.tipo_cafe);
+        if (original) {
+          tipoCafe = original.tipo_cafe;
+        }
+      }
+      return {
+        ...f,
+        tipo_cafe: tipoCafe
+      };
     });
   }
 

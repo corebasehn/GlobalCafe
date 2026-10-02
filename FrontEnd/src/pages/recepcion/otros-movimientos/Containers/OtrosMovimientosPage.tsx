@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Card, Button, Table, Badge, Form, InputGroup, Row, Col, Nav, Spinner } from "react-bootstrap";
-import { Plus, Search, RefreshCw, Scale, Printer, ArrowDownCircle, ArrowUpCircle, CheckCircle2, AlertCircle } from "lucide-react";
+import { Card, Button, Table, Badge, Form, InputGroup, Row, Col, Nav, Spinner, Dropdown } from "react-bootstrap";
+import { Plus, Search, RefreshCw, Scale, Printer, ArrowDownCircle, ArrowUpCircle, CheckCircle2, AlertCircle, FileText, Truck, MoreVertical } from "lucide-react";
 import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 import { getOtrosMovimientosApi } from "../../../../api/reception.api";
@@ -18,7 +18,6 @@ import {
 // Componentes
 import ModalNuevoMovimiento from "../Components/ModalNuevoMovimiento";
 import ModalPesajeOtroMovimiento, { TipoPesada } from "../Components/ModalPesajeOtroMovimiento";
-import ModalBoletaPesadaOtroMovimiento from "../Components/ModalBoletaPesadaOtroMovimiento";
 
 type FilterTab = "TODOS" | "PENDIENTE_1RA" | "EN_CARGA" | "FINALIZADOS";
 
@@ -45,7 +44,23 @@ export default function OtrosMovimientosPage() {
     tipo: "PRIMERA_PESADA",
     movimiento: null,
   });
-  const [modalBoletaId, setModalBoletaId] = useState<number | null>(null);
+
+  const base = import.meta.env.BASE_URL;
+
+  const handlePrintRecepcion = (idRecepcion: number) => {
+    if (!idRecepcion) return;
+    window.open(`${base}print/boleta-recepcion/${idRecepcion}`, "_blank");
+  };
+
+  const handlePrintTicket = (idDetalle: number, tipo: "primera" | "segunda") => {
+    if (!idDetalle) return;
+    window.open(`${base}print/boleta-otro-movimiento/${idDetalle}/${tipo}`, "_blank");
+  };
+
+  const handlePrintPaseSalida = (idDetalle: number) => {
+    if (!idDetalle) return;
+    window.open(`${base}print/pase-salida/${idDetalle}`, "_blank");
+  };
 
   useEffect(() => {
     loadData();
@@ -291,7 +306,7 @@ export default function OtrosMovimientosPage() {
               </Button>
             </div>
           ) : (
-            <div className="table-responsive">
+            <div className="table-responsive" style={{ overflow: "visible", minHeight: "260px" }}>
               <Table hover className="align-middle mb-0 text-nowrap">
                 <thead className="table-light">
                   <tr>
@@ -317,42 +332,75 @@ export default function OtrosMovimientosPage() {
                     return (
                       <tr key={m.id_recepcion}>
                         <td className="text-center">
-                          <div className="d-inline-flex gap-1">
-                            {!tara && (
-                              <Button
-                                variant="warning"
-                                size="sm"
-                                className="d-inline-flex align-items-center gap-1 fw-bold text-dark shadow-sm"
-                                style={{ color: "#000", borderColor: "#d39e00" }}
-                                onClick={() => handleOpenPesaje(m, "PRIMERA_PESADA")}
-                              >
-                                <Scale size={14} style={{ color: "#000" }} />
-                                <span style={{ color: "#000" }}>1ra Pesada (Tara)</span>
-                              </Button>
-                            )}
+                          <Dropdown align="start" onClick={(e) => e.stopPropagation()}>
+                            <Dropdown.Toggle
+                              variant={!tara ? "warning" : (!bruto ? "success" : "outline-primary")}
+                              size="sm"
+                              className="d-inline-flex align-items-center gap-1 shadow-sm fw-semibold"
+                              style={!tara ? { color: "#000", borderColor: "#d39e00" } : undefined}
+                            >
+                              <MoreVertical size={14} /> Acciones
+                            </Dropdown.Toggle>
 
-                            {tara && !bruto && (
-                              <Button
-                                variant="success"
-                                size="sm"
-                                className="d-inline-flex align-items-center gap-1 fw-semibold text-white shadow-sm"
-                                onClick={() => handleOpenPesaje(m, "SEGUNDA_PESADA")}
-                              >
-                                <Scale size={14} /> 2da Pesada (Bruto)
-                              </Button>
-                            )}
+                            <Dropdown.Menu
+                              renderOnMount
+                              popperConfig={{ strategy: "fixed" }}
+                              className="shadow-lg border-0 fs-13"
+                              style={{ zIndex: 1060 }}
+                            >
+                              {/* 1. Acción de Pesaje */}
+                              {!tara && (
+                                <Dropdown.Item
+                                  onClick={() => handleOpenPesaje(m, "PRIMERA_PESADA")}
+                                  className="d-flex align-items-center gap-2 fw-semibold text-warning"
+                                >
+                                  <Scale size={15} /> Pesar 1ra Pesada (Tara)
+                                </Dropdown.Item>
+                              )}
 
-                            {bruto && det?.id_detalle_recepcion && (
-                              <Button
-                                variant="outline-primary"
-                                size="sm"
-                                className="d-inline-flex align-items-center gap-1 fw-semibold"
-                                onClick={() => setModalBoletaId(det.id_detalle_recepcion)}
+                              {tara && !bruto && (
+                                <Dropdown.Item
+                                  onClick={() => handleOpenPesaje(m, "SEGUNDA_PESADA")}
+                                  className="d-flex align-items-center gap-2 fw-semibold text-success"
+                                >
+                                  <Scale size={15} /> Pesar 2da Pesada (Bruto)
+                                </Dropdown.Item>
+                              )}
+
+                              {bruto && (
+                                <Dropdown.Item disabled className="text-muted d-flex align-items-center gap-2">
+                                  <CheckCircle2 size={15} className="text-success" /> Pesaje Cerrado
+                                </Dropdown.Item>
+                              )}
+
+                              <Dropdown.Divider />
+
+                              {/* 2. Tres Opciones de Impresión */}
+                              <Dropdown.Item
+                                onClick={() => handlePrintRecepcion(m.id_recepcion)}
+                                className="d-flex align-items-center gap-2"
                               >
-                                <Printer size={14} /> Ticket
-                              </Button>
-                            )}
-                          </div>
+                                <FileText size={15} className="text-info" /> Boleta de Ingreso / Recepción
+                              </Dropdown.Item>
+
+                              <Dropdown.Item
+                                disabled={!tara || !det?.id_detalle_recepcion}
+                                onClick={() => handlePrintTicket(det?.id_detalle_recepcion, bruto ? "segunda" : "primera")}
+                                className="d-flex align-items-center gap-2"
+                              >
+                                <Printer size={15} className="text-primary" />
+                                {bruto ? "Ticket (Pesada Cerrada)" : "Ticket 1ra Pesada (Tara)"}
+                              </Dropdown.Item>
+
+                              <Dropdown.Item
+                                disabled={!bruto || !det?.id_detalle_recepcion}
+                                onClick={() => handlePrintPaseSalida(det?.id_detalle_recepcion)}
+                                className="d-flex align-items-center gap-2"
+                              >
+                                <Truck size={15} className="text-success" /> Pase de Salida
+                              </Dropdown.Item>
+                            </Dropdown.Menu>
+                          </Dropdown>
                         </td>
                         <td>
                           <strong className="text-primary">{m.numero_entrada}</strong>
@@ -438,12 +486,6 @@ export default function OtrosMovimientosPage() {
         movimiento={modalPesajeData.movimiento}
         onHide={() => setModalPesajeData((prev) => ({ ...prev, show: false }))}
         onSuccess={loadData}
-      />
-
-      <ModalBoletaPesadaOtroMovimiento
-        show={modalBoletaId !== null}
-        idDetalle={modalBoletaId}
-        onHide={() => setModalBoletaId(null)}
       />
     </div>
   );

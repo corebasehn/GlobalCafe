@@ -15,6 +15,7 @@ export default function FaltosTable({ data, onDecide }: FaltosTableProps) {
             <th scope="col" className="text-center">Acción</th>
             <th scope="col">Ingreso / Fecha</th>
             <th scope="col">Proveedor / Remisión</th>
+            <th scope="col">Tipo de Café</th>
             <th scope="col" className="text-center">Sacos Faltos</th>
             <th scope="col">Motivo Reportado</th>
           </tr>
@@ -22,7 +23,7 @@ export default function FaltosTable({ data, onDecide }: FaltosTableProps) {
         <tbody>
           {data.length === 0 ? (
             <tr>
-              <td colSpan={5} className="text-center py-5 text-muted">
+              <td colSpan={6} className="text-center py-5 text-muted">
                 No hay reportes de sacos faltos pendientes de decisión
               </td>
             </tr>
@@ -49,11 +50,16 @@ export default function FaltosTable({ data, onDecide }: FaltosTableProps) {
                 </td>
                 <td>
                   <div className="d-flex flex-column">
-                    <span className="fw-semibold text-dark">{item.proveedor.nombre}</span>
+                    <span className="fw-semibold text-dark">{item.proveedor?.nombre || "N/A"}</span>
                     <Badge bg="warning-transparent" className="rounded-pill mt-1 w-fit">
                       {item.remision}
                     </Badge>
                   </div>
+                </td>
+                <td>
+                  <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                    {item.tipo_cafe?.tipo_cafe || "---"}
+                  </Badge>
                 </td>
                 <td className="text-center">
                   <span className="fs-15 fw-bold text-danger">{item.cantidad_sacos}</span>

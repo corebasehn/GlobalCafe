@@ -77,11 +77,14 @@ export default function PaseSalidaPage() {
   }
   if (!data) return null;
 
-  const recepcion = data.detalle?.recepcion;
+  const detalle = data.detalle || data;
+  const recepcion = detalle?.recepcion;
   const ahora = new Date();
 
   // Detectar si es destarse (cabezal saliente): estado = "Sin Cabezal"
-  const esDestarse = data.detalle?.estado_transaccion?.nombre === "Sin Cabezal";
+  const esDestarse = detalle?.estado_transaccion?.nombre === "Sin Cabezal";
+  const clienteProveedor = detalle?.proveedor?.nombre ?? "—";
+  const transporte = recepcion?.conductor?.transporte?.nombre ?? "Particular";
 
   return (
     <>
@@ -248,13 +251,26 @@ export default function PaseSalidaPage() {
             <span className="ps-val">{fmtFechaHora(ahora)}</span>
           </div>
           <div className="ps-row">
+            <span className="ps-lbl">CLIENTE / PROV:</span>
+            <span className="ps-val">{clienteProveedor}</span>
+          </div>
+          <div className="ps-row">
+            <span className="ps-lbl">TIPO VEHÍCULO:</span>
+            <span className="ps-val">{recepcion?.tipo_vehiculo ?? "—"}</span>
+          </div>
+          <div className="ps-row">
             <span className="ps-lbl">PLACA CABEZAL:</span>
             <span className="ps-val">{recepcion?.placa_cabezal?.placa ?? "—"}</span>
           </div>
-          {!esDestarse && (
+          {!esDestarse ? (
             <div className="ps-row">
               <span className="ps-lbl">PLACA FURGÓN:</span>
               <span className="ps-val">{recepcion?.placa_furgon?.placa ?? "—"}</span>
+            </div>
+          ) : (
+            <div className="ps-row">
+              <span className="ps-lbl">PLACA FURGÓN:</span>
+              <span className="ps-val">DESACOPLADO</span>
             </div>
           )}
           <div className="ps-row">
@@ -262,15 +278,15 @@ export default function PaseSalidaPage() {
             <span className="ps-val">{recepcion?.conductor?.nombre ?? "—"}</span>
           </div>
           <div className="ps-row">
-            <span className="ps-lbl">TIPO VEHÍCULO:</span>
-            <span className="ps-val">{recepcion?.tipo_vehiculo ?? "—"}</span>
+            <span className="ps-lbl">TRANSPORTE:</span>
+            <span className="ps-val">{transporte}</span>
           </div>
         </div>
 
         {/* Observaciones */}
         <div className="ps-obs">
           <div className="ps-obs-lbl">OBSERVACIONES:</div>
-          <div>{esDestarse ? "SALE POR DESACOPLO DEL FURGON" : (recepcion?.observaciones || "Sin observaciones.")}</div>
+          <div>{esDestarse ? "SALE POR DESACOPLO DEL FURGON" : (data.detalle?.observaciones || recepcion?.observaciones || "Sin observaciones.")}</div>
         </div>
 
         {/* Firmas */}

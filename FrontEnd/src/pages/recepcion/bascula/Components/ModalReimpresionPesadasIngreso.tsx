@@ -160,6 +160,7 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
                               <thead className="bg-light">
                                 <tr>
                                   <th>Remisión</th>
+                                  <th>Tipo de Café</th>
                                   <th>Proveedor / Finca</th>
                                   <th className="text-end">Pesada Entrada</th>
                                   <th className="text-end">Pesada Salida</th>
@@ -176,6 +177,11 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
                                   return (
                                     <tr key={carga.id_detalle_recepcion}>
                                       <td className="fw-medium">{carga.remision}</td>
+                                      <td>
+                                        <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                                          {carga.tipo_cafe?.tipo_cafe || "—"}
+                                        </Badge>
+                                      </td>
                                       <td>{carga.proveedor?.nombre ?? "—"}</td>
                                       <td className="text-end font-monospace">
                                         {carga.pesada_entrada
@@ -196,6 +202,11 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
                                         <Badge bg={tieneSalida ? "success-transparent" : "primary-transparent"}>
                                           {tieneSalida ? "1ra y 2da Pesada" : "1ra Pesada"}
                                         </Badge>
+                                        {carga.devolucion && (
+                                          <Badge bg="danger-transparent" className="ms-1">
+                                            Devolución ({carga.devolucion.cantidad_sacos} {carga.devolucion.cantidad_sacos === 1 ? "saco" : "sacos"})
+                                          </Badge>
+                                        )}
                                       </td>
                                       <td className="text-center">
                                         <Button

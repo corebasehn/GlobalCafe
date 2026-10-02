@@ -74,15 +74,22 @@ export class AnalisisService {
         }
       });
 
-      // B. Cambiamos el estado de la carga para que viaje virtualmente a Gerencia
-      await tx.detalleRecepcion.update({
+      // B. Cambiamos el estado de la carga para que viaje virtualmente a Gerencia solo si no ha cerrado pesada
+      const detalleActual = await tx.detalleRecepcion.findUnique({
         where: { id_detalle_recepcion: dto.id_detalle_recepcion },
-        data: {
-          id_estado_transaccion: estadoDestino.id_estado_transaccion,
-          usuario_modificacion: usuarioId,
-          fecha_modificacion: new Date(),
-        }
+        include: { estado_transaccion: true }
       });
+
+      if (!detalleActual?.pesada_salida && detalleActual?.estado_transaccion?.nombre !== 'Pesada Cerrada') {
+        await tx.detalleRecepcion.update({
+          where: { id_detalle_recepcion: dto.id_detalle_recepcion },
+          data: {
+            id_estado_transaccion: estadoDestino.id_estado_transaccion,
+            usuario_modificacion: usuarioId,
+            fecha_modificacion: new Date(),
+          }
+        });
+      }
 
       return analisis;
     });
@@ -110,7 +117,16 @@ export class AnalisisService {
 
   // 2. VEREDICTO (Desde pantalla de Gerencia)
   async veredictoGerencia(idAnalisis: number, dto: VeredictoGerenciaDto, usuarioId: number) {
-    const analisis = await this.prisma.analisisCalidad.findUnique({ where: { id_analisis_calidad: idAnalisis } });
+    const analisis = await this.prisma.analisisCalidad.findUnique({
+      where: { id_analisis_calidad: idAnalisis },
+      include: {
+        detalle_recepcion: {
+          include: {
+            estado_transaccion: true
+          }
+        }
+      }
+    });
     if (!analisis) throw new NotFoundException('Análisis no encontrado');
 
     let estadoAnalisisNombre = '';
@@ -118,7 +134,18 @@ export class AnalisisService {
 
     if (dto.veredicto === 'APROBAR') {
       estadoAnalisisNombre = 'Muestra Aprobada';
-      estadoDetalleNombre = 'Muestra Aprobada';
+      if (analisis.tipo_analisis === 'Muestra General') {
+        // En Muestra General la carga ya descargó en patio.
+        // Si ya tiene pesada de salida registrada o ya estaba cerrada en báscula, DEBE mantenerse como Pesada Cerrada.
+        if (analisis.detalle_recepcion?.pesada_salida != null || analisis.detalle_recepcion?.estado_transaccion?.nombre === 'Pesada Cerrada') {
+          estadoDetalleNombre = 'Pesada Cerrada';
+        } else {
+          // Si aún no pesa salida, queda en Pesada Abierta para que báscula capture la tara
+          estadoDetalleNombre = 'Pesada Abierta';
+        }
+      } else {
+        estadoDetalleNombre = 'Muestra Aprobada';
+      }
     } else if (dto.veredicto === 'SEGUNDA_MUESTRA') {
       estadoAnalisisNombre = 'Muestra Rechazada'; // Se rechaza este análisis en específico (historial)
       estadoDetalleNombre = 'Pendiente de Muestrear'; // La carga física regresa al patio para nuevo muestreo

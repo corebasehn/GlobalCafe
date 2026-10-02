@@ -35,6 +35,8 @@ export interface MuestraGerencia {
   remision: string;
   proveedor_nombre: string;
   cantidad_qq: number;
+  tipo_analisis: string;
+  tipo_cafe: string;
 }
 
 export default function AprobacionGerenciaPage() {
@@ -90,6 +92,8 @@ export default function AprobacionGerenciaPage() {
         remision: ana.detalle_recepcion?.remision || "N/A",
         proveedor_nombre: ana.detalle_recepcion?.proveedor?.nombre || "N/A",
         cantidad_qq: Number(ana.detalle_recepcion?.cantidad_qq || 0),
+        tipo_analisis: ana.tipo_analisis || "N/A",
+        tipo_cafe: ana.detalle_recepcion?.tipo_cafe?.tipo_cafe || "N/A",
       }));
 
       setMuestras(mapeadas);

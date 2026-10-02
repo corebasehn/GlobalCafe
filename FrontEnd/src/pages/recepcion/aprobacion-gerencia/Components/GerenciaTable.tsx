@@ -30,6 +30,8 @@ export default function GerenciaTable({ muestras, loading, hasRowActions, onOpen
     const filas = muestras.map(m => ({
       "N° Análisis": m.numero_analisis,
       "Fecha": new Date(m.fecha_analisis).toLocaleDateString(),
+      "Tipo de Muestra": m.tipo_analisis,
+      "Tipo de Café": m.tipo_cafe,
       "N° Ingreso": m.numero_entrada,
       "Remisión": m.remision,
       "Proveedor": m.proveedor_nombre,
@@ -56,6 +58,8 @@ export default function GerenciaTable({ muestras, loading, hasRowActions, onOpen
           <tr>
             {hasRowActions && <th scope="col" className="text-center">Acción</th>}
             <th scope="col">Identificador</th>
+            <th scope="col">Tipo de Muestra</th>
+            <th scope="col">Tipo de Café</th>
             <th scope="col">Ingreso / Remisión</th>
             <th scope="col">Proveedor</th>
             <th scope="col" className="text-center">Calidad Sugerida</th>
@@ -65,13 +69,13 @@ export default function GerenciaTable({ muestras, loading, hasRowActions, onOpen
         <tbody>
           {loading ? (
             <tr>
-              <td colSpan={hasRowActions ? 6 : 5} className="text-center py-5 text-muted">
+              <td colSpan={hasRowActions ? 8 : 7} className="text-center py-5 text-muted">
                 <Loader2 className="w-6 h-6 animate-spin d-inline-block me-2" /> Consultando pendientes...
               </td>
             </tr>
           ) : muestras.length === 0 ? (
             <tr>
-              <td colSpan={hasRowActions ? 6 : 5} className="text-center py-5 text-muted">
+              <td colSpan={hasRowActions ? 8 : 7} className="text-center py-5 text-muted">
                 Bandeja limpia. No hay muestras pendientes de autorización.
               </td>
             </tr>
@@ -98,6 +102,19 @@ export default function GerenciaTable({ muestras, loading, hasRowActions, onOpen
                   </div>
                 </td>
                 <td>
+                  <Badge 
+                    bg={m.tipo_analisis === "Muestra General" ? "primary-transparent" : "info-transparent"} 
+                    className="rounded-pill px-2"
+                  >
+                    {m.tipo_analisis}
+                  </Badge>
+                </td>
+                <td>
+                  <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                    {m.tipo_cafe}
+                  </Badge>
+                </td>
+                <td>
                   <div className="d-flex flex-column">
                     <span className="fw-semibold text-dark">{m.numero_entrada}</span>
                     <span className="fs-11 text-muted">Rem: {m.remision}</span>
@@ -118,7 +135,7 @@ export default function GerenciaTable({ muestras, loading, hasRowActions, onOpen
         {!loading && muestras.length > 0 && (
           <tfoot className="table-light border-top border-2">
             <tr>
-              <td colSpan={hasRowActions ? 5 : 4} className="text-end fw-bold text-neutral-600 py-2">
+              <td colSpan={hasRowActions ? 7 : 6} className="text-end fw-bold text-neutral-600 py-2">
                 Total ({muestras.length} {muestras.length === 1 ? "muestra" : "muestras"}):
               </td>
               <td className="text-end fw-bold">{totalQq.toFixed(2)} QQ</td>

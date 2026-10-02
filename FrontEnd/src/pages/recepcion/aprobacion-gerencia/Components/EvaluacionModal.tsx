@@ -48,11 +48,23 @@ export default function EvaluacionModal({ muestra, formData, submitting, onClose
 
                 {/* Métricas */}
                 <Row className="g-3 mb-4">
-                  <Col xs={6} md={4}>
+                  <Col xs={6} md={3}>
+                    <label className="fw-semibold text-muted fs-11 d-block mb-1">Tipo de Muestra</label>
+                    <Badge bg={muestra.tipo_analisis === "Muestra General" ? "primary-transparent" : "info-transparent"}>
+                      {muestra.tipo_analisis}
+                    </Badge>
+                  </Col>
+                  <Col xs={6} md={3}>
+                    <label className="fw-semibold text-muted fs-11 d-block mb-1">Tipo de Café</label>
+                    <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                      {muestra.tipo_cafe}
+                    </Badge>
+                  </Col>
+                  <Col xs={6} md={3}>
                     <label className="fw-semibold text-muted fs-11 d-block mb-1">Catador</label>
                     <span className="fw-bold text-dark fs-13">{muestra.catador_nombre}</span>
                   </Col>
-                  <Col xs={6} md={4}>
+                  <Col xs={6} md={3}>
                     <p className="text-muted mb-0" style={{ fontSize: "0.72rem" }}>Calidad Perfilada</p>
                     <Badge bg="info-transparent">{muestra.calidad_nombre}</Badge>
                   </Col>
