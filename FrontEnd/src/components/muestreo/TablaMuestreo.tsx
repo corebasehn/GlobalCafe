@@ -30,6 +30,7 @@ export default function TablaMuestreo({
       "No. Ingreso": c.numero_entrada,
       "Fecha Entrada": new Date(c.fecha_entrada).toLocaleString(),
       "Remisión Física": c.remision,
+      "Tipo de Café": c.tipo_cafe?.tipo_cafe || "—",
       "Proveedor / Finca": c.proveedor_nombre,
       "Sacos Declarados": c.cantidad_sacos,
       "Quintales (QQ)": Number(Number(c.cantidad_qq).toFixed(2)),
@@ -44,7 +45,7 @@ export default function TablaMuestreo({
   const totalPages = Math.max(1, Math.ceil(filteredCargas.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
   const paginated = filteredCargas.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const colSpan = hasRowActions ? 6 : 5;
+  const colSpan = hasRowActions ? 7 : 6;
 
   type PageItem =
     | { type: "page"; value: number }
@@ -90,6 +91,11 @@ export default function TablaMuestreo({
         )}
         <td className="font-medium text-neutral-600">{carga.numero_entrada}</td>
         <td className="font-bold text-coffee-700">{carga.remision}</td>
+        <td>
+          <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+            {carga.tipo_cafe?.tipo_cafe || "—"}
+          </Badge>
+        </td>
         <td>{carga.proveedor_nombre}</td>
         <td className="text-center">{carga.cantidad_sacos}</td>
         <td className="text-center">
@@ -120,6 +126,7 @@ export default function TablaMuestreo({
             {hasRowActions && <th className="text-center" style={{ width: "120px" }}>Acción</th>}
             <th>No. Ingreso</th>
             <th>Remisión Física</th>
+            <th>Tipo de Café</th>
             <th>Proveedor / Finca</th>
             <th className="text-center">Sacos Declarados</th>
             <th className="text-center">Estado</th>
@@ -130,7 +137,7 @@ export default function TablaMuestreo({
         {!loading && filteredCargas.length > 0 && (
           <tfoot className="table-light border-top border-2">
             <tr>
-              <td colSpan={hasRowActions ? 4 : 3} className="text-end fw-bold text-neutral-600 py-2">
+              <td colSpan={hasRowActions ? 5 : 4} className="text-end fw-bold text-neutral-600 py-2">
                 Total ({filteredCargas.length} {filteredCargas.length === 1 ? "carga" : "cargas"}):
               </td>
               <td className="text-center fw-bold">

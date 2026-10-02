@@ -93,7 +93,7 @@ export default function PaseSalidaPage() {
 
         @page {
           size: ${PAGE_W} ${PAGE_H};
-          margin: 0;
+          margin: 3cm 1.5cm 2cm 1.5cm;
         }
 
         body {
@@ -145,7 +145,7 @@ export default function PaseSalidaPage() {
           body {
             color: #000000 !important;
           }
-          .pase-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
+          .pase-paper { padding: 0; }
           .no-print { display: none !important; }
         }
 

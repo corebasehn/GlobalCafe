@@ -87,7 +87,8 @@ export default function MuestreoPage() {
   const filteredCargas = cargasPendientes.filter(c =>
     c.numero_entrada.toLowerCase().includes(searchTerm.toLowerCase()) ||
     c.remision.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.proveedor_nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    c.proveedor_nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.tipo_cafe?.tipo_cafe || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
