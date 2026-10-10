@@ -46,16 +46,24 @@ export default function ModalBoletaPesadaOtroMovimiento({
   if (!show) return null;
 
   const recepcion = data?.recepcion;
-  const tara = data?.pesada_entrada ? Number(data.pesada_entrada) : 0;
-  const bruto = data?.pesada_salida ? Number(data.pesada_salida) : 0;
-  const neto = data?.peso_neto ? Number(data.peso_neto) : bruto - tara;
+  const esBrutoPrimero = recepcion?.tipo_movimiento?.sentido_pesaje === "BRUTO_PRIMERO";
+  const nombreMovimiento = recepcion?.tipo_movimiento?.nombre || "Otro Movimiento";
+  const nombreMovimientoUpper = nombreMovimiento.toUpperCase();
+
+  const pesadaEntrada = data?.pesada_entrada ? Number(data.pesada_entrada) : 0;
+  const pesadaSalida = data?.pesada_salida ? Number(data.pesada_salida) : 0;
+  const neto = data?.peso_neto
+    ? Number(data.peso_neto)
+    : (pesadaEntrada && pesadaSalida
+        ? (esBrutoPrimero ? pesadaEntrada - pesadaSalida : pesadaSalida - pesadaEntrada)
+        : 0);
 
   return (
     <Modal show={show} onHide={onHide} size="lg" centered>
       <Modal.Header closeButton className="d-print-none bg-primary text-white">
         <Modal.Title className="d-flex align-items-center gap-2 fs-6">
           <Printer size={20} />
-          Ticket de Báscula - Pesada de Casulla
+          Ticket de Báscula - Pesada de {nombreMovimiento}
         </Modal.Title>
       </Modal.Header>
       <Modal.Body className="p-4 print-container">
@@ -69,7 +77,7 @@ export default function ModalBoletaPesadaOtroMovimiento({
             {/* Encabezado */}
             <div className="text-center border-bottom pb-3 mb-3">
               <h4 className="fw-bold mb-1">GLOBAL CAFÉ</h4>
-              <h6 className="text-muted mb-1">COMPROBANTE DE PESAJE DE SUBPRODUCTOS / CASULLA</h6>
+              <h6 className="text-muted mb-1">COMPROBANTE DE PESAJE DE {nombreMovimientoUpper}</h6>
               <div className="small text-muted">
                 {recepcion?.sucursal?.nombre || "Planta Principal"} - {recepcion?.municipio?.nombre || "Danlí, El Paraíso"}
               </div>
@@ -121,22 +129,22 @@ export default function ModalBoletaPesadaOtroMovimiento({
               <tbody>
                 <tr>
                   <td className="text-start">
-                    <strong>1ra Pesada:</strong> Tara (Vehículo Vacío)
+                    <strong>1ra Pesada:</strong> {esBrutoPrimero ? "Peso Bruto (Vehículo Cargado)" : "Tara (Vehículo Vacío)"}
                   </td>
                   <td>{data?.fecha_entrada_bascula ? new Date(data.fecha_entrada_bascula).toLocaleString() : "Pendiente"}</td>
-                  <td className="fw-semibold">{tara.toLocaleString()} LB</td>
-                  <td>{(tara / 100).toFixed(2)} QQ</td>
+                  <td className="fw-semibold">{pesadaEntrada ? `${pesadaEntrada.toLocaleString()} LB` : "--"}</td>
+                  <td>{pesadaEntrada ? `${(pesadaEntrada / 100).toFixed(2)} QQ` : "--"}</td>
                 </tr>
                 <tr>
                   <td className="text-start">
-                    <strong>2da Pesada:</strong> Peso Bruto (Vehículo Cargado)
+                    <strong>2da Pesada:</strong> {esBrutoPrimero ? "Tara (Vehículo Vacío)" : "Peso Bruto (Vehículo Cargado)"}
                   </td>
                   <td>{data?.fecha_salida_bascula ? new Date(data.fecha_salida_bascula).toLocaleString() : "Pendiente"}</td>
-                  <td className="fw-semibold">{bruto ? `${bruto.toLocaleString()} LB` : "--"}</td>
-                  <td>{bruto ? `${(bruto / 100).toFixed(2)} QQ` : "--"}</td>
+                  <td className="fw-semibold">{pesadaSalida ? `${pesadaSalida.toLocaleString()} LB` : "--"}</td>
+                  <td>{pesadaSalida ? `${(pesadaSalida / 100).toFixed(2)} QQ` : "--"}</td>
                 </tr>
                 <tr className="table-success fs-6">
-                  <td className="text-start fw-bold">PESO NETO (CASULLA):</td>
+                  <td className="text-start fw-bold">PESO NETO ({nombreMovimientoUpper}):</td>
                   <td>--</td>
                   <td className="fw-bold">{neto > 0 ? `${neto.toLocaleString()} LB` : "--"}</td>
                   <td className="fw-bold">{neto > 0 ? `${(neto / 100).toFixed(2)} QQ` : "--"}</td>

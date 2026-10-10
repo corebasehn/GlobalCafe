@@ -3,7 +3,7 @@ import { Modal, Button, Form, Row, Col, Alert, InputGroup } from "react-bootstra
 import { Truck, Scale } from "lucide-react";
 import toast from "react-hot-toast";
 import { createOtroMovimientoApi, CreateOtroMovimientoRequest } from "../../../../api/reception.api";
-import { PlacaCabezal, PlacaFurgon, Conductor, Proveedor } from "../../../../api/catalogs.api";
+import { PlacaCabezal, PlacaFurgon, Conductor, Proveedor, TipoMovimiento } from "../../../../api/catalogs.api";
 
 interface Props {
   show: boolean;
@@ -13,6 +13,7 @@ interface Props {
   placasFurgon: PlacaFurgon[];
   conductores: Conductor[];
   proveedores: Proveedor[];
+  tiposMovimiento?: TipoMovimiento[];
 }
 
 export default function ModalNuevoMovimiento({
@@ -23,8 +24,10 @@ export default function ModalNuevoMovimiento({
   placasFurgon,
   conductores,
   proveedores,
+  tiposMovimiento = [],
 }: Props) {
   const [submitting, setSubmitting] = useState(false);
+  const [idTipoMovimiento, setIdTipoMovimiento] = useState<number | "">("");
   const [tipoVehiculo, setTipoVehiculo] = useState("Camión");
   const [idPlacaCabezal, setIdPlacaCabezal] = useState<number | "">("");
   const [idPlacaFurgon, setIdPlacaFurgon] = useState<number | "">("");
@@ -35,7 +38,20 @@ export default function ModalNuevoMovimiento({
   const [pesarInmediatamente, setPesarInmediatamente] = useState(false);
   const [pesoTaraInicial, setPesoTaraInicial] = useState("");
 
+  // Filtrar tipos de movimiento excluyendo café (id 1 o código CAFE) y solo activos
+  const tiposDisponibles = (tiposMovimiento || []).filter(
+    (t) => t.id !== 1 && t.codigo !== "CAFE" && (t.activo ?? t.estado ?? true)
+  );
+
+  const tipoSeleccionado =
+    tiposDisponibles.find((t) => t.id === Number(idTipoMovimiento)) ||
+    tiposDisponibles.find((t) => t.id === 2 || t.codigo === "CASULLA") ||
+    tiposDisponibles[0];
+
+  const esBrutoPrimero = tipoSeleccionado?.sentido_pesaje === "BRUTO_PRIMERO";
+
   const resetForm = () => {
+    setIdTipoMovimiento("");
     setTipoVehiculo("Camión");
     setIdPlacaCabezal("");
     setIdPlacaFurgon("");
@@ -64,12 +80,13 @@ export default function ModalNuevoMovimiento({
     }
 
     if (pesarInmediatamente && (!pesoTaraInicial || Number(pesoTaraInicial) <= 0)) {
-      toast.error("Ingrese un peso válido para la tara inicial del equipo");
+      toast.error(`Ingrese un peso válido para la 1ra pesada (${esBrutoPrimero ? "Bruto" : "Tara"}) del equipo`);
       return;
     }
 
     try {
       setSubmitting(true);
+      const selectedId = Number(idTipoMovimiento || tipoSeleccionado?.id || 2);
       const payload: CreateOtroMovimientoRequest = {
         tipo_vehiculo: tipoVehiculo,
         id_placa_cabezal: Number(idPlacaCabezal),
@@ -78,12 +95,12 @@ export default function ModalNuevoMovimiento({
         id_proveedor: idProveedor ? Number(idProveedor) : undefined,
         remision: remision.trim() || undefined,
         observaciones: observaciones.trim() || undefined,
-        id_tipo_movimiento: 2, // 2 = Casulla / Otros Movimientos
+        id_tipo_movimiento: selectedId,
         peso_tara_inicial: pesarInmediatamente && pesoTaraInicial ? Number(pesoTaraInicial) : undefined,
       };
 
       await createOtroMovimientoApi(payload);
-      toast.success("Movimiento de casulla registrado correctamente");
+      toast.success(`Movimiento de ${tipoSeleccionado?.nombre || "pesaje"} registrado correctamente`);
       handleClose();
       onSuccess();
     } catch (error: any) {
@@ -100,7 +117,7 @@ export default function ModalNuevoMovimiento({
       <Modal.Header closeButton className="bg-primary text-white">
         <Modal.Title className="d-flex align-items-center gap-2 fs-6">
           <Truck size={20} />
-          Nuevo Movimiento - Pesaje de Casulla
+          Nuevo Movimiento - {tipoSeleccionado?.nombre || "Pesaje"}
         </Modal.Title>
       </Modal.Header>
       <Form onSubmit={handleSubmit}>
@@ -108,11 +125,35 @@ export default function ModalNuevoMovimiento({
           <Alert variant="info" className="d-flex align-items-center gap-2 py-2 mb-3">
             <Scale size={20} className="flex-shrink-0" />
             <small>
-              <strong>Flujo invertido:</strong> El camión ingresa vacío (1ra Pesada: <strong>Tara</strong>), carga casulla en planta y se pesa cargado al salir (2da Pesada: <strong>Bruto</strong>).
+              {esBrutoPrimero ? (
+                <span>
+                  <strong>Flujo estándar:</strong> El vehículo ingresa cargado (1ra Pesada: <strong>Bruto</strong>), descarga en planta y se pesa vacío al salir (2da Pesada: <strong>Tara</strong>).
+                </span>
+              ) : (
+                <span>
+                  <strong>Flujo invertido:</strong> El camión ingresa vacío (1ra Pesada: <strong>Tara</strong>), carga en planta y se pesa cargado al salir (2da Pesada: <strong>Bruto</strong>).
+                </span>
+              )}
             </small>
           </Alert>
 
           <Row className="g-3">
+            <Col md={12}>
+              <Form.Group>
+                <Form.Label className="fw-semibold">Tipo de Movimiento *</Form.Label>
+                <Form.Select
+                  value={idTipoMovimiento || (tipoSeleccionado?.id ?? "")}
+                  onChange={(e) => setIdTipoMovimiento(e.target.value ? Number(e.target.value) : "")}
+                  required
+                >
+                  {tiposDisponibles.map((tm) => (
+                    <option key={tm.id} value={tm.id}>
+                      {tm.nombre} ({tm.codigo}) — {tm.sentido_pesaje === "BRUTO_PRIMERO" ? "1° Bruto (Cargado) → 2° Tara (Vacío)" : "1° Tara (Vacío) → 2° Bruto (Cargado)"}
+                    </option>
+                  ))}
+                </Form.Select>
+              </Form.Group>
+            </Col>
             <Col md={6}>
               <Form.Group>
                 <Form.Label className="fw-semibold">Tipo de Vehículo *</Form.Label>
@@ -214,11 +255,13 @@ export default function ModalNuevoMovimiento({
 
             <Col md={12}>
               <Form.Group>
-                <Form.Label className="fw-semibold">Observaciones / Destino de la Casulla</Form.Label>
+                <Form.Label className="fw-semibold">
+                  Observaciones / Destino de {tipoSeleccionado?.nombre || "la Carga"}
+                </Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={2}
-                  placeholder="Notas adicionales sobre la entrega o destino de la casulla..."
+                  placeholder={`Notas adicionales sobre el movimiento o entrega de ${tipoSeleccionado?.nombre?.toLowerCase() || "la carga"}...`}
                   value={observaciones}
                   onChange={(e) => setObservaciones(e.target.value)}
                 />
@@ -230,14 +273,14 @@ export default function ModalNuevoMovimiento({
                 <Form.Check
                   type="switch"
                   id="switch-pesar-ahora"
-                  label={<strong>¿El camión está en báscula ahora? (Registrar 1ra Pesada / Tara)</strong>}
+                  label={<strong>¿El camión está en báscula ahora? (Registrar 1ra Pesada / {esBrutoPrimero ? "Bruto" : "Tara"})</strong>}
                   checked={pesarInmediatamente}
                   onChange={(e) => setPesarInmediatamente(e.target.checked)}
                 />
                 {pesarInmediatamente && (
                   <div className="mt-3">
                     <Form.Label className="fw-semibold text-primary">
-                      Peso Tara del Equipo Vacío (LB) *
+                      Peso {esBrutoPrimero ? "Bruto Inicial del Vehículo Cargado" : "Tara del Equipo Vacío"} (LB) *
                     </Form.Label>
                     <InputGroup>
                       <Form.Control
@@ -252,7 +295,7 @@ export default function ModalNuevoMovimiento({
                       <InputGroup.Text>Libras (LB)</InputGroup.Text>
                     </InputGroup>
                     <Form.Text className="text-muted">
-                      Se guardará como la 1ra pesada (Tara). Al salir, se pesará cargado para obtener el peso neto.
+                      Se guardará como la 1ra pesada ({esBrutoPrimero ? "Bruto" : "Tara"}). Al salir, se pesará {esBrutoPrimero ? "vacío (Tara)" : "cargado (Bruto)"} para calcular el peso neto.
                     </Form.Text>
                   </div>
                 )}

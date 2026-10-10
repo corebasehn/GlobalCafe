@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { LiquidarNotaPesoDto } from './dto/liquidar-nota-peso.dto';
@@ -10,13 +10,20 @@ export class NotaPesoService {
     private notifications: NotificationsGateway,
   ) {}
 
-  // 1. Obtener detalles de recepción listos para liquidar (Pesada Cerrada y sin Nota de Peso)
+  // 1. Obtener detalles de recepción listos para liquidar (Pesada Cerrada y sin Nota de Peso, solo Café normal)
   async getPendientesLiquidar() {
     return this.prisma.detalleRecepcion.findMany({
       where: {
         estado: true,
         estado_transaccion: { nombre: 'Pesada Cerrada' },
         notas_peso: { none: {} }, // Que no tengan nota de peso aún
+        recepcion: {
+          estado: true,
+          OR: [
+            { id_tipo_movimiento: 1 },
+            { id_tipo_movimiento: null },
+          ],
+        },
       },
       include: {
         recepcion: {
@@ -33,7 +40,6 @@ export class NotaPesoService {
         tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
-          take: 1,
         },
       },
       orderBy: { fecha_modificacion: 'desc' },
@@ -49,13 +55,25 @@ export class NotaPesoService {
         tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
-          take: 1,
         },
       },
     });
 
     if (!detalle) throw new NotFoundException('Detalle de recepción no encontrado');
+    if (detalle.recepcion?.id_tipo_movimiento && detalle.recepcion.id_tipo_movimiento !== 1) {
+      throw new InternalServerErrorException('Las transacciones de otros movimientos no se liquidan con nota de peso');
+    }
     if (!detalle.peso_neto) throw new InternalServerErrorException('El registro no tiene peso neto de báscula');
+
+    // Validación de Muestra General (obligatoria a menos que la recepción tenga omitir análisis externo)
+    if (!detalle.omitir_analisis) {
+      const tieneMuestraGeneral = detalle.analisis_calidad.some(
+        a => a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')
+      );
+      if (!tieneMuestraGeneral) {
+        throw new BadRequestException('No se puede liquidar: La muestra general no ha sido creada para este ingreso.');
+      }
+    }
 
     // --- LÓGICA DE CÁLCULO SEGÚN FORMATO ---
     
@@ -74,7 +92,9 @@ export class NotaPesoService {
     const subtotalQQ = pesoBrutoQQ - taraQQ;
 
     // 5. Obtener descuentos (del DTO editado por el usuario o de la muestra de laboratorio como fallback)
-    const analisis = detalle.analisis_calidad[0];
+    const analisis = detalle.analisis_calidad.find(
+      a => a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')
+    ) || detalle.analisis_calidad[0];
     const humedadPerc = dto?.humedad !== undefined && dto?.humedad !== null
       ? Number(dto.humedad)
       : (analisis?.humedad ? Number(analisis.humedad) : 0);
@@ -155,6 +175,7 @@ export class NotaPesoService {
               include: { cosecha: true }
             },
             proveedor: true,
+            tipo_cafe: true,
           },
         },
       },

@@ -40,13 +40,27 @@ export default function ModalPesajeOtroMovimiento({
 
   if (!movimiento) return null;
 
+  const esBrutoPrimero = movimiento?.tipo_movimiento?.sentido_pesaje === "BRUTO_PRIMERO";
+  const nombreMovimiento = movimiento?.tipo_movimiento?.nombre || "Carga";
+  const primeraPesadaLabel = esBrutoPrimero ? "Bruto" : "Tara";
+  const segundaPesadaLabel = esBrutoPrimero ? "Tara" : "Bruto";
+
   const detalle = movimiento.detalles && movimiento.detalles.length > 0 ? movimiento.detalles[0] : null;
-  const taraPrevia = detalle && detalle.pesada_entrada ? Number(detalle.pesada_entrada) : null;
+  const primeraPesadaPrevia = detalle && detalle.pesada_entrada ? Number(detalle.pesada_entrada) : null;
   const pesoActual = Number(pesoInput) || 0;
 
   // Cálculo en vivo para segunda pesada
-  const pesoNetoCalculado = tipo === "SEGUNDA_PESADA" && taraPrevia ? pesoActual - taraPrevia : 0;
-  const esValido = tipo === "PRIMERA_PESADA" ? pesoActual > 0 : pesoActual > (taraPrevia || 0);
+  const pesoNetoCalculado =
+    tipo === "SEGUNDA_PESADA" && primeraPesadaPrevia
+      ? (esBrutoPrimero ? primeraPesadaPrevia - pesoActual : pesoActual - primeraPesadaPrevia)
+      : 0;
+
+  const esValido =
+    tipo === "PRIMERA_PESADA"
+      ? pesoActual > 0
+      : (esBrutoPrimero
+          ? pesoActual > 0 && pesoActual < (primeraPesadaPrevia || 0)
+          : pesoActual > (primeraPesadaPrevia || 0));
 
   // Captura automática de báscula camionera (Agente local .exe en puerto 4000)
   const handleCapturarBascula = async () => {
@@ -85,7 +99,7 @@ export default function ModalPesajeOtroMovimiento({
 
     if (tipo === "PRIMERA_PESADA") {
       if (pesoActual <= 0) {
-        toast.error("Ingrese un peso válido para la tara (vehículo vacío)");
+        toast.error(`Ingrese un peso válido para la 1ra pesada (${primeraPesadaLabel})`);
         return;
       }
       try {
@@ -95,7 +109,7 @@ export default function ModalPesajeOtroMovimiento({
           pesoActual,
           observaciones.trim() || undefined
         );
-        toast.success("1ra Pesada (Tara) guardada exitosamente. El camión puede pasar a cargar.");
+        toast.success(`1ra Pesada (${primeraPesadaLabel}) guardada exitosamente.`);
         onHide();
         onSuccess();
       } catch (error: any) {
@@ -105,9 +119,16 @@ export default function ModalPesajeOtroMovimiento({
         setSubmitting(false);
       }
     } else {
-      if (pesoActual <= (taraPrevia || 0)) {
-        toast.error("El peso bruto (cargado) debe ser mayor que la tara del vehículo vacío");
-        return;
+      if (esBrutoPrimero) {
+        if (pesoActual <= 0 || pesoActual >= (primeraPesadaPrevia || 0)) {
+          toast.error("La tara (salida) debe ser menor que el peso bruto de entrada.");
+          return;
+        }
+      } else {
+        if (pesoActual <= (primeraPesadaPrevia || 0)) {
+          toast.error("El peso bruto (salida) debe ser mayor que la tara de entrada.");
+          return;
+        }
       }
       try {
         setSubmitting(true);
@@ -116,7 +137,7 @@ export default function ModalPesajeOtroMovimiento({
           pesoActual,
           observaciones.trim() || undefined
         );
-        toast.success(`Pesaje completado. Peso Neto de Casulla: ${pesoNetoCalculado.toLocaleString()} LB`);
+        toast.success(`Pesaje completado. Peso Neto de ${nombreMovimiento}: ${pesoNetoCalculado.toLocaleString()} LB`);
         onHide();
         onSuccess();
       } catch (error: any) {
@@ -129,8 +150,8 @@ export default function ModalPesajeOtroMovimiento({
   };
 
   const modalTitle = tipo === "PRIMERA_PESADA"
-    ? "Pesada de Entrada (Vehículo Vacío)"
-    : "Pesada de Salida (Vehículo Cargado)";
+    ? `1ra Pesada (${primeraPesadaLabel}) - ${nombreMovimiento}`
+    : `2da Pesada (${segundaPesadaLabel}) - ${nombreMovimiento}`;
 
   return (
     <Modal show={show} onHide={onHide} centered backdrop="static">
@@ -166,12 +187,12 @@ export default function ModalPesajeOtroMovimiento({
               </Col>
             </Row>
 
-            {/* Referencia de Tara previa en caso de 2da pesada */}
-            {tipo === "SEGUNDA_PESADA" && taraPrevia && (
+            {/* Referencia de 1ra pesada previa en caso de 2da pesada */}
+            {tipo === "SEGUNDA_PESADA" && primeraPesadaPrevia && (
               <Row className="mt-2 pt-2 border-top g-0 align-items-center" style={{ color: "#63391d" }}>
-                <Col className="fw-semibold">Peso Tara de Referencia:</Col>
+                <Col className="fw-semibold">1ra Pesada ({primeraPesadaLabel}) de Referencia:</Col>
                 <Col xs="auto" className="font-monospace fw-bold fs-6">
-                  {taraPrevia.toLocaleString("en-US", { minimumFractionDigits: 2 })} LB
+                  {primeraPesadaPrevia.toLocaleString("en-US", { minimumFractionDigits: 2 })} LB
                 </Col>
               </Row>
             )}
@@ -226,7 +247,7 @@ export default function ModalPesajeOtroMovimiento({
           </Form.Group>
 
           {/* Cálculo dinámico en vivo para 2da pesada */}
-          {tipo === "SEGUNDA_PESADA" && taraPrevia && (
+          {tipo === "SEGUNDA_PESADA" && primeraPesadaPrevia && (
             <div
               className={`p-3 rounded border text-center mb-4 ${
                 pesoNetoCalculado > 0 ? "bg-success-subtle border-success" : "bg-danger-subtle border-danger"
@@ -234,9 +255,17 @@ export default function ModalPesajeOtroMovimiento({
             >
               <div className="small text-muted mb-1">Cálculo de Peso Neto Estimado:</div>
               <div className="d-flex justify-content-center align-items-center gap-2">
-                <span>{pesoActual.toLocaleString()} LB (Bruto)</span>
+                <span>
+                  {esBrutoPrimero
+                    ? `${primeraPesadaPrevia.toLocaleString()} LB (Bruto)`
+                    : `${pesoActual.toLocaleString()} LB (Bruto)`}
+                </span>
                 <span>-</span>
-                <span>{taraPrevia.toLocaleString()} LB (Tara)</span>
+                <span>
+                  {esBrutoPrimero
+                    ? `${pesoActual.toLocaleString()} LB (Tara)`
+                    : `${primeraPesadaPrevia.toLocaleString()} LB (Tara)`}
+                </span>
                 <ArrowRight size={16} />
                 <strong className={`fs-5 ${pesoNetoCalculado > 0 ? "text-success" : "text-danger"}`}>
                   {pesoNetoCalculado.toLocaleString()} LB Neto

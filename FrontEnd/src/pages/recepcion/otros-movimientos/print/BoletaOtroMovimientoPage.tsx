@@ -85,14 +85,20 @@ export default function BoletaOtroMovimientoPage() {
   const placaFurgon = recepcion?.placa_furgon?.placa;
   const placaCompleta = placaFurgon ? `${placaCabezal} / ${placaFurgon}` : placaCabezal;
 
-  const tara = data.pesada_entrada != null ? Number(data.pesada_entrada) : 0;
-  const bruto = data.pesada_salida != null ? Number(data.pesada_salida) : 0;
-  const neto = data.peso_neto != null ? Number(data.peso_neto) : (bruto > 0 && tara > 0 ? bruto - tara : 0);
+  const esBrutoPrimero = recepcion?.tipo_movimiento?.sentido_pesaje === "BRUTO_PRIMERO";
+  const pesadaEntrada = data.pesada_entrada != null ? Number(data.pesada_entrada) : 0;
+  const pesadaSalida = data.pesada_salida != null ? Number(data.pesada_salida) : 0;
+
+  const bruto = esBrutoPrimero ? pesadaEntrada : pesadaSalida;
+  const tara = esBrutoPrimero ? pesadaSalida : pesadaEntrada;
+  const neto = data.peso_neto != null
+    ? Number(data.peso_neto)
+    : (bruto > 0 && tara > 0 ? bruto - tara : 0);
   const qNeto = neto / 100;
   const qTara = tara / 100;
   const qBruto = bruto / 100;
 
-  const tipoMovimientoNombre = recepcion?.tipo_movimiento?.nombre?.toUpperCase() || "SUBPRODUCTOS / CASULLA";
+  const tipoMovimientoNombre = recepcion?.tipo_movimiento?.nombre?.toUpperCase() || "SUBPRODUCTOS / OTROS MOVIMIENTOS";
 
   return (
     <>
@@ -301,30 +307,30 @@ export default function BoletaOtroMovimientoPage() {
             </tr>
           </thead>
           <tbody>
-            {/* 1ra Pesada: Tara (Vehículo Vacío) */}
+            {/* 1ra Pesada */}
             <tr>
-              <td>1RA PESADA (TARA)</td>
+              <td>1RA PESADA ({esBrutoPrimero ? "BRUTO" : "TARA"})</td>
               <td className="tr">
-                {tara > 0 ? `-${fmt(tara)}` : "—"}
+                {pesadaEntrada > 0 ? `${esBrutoPrimero ? "+" : "-"}${fmt(pesadaEntrada)}` : "—"}
               </td>
               <td className="tr">
-                {tara > 0 ? fmt(qTara) : "—"}
+                {pesadaEntrada > 0 ? fmt(pesadaEntrada / 100) : "—"}
               </td>
               <td>{data.fecha_entrada_bascula ? fmtFecha(new Date(data.fecha_entrada_bascula)) : "—"}</td>
             </tr>
 
-            {/* 2da Pesada: Peso Bruto (Vehículo Cargado) */}
+            {/* 2da Pesada */}
             <tr>
-              <td>2DA PESADA (BRUTO)</td>
+              <td>2DA PESADA ({esBrutoPrimero ? "TARA" : "BRUTO"})</td>
               <td className="tr">
                 {esPrimera
                   ? "******"
-                  : (bruto > 0 ? `+${fmt(bruto)}` : "—")}
+                  : (pesadaSalida > 0 ? `${esBrutoPrimero ? "-" : "+"}${fmt(pesadaSalida)}` : "—")}
               </td>
               <td className="tr">
                 {esPrimera
                   ? "******"
-                  : (bruto > 0 ? fmt(qBruto) : "—")}
+                  : (pesadaSalida > 0 ? fmt(pesadaSalida / 100) : "—")}
               </td>
               <td>
                 {esPrimera
@@ -339,13 +345,13 @@ export default function BoletaOtroMovimientoPage() {
           <tbody>
             <tr>
               <td style={{ width: "35%" }}>
-                <strong>PESO BRUTO:</strong>&nbsp;{esPrimera ? "****** LB" : (bruto > 0 ? `${fmt(bruto)} LB` : "—")}
+                <strong>PESO BRUTO:</strong>&nbsp;{esPrimera && !esBrutoPrimero ? "****** LB" : (bruto > 0 ? `${fmt(bruto)} LB` : "—")}
               </td>
               <td style={{ width: "35%" }}>
-                <strong>PESO TARA:</strong>&nbsp;{tara > 0 ? `${fmt(tara)} LB` : "—"}
+                <strong>PESO TARA:</strong>&nbsp;{esPrimera && esBrutoPrimero ? "****** LB" : (tara > 0 ? `${fmt(tara)} LB` : "—")}
               </td>
               <td style={{ width: "30%" }}>
-                <strong>TARA (QQ):</strong>&nbsp;{tara > 0 ? `${fmt(qTara)} QQ` : "—"}
+                <strong>TARA (QQ):</strong>&nbsp;{esPrimera && esBrutoPrimero ? "****** QQ" : (tara > 0 ? `${fmt(qTara)} QQ` : "—")}
               </td>
             </tr>
             {!esPrimera && (

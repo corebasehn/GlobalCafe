@@ -16,7 +16,7 @@ export default function FaltosTable({ data, onDecide }: FaltosTableProps) {
             <th scope="col">Ingreso / Fecha</th>
             <th scope="col">Proveedor / Remisión</th>
             <th scope="col">Tipo de Café</th>
-            <th scope="col" className="text-center">Sacos Faltos</th>
+            <th scope="col" className="text-center">Sacos con Problemas</th>
             <th scope="col">Motivo Reportado</th>
           </tr>
         </thead>

@@ -210,7 +210,7 @@ export default function BoletaRecepcionPage() {
         <table className="blt-info">
           <tbody>
             <tr>
-              <td className="lbl">N° INGRESO:</td>
+              <td className="lbl"># RECEPCIÓN:</td>
               <td style={{ width: "40%" }}>{data.numero_entrada}</td>
               <td className="lbl">FECHA:</td>
               <td>{new Date(data.fecha_entrada).toLocaleString("es-HN")}</td>

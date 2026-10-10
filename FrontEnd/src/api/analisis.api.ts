@@ -78,3 +78,10 @@ export const veredictoGerenciaApi = async (idAnalisis: number, data: VeredictoGe
   const response = await http.patch(`/analisis/${idAnalisis}/veredicto`, data);
   return response.data;
 };
+
+export async function getComparativoFechasApi(fechaInicio: string, fechaFin: string): Promise<any[]> {
+  const { data } = await http.get("/analisis/comparativo-fechas", {
+    params: { fechaInicio, fechaFin }
+  });
+  return data;
+}

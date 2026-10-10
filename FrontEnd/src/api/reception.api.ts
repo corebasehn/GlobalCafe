@@ -71,6 +71,7 @@ export interface CreateReceptionDetalleRequest {
 
 export interface CreateReceptionRequest {
   id_sucursal?: number;
+  id_tipo_remision?: number;
   id_cosecha: number;
   tipo_vehiculo: string;
   id_placa_cabezal: number;
@@ -141,8 +142,13 @@ export async function registrarEntradaCabezalApi(id: number, id_placa_entrante: 
   return data;
 }
 
-export async function registrarPesadaSalidaApi(id: number, peso: number): Promise<any> {
-  const { data } = await http.put<any>(`/reception/bascula/salida/${id}`, { peso });
+export async function registrarPesadaSalidaApi(id: number, peso: number, observaciones?: string): Promise<any> {
+  const { data } = await http.put<any>(`/reception/bascula/salida/${id}`, { peso, observaciones });
+  return data;
+}
+
+export async function actualizarObservacionesDetalleApi(id: number, observaciones: string): Promise<any> {
+  const { data } = await http.patch<any>(`/reception/detalle/${id}/observaciones`, { observaciones });
   return data;
 }
 

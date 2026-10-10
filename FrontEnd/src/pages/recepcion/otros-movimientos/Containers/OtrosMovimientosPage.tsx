@@ -9,10 +9,12 @@ import {
   getPlacasFurgonApi,
   getConductoresApi,
   getProveedoresApi,
+  getTiposMovimientoApi,
   PlacaCabezal,
   PlacaFurgon,
   Conductor,
   Proveedor,
+  TipoMovimiento,
 } from "../../../../api/catalogs.api";
 
 // Componentes
@@ -32,6 +34,7 @@ export default function OtrosMovimientosPage() {
   const [placasFurgon, setPlacasFurgon] = useState<PlacaFurgon[]>([]);
   const [conductores, setConductores] = useState<Conductor[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
+  const [tiposMovimiento, setTiposMovimiento] = useState<TipoMovimiento[]>([]);
 
   // Estados de Modales
   const [showModalNuevo, setShowModalNuevo] = useState(false);
@@ -74,7 +77,7 @@ export default function OtrosMovimientosPage() {
       setMovimientos(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar los movimientos de casulla");
+      toast.error("Error al cargar los movimientos");
     } finally {
       setLoading(false);
     }
@@ -82,16 +85,18 @@ export default function OtrosMovimientosPage() {
 
   const loadCatalogs = async () => {
     try {
-      const [placasC, placasF, conds, provs] = await Promise.all([
+      const [placasC, placasF, conds, provs, tiposMov] = await Promise.all([
         getPlacasCabezalApi(),
         getPlacasFurgonApi(),
         getConductoresApi(),
         getProveedoresApi(),
+        getTiposMovimientoApi(),
       ]);
       setPlacasCabezal(placasC);
       setPlacasFurgon(placasF);
       setConductores(conds);
       setProveedores(provs);
+      setTiposMovimiento(tiposMov);
     } catch (error) {
       console.error("Error cargando catálogos", error);
     }
@@ -103,7 +108,7 @@ export default function OtrosMovimientosPage() {
     if (!det || !det.pesada_entrada) {
       return {
         key: "PENDIENTE_1RA",
-        label: "Pendiente 1ra Pesada (Tara)",
+        label: "Pendiente 1ra Pesada",
         bg: "warning",
         text: "dark",
         icon: <ArrowDownCircle size={14} className="me-1" />,
@@ -112,7 +117,7 @@ export default function OtrosMovimientosPage() {
     if (det.pesada_entrada && !det.pesada_salida) {
       return {
         key: "EN_CARGA",
-        label: "En Carga (Espera 2da Pesada)",
+        label: "En Proceso (Espera 2da Pesada)",
         bg: "primary",
         text: "white",
         icon: <ArrowUpCircle size={14} className="me-1" />,
@@ -140,7 +145,16 @@ export default function OtrosMovimientosPage() {
       const placa = m.placa_cabezal?.placa?.toLowerCase() || "";
       const conductor = m.conductor?.nombre?.toLowerCase() || "";
       const cliente = m.detalles?.[0]?.proveedor?.nombre?.toLowerCase() || "";
-      return numEntrada.includes(term) || placa.includes(term) || conductor.includes(term) || cliente.includes(term);
+      const tipoNombre = m.tipo_movimiento?.nombre?.toLowerCase() || "";
+      const tipoCodigo = m.tipo_movimiento?.codigo?.toLowerCase() || "";
+      return (
+        numEntrada.includes(term) ||
+        placa.includes(term) ||
+        conductor.includes(term) ||
+        cliente.includes(term) ||
+        tipoNombre.includes(term) ||
+        tipoCodigo.includes(term)
+      );
     }
 
     return true;
@@ -231,9 +245,9 @@ export default function OtrosMovimientosPage() {
       <Card className="custom-card shadow-sm border-0">
         <Card.Header className="d-flex flex-wrap justify-content-between align-items-center gap-3 bg-white py-3 border-bottom">
           <div>
-            <h6 className="card-title mb-0 fw-bold fs-6">Control de Báscula - Pesada de Casulla</h6>
+            <h6 className="card-title mb-0 fw-bold fs-6">Control de Báscula - Otros Movimientos</h6>
             <small className="text-muted">
-              Flujo vehicular invertido: 1° Tara (Vacío) &rarr; Carga &rarr; 2° Bruto (Lleno).
+              Pesaje vehicular y operativo de subproductos y materiales (Casulla, Chatarra, etc.).
             </small>
           </div>
           <div className="d-flex gap-2">
@@ -257,12 +271,12 @@ export default function OtrosMovimientosPage() {
               </Nav.Item>
               <Nav.Item>
                 <Nav.Link eventKey="PENDIENTE_1RA" className="py-1 px-3">
-                  1ra Pesada (Tara) <Badge bg="warning" text="dark" className="ms-1">{countPendiente1ra}</Badge>
+                  1ra Pesada <Badge bg="warning" text="dark" className="ms-1">{countPendiente1ra}</Badge>
                 </Nav.Link>
               </Nav.Item>
               <Nav.Item>
                 <Nav.Link eventKey="EN_CARGA" className="py-1 px-3">
-                  En Carga (Espera Bruto) <Badge bg="primary" className="ms-1">{countEnCarga}</Badge>
+                  En Proceso <Badge bg="primary" className="ms-1">{countEnCarga}</Badge>
                 </Nav.Link>
               </Nav.Item>
               <Nav.Item>
@@ -278,7 +292,7 @@ export default function OtrosMovimientosPage() {
                   <Search size={15} className="text-muted" />
                 </InputGroup.Text>
                 <Form.Control
-                  placeholder="Buscar por placa, conductor o N°..."
+                  placeholder="Buscar por placa, conductor, N° o tipo..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -290,7 +304,7 @@ export default function OtrosMovimientosPage() {
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" variant="primary" />
-              <p className="mt-2 text-muted">Cargando registros de casulla...</p>
+              <p className="mt-2 text-muted">Cargando registros de movimientos...</p>
             </div>
           ) : filteredMovimientos.length === 0 ? (
             <div className="text-center py-5 border rounded bg-light">
@@ -312,11 +326,12 @@ export default function OtrosMovimientosPage() {
                   <tr>
                     <th className="text-center" style={{ width: "170px" }}>Acciones</th>
                     <th>N° Movimiento</th>
+                    <th>Tipo de Movimiento</th>
                     <th>Vehículo / Placa</th>
                     <th>Conductor / Transporte</th>
                     <th>Cliente / Destino</th>
-                    <th className="text-end">1ra Pesada (Tara)</th>
-                    <th className="text-end">2da Pesada (Bruto)</th>
+                    <th className="text-end">1ra Pesada</th>
+                    <th className="text-end">2da Pesada</th>
                     <th className="text-end">Peso Neto</th>
                     <th className="text-center">Estado</th>
                   </tr>
@@ -325,19 +340,24 @@ export default function OtrosMovimientosPage() {
                   {filteredMovimientos.map((m) => {
                     const det = m.detalles?.[0];
                     const estado = getEstadoMovimiento(m);
-                    const tara = det?.pesada_entrada ? Number(det.pesada_entrada) : null;
-                    const bruto = det?.pesada_salida ? Number(det.pesada_salida) : null;
-                    const neto = det?.peso_neto ? Number(det.peso_neto) : (bruto && tara ? bruto - tara : null);
+                    const esBrutoPrimero = m.tipo_movimiento?.sentido_pesaje === "BRUTO_PRIMERO";
+                    const pesadaEntrada = det?.pesada_entrada ? Number(det.pesada_entrada) : null;
+                    const pesadaSalida = det?.pesada_salida ? Number(det.pesada_salida) : null;
+                    const neto = det?.peso_neto
+                      ? Number(det.peso_neto)
+                      : (pesadaSalida && pesadaEntrada
+                          ? (esBrutoPrimero ? pesadaEntrada - pesadaSalida : pesadaSalida - pesadaEntrada)
+                          : null);
 
                     return (
                       <tr key={m.id_recepcion}>
                         <td className="text-center">
                           <Dropdown align="start" onClick={(e) => e.stopPropagation()}>
                             <Dropdown.Toggle
-                              variant={!tara ? "warning" : (!bruto ? "success" : "outline-primary")}
+                              variant={!pesadaEntrada ? "warning" : (!pesadaSalida ? "success" : "outline-primary")}
                               size="sm"
                               className="d-inline-flex align-items-center gap-1 shadow-sm fw-semibold"
-                              style={!tara ? { color: "#000", borderColor: "#d39e00" } : undefined}
+                              style={!pesadaEntrada ? { color: "#000", borderColor: "#d39e00" } : undefined}
                             >
                               <MoreVertical size={14} /> Acciones
                             </Dropdown.Toggle>
@@ -349,25 +369,25 @@ export default function OtrosMovimientosPage() {
                               style={{ zIndex: 1060 }}
                             >
                               {/* 1. Acción de Pesaje */}
-                              {!tara && (
+                              {!pesadaEntrada && (
                                 <Dropdown.Item
                                   onClick={() => handleOpenPesaje(m, "PRIMERA_PESADA")}
                                   className="d-flex align-items-center gap-2 fw-semibold text-warning"
                                 >
-                                  <Scale size={15} /> Pesar 1ra Pesada (Tara)
+                                  <Scale size={15} /> Pesar 1ra Pesada ({esBrutoPrimero ? "Bruto" : "Tara"})
                                 </Dropdown.Item>
                               )}
 
-                              {tara && !bruto && (
+                              {pesadaEntrada && !pesadaSalida && (
                                 <Dropdown.Item
                                   onClick={() => handleOpenPesaje(m, "SEGUNDA_PESADA")}
                                   className="d-flex align-items-center gap-2 fw-semibold text-success"
                                 >
-                                  <Scale size={15} /> Pesar 2da Pesada (Bruto)
+                                  <Scale size={15} /> Pesar 2da Pesada ({esBrutoPrimero ? "Tara" : "Bruto"})
                                 </Dropdown.Item>
                               )}
 
-                              {bruto && (
+                              {pesadaSalida && (
                                 <Dropdown.Item disabled className="text-muted d-flex align-items-center gap-2">
                                   <CheckCircle2 size={15} className="text-success" /> Pesaje Cerrado
                                 </Dropdown.Item>
@@ -384,16 +404,16 @@ export default function OtrosMovimientosPage() {
                               </Dropdown.Item>
 
                               <Dropdown.Item
-                                disabled={!tara || !det?.id_detalle_recepcion}
-                                onClick={() => handlePrintTicket(det?.id_detalle_recepcion, bruto ? "segunda" : "primera")}
+                                disabled={!pesadaEntrada || !det?.id_detalle_recepcion}
+                                onClick={() => handlePrintTicket(det?.id_detalle_recepcion, pesadaSalida ? "segunda" : "primera")}
                                 className="d-flex align-items-center gap-2"
                               >
                                 <Printer size={15} className="text-primary" />
-                                {bruto ? "Ticket (Pesada Cerrada)" : "Ticket 1ra Pesada (Tara)"}
+                                {pesadaSalida ? "Ticket (Pesada Cerrada)" : `Ticket 1ra Pesada (${esBrutoPrimero ? "Bruto" : "Tara"})`}
                               </Dropdown.Item>
 
                               <Dropdown.Item
-                                disabled={!bruto || !det?.id_detalle_recepcion}
+                                disabled={!pesadaSalida || !det?.id_detalle_recepcion}
                                 onClick={() => handlePrintPaseSalida(det?.id_detalle_recepcion)}
                                 className="d-flex align-items-center gap-2"
                               >
@@ -406,6 +426,14 @@ export default function OtrosMovimientosPage() {
                           <strong className="text-primary">{m.numero_entrada}</strong>
                           <div className="text-muted small">
                             {new Date(m.fecha_entrada).toLocaleDateString()} {new Date(m.fecha_entrada).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                        </td>
+                        <td>
+                          <Badge bg="info-transparent" className="text-info fw-semibold border border-info-subtle">
+                            {m.tipo_movimiento?.nombre || "Otro Movimiento"}
+                          </Badge>
+                          <div className="text-xs text-muted mt-1">
+                            {esBrutoPrimero ? "1° Bruto / 2° Tara" : "1° Tara / 2° Bruto"}
                           </div>
                         </td>
                         <td>
@@ -423,15 +451,21 @@ export default function OtrosMovimientosPage() {
                           {det?.remision && <small className="text-muted">Ref: {det.remision}</small>}
                         </td>
                         <td className="text-end">
-                          {tara ? (
-                            <span className="fw-semibold text-dark">{tara.toLocaleString()} LB</span>
+                          {pesadaEntrada ? (
+                            <div>
+                              <span className="fw-semibold text-dark">{pesadaEntrada.toLocaleString()} LB</span>
+                              <div className="text-xs text-muted">({esBrutoPrimero ? "Bruto" : "Tara"})</div>
+                            </div>
                           ) : (
                             <span className="text-muted">--</span>
                           )}
                         </td>
                         <td className="text-end">
-                          {bruto ? (
-                            <span className="fw-semibold text-dark">{bruto.toLocaleString()} LB</span>
+                          {pesadaSalida ? (
+                            <div>
+                              <span className="fw-semibold text-dark">{pesadaSalida.toLocaleString()} LB</span>
+                              <div className="text-xs text-muted">({esBrutoPrimero ? "Tara" : "Bruto"})</div>
+                            </div>
                           ) : (
                             <span className="text-muted">--</span>
                           )}
@@ -478,6 +512,7 @@ export default function OtrosMovimientosPage() {
         placasFurgon={placasFurgon}
         conductores={conductores}
         proveedores={proveedores}
+        tiposMovimiento={tiposMovimiento}
       />
 
       <ModalPesajeOtroMovimiento

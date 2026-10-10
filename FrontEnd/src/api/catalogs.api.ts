@@ -456,3 +456,40 @@ export async function updateTipoEmpaqueApi(id: number, payload: Partial<TipoEmpa
   const { data } = await http.patch<TipoEmpaque>(`/catalogs/tipos-empaque/${id}`, payload);
   return data;
 }
+
+// ==========================================
+// TIPO MOVIMIENTO
+// ==========================================
+export interface TipoMovimiento {
+  id: number;
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  sentido_pesaje: string;
+  activo: boolean;
+  estado?: boolean;
+  created_at?: string;
+}
+
+export async function getTiposMovimientoApi(): Promise<TipoMovimiento[]> {
+  const { data } = await http.get<TipoMovimiento[]>("/catalogs/tipos-movimiento");
+  return data;
+}
+
+export async function createTipoMovimientoApi(payload: {
+  codigo: string;
+  nombre: string;
+  descripcion?: string;
+  sentido_pesaje?: string;
+}): Promise<TipoMovimiento> {
+  const { data } = await http.post<TipoMovimiento>("/catalogs/tipos-movimiento", payload);
+  return data;
+}
+
+export async function updateTipoMovimientoApi(
+  id: number,
+  payload: Partial<TipoMovimiento>
+): Promise<TipoMovimiento> {
+  const { data } = await http.patch<TipoMovimiento>(`/catalogs/tipos-movimiento/${id}`, payload);
+  return data;
+}

@@ -425,4 +425,74 @@ export class CatalogsService {
       data: { ...data, usuario_modificacion: userId, fecha_modificacion: new Date() }
     });
   }
+
+  // ==========================================
+  // TIPO MOVIMIENTO
+  // ==========================================
+  async getTiposMovimiento() {
+    return this.prisma.tipo_movimiento.findMany({
+      orderBy: { id: 'asc' },
+    });
+  }
+
+  async createTipoMovimiento(data: {
+    codigo: string;
+    nombre: string;
+    descripcion?: string;
+    sentido_pesaje?: string;
+  }) {
+    const codigoUpper = data.codigo.trim().toUpperCase();
+    const existe = await this.prisma.tipo_movimiento.findUnique({
+      where: { codigo: codigoUpper },
+    });
+    if (existe) {
+      throw new ConflictException(`Ya existe un tipo de movimiento con el código "${codigoUpper}".`);
+    }
+
+    return this.prisma.tipo_movimiento.create({
+      data: {
+        codigo: codigoUpper,
+        nombre: data.nombre.trim(),
+        descripcion: data.descripcion?.trim() || null,
+        sentido_pesaje: data.sentido_pesaje || 'BRUTO_PRIMERO',
+        activo: true,
+      },
+    });
+  }
+
+  async updateTipoMovimiento(
+    id: number,
+    data: {
+      codigo?: string;
+      nombre?: string;
+      descripcion?: string;
+      sentido_pesaje?: string;
+      activo?: boolean;
+    },
+  ) {
+    if (data.codigo) {
+      const codigoUpper = data.codigo.trim().toUpperCase();
+      const existe = await this.prisma.tipo_movimiento.findFirst({
+        where: {
+          codigo: codigoUpper,
+          NOT: { id },
+        },
+      });
+      if (existe) {
+        throw new ConflictException(`Ya existe otro tipo de movimiento con el código "${codigoUpper}".`);
+      }
+      data.codigo = codigoUpper;
+    }
+
+    return this.prisma.tipo_movimiento.update({
+      where: { id },
+      data: {
+        ...(data.codigo && { codigo: data.codigo }),
+        ...(data.nombre && { nombre: data.nombre.trim() }),
+        ...(data.descripcion !== undefined && { descripcion: data.descripcion?.trim() || null }),
+        ...(data.sentido_pesaje && { sentido_pesaje: data.sentido_pesaje }),
+        ...(data.activo !== undefined && { activo: data.activo }),
+      },
+    });
+  }
 }

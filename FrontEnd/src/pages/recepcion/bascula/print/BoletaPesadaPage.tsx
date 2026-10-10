@@ -336,7 +336,7 @@ export default function BoletaPesadaPage() {
         <table className="blt-info">
           <tbody>
             <tr>
-              <td className="lbl">DESPACHO:</td>
+              <td className="lbl"># RECEPCIÓN:</td>
               <td>{recepcion?.numero_entrada ?? "—"}</td>
               <td className="lbl">COSECHA:</td>
               <td>{recepcion?.cosecha?.cosecha ?? "—"}</td>

@@ -15,8 +15,8 @@ interface NotaPatioModalProps {
 }
 
 export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onClose, onSubmit }: NotaPatioModalProps) {
-  const [sacosBuenos, setSacosBuenos] = useState<number>(0);
-  const [sacosFaltos, setSacosFaltos] = useState<number>(0);
+  const [sacosBuenos, setSacosBuenos] = useState<number | "">(0);
+  const [sacosFaltos, setSacosFaltos] = useState<number | "">(0);
   const [idEstiba, setIdEstiba] = useState<number>(0);
   const [idTipoEmpaque, setIdTipoEmpaque] = useState<number>(0);
   const [observaciones, setObservaciones] = useState<string>("");
@@ -40,12 +40,47 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
 
   const selectedEmpaqueOption = tipoEmpaqueOptions.find(o => o.value === idTipoEmpaque.toString()) || null;
 
-  const totalSacos = sacosBuenos + sacosFaltos;
+  const numBuenos = typeof sacosBuenos === "number" ? sacosBuenos : 0;
+  const numFaltos = typeof sacosFaltos === "number" ? sacosFaltos : 0;
+  const totalSacos = numBuenos + numFaltos;
   const dif = totalSacos - item.cantidad_sacos;
 
-  const handleSacosBuenosChange = (val: number) => {
+  const handleSacosBuenosChange = (raw: string) => {
+    if (raw === "") {
+      setSacosBuenos("");
+      return;
+    }
+    const val = Number(raw);
+    if (isNaN(val) || val < 0) return;
     setSacosBuenos(val);
-    // Auto-ajustar faltos si se desea, pero mejor dejar que el usuario lo haga
+    const faltosCalculados = Math.max(0, item.cantidad_sacos - val);
+    setSacosFaltos(faltosCalculados);
+  };
+
+  const handleSacosBuenosBlur = () => {
+    if (sacosBuenos === "") {
+      const faltos = typeof sacosFaltos === "number" ? sacosFaltos : 0;
+      setSacosBuenos(Math.max(0, item.cantidad_sacos - faltos));
+    }
+  };
+
+  const handleSacosFaltosChange = (raw: string) => {
+    if (raw === "") {
+      setSacosFaltos("");
+      return;
+    }
+    const val = Number(raw);
+    if (isNaN(val) || val < 0) return;
+    setSacosFaltos(val);
+    const buenosCalculados = Math.max(0, item.cantidad_sacos - val);
+    setSacosBuenos(buenosCalculados);
+  };
+
+  const handleSacosFaltosBlur = () => {
+    if (sacosFaltos === "") {
+      const buenos = typeof sacosBuenos === "number" ? sacosBuenos : 0;
+      setSacosFaltos(Math.max(0, item.cantidad_sacos - buenos));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,8 +90,8 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
     onSubmit({
       id_detalle_recepcion: item.id_detalle_recepcion,
       id_estiba: idEstiba,
-      cantidad_sacos_buenos: sacosBuenos,
-      cantidad_sacos_faltos: sacosFaltos,
+      cantidad_sacos_buenos: numBuenos,
+      cantidad_sacos_faltos: numFaltos,
       observaciones_faltos: observaciones,
       id_tipo_empaque: idTipoEmpaque > 0 ? idTipoEmpaque : undefined
     });
@@ -102,7 +137,8 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
                   type="number"
                   size="lg"
                   value={sacosBuenos}
-                  onChange={(e) => handleSacosBuenosChange(Number(e.target.value))}
+                  onChange={(e) => handleSacosBuenosChange(e.target.value)}
+                  onBlur={handleSacosBuenosBlur}
                   onWheel={(e) => e.currentTarget.blur()}
                   min={0}
                   required
@@ -113,17 +149,18 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
             <Col md={6}>
               <Form.Group>
                 <Form.Label className="font-bold text-danger-700 flex items-center gap-2">
-                  <AlertTriangle size={18}/> Sacos Faltos / Problemas
+                  <AlertTriangle size={18}/> Sacos con problemas
                 </Form.Label>
                 <Form.Control
                   type="number"
                   size="lg"
                   value={sacosFaltos}
-                  onChange={(e) => setSacosFaltos(Number(e.target.value))}
+                  onChange={(e) => handleSacosFaltosChange(e.target.value)}
+                  onBlur={handleSacosFaltosBlur}
                   onWheel={(e) => e.currentTarget.blur()}
                   min={0}
                 />
-                <Form.Text className="text-muted">Sacos con humedad, olor o daños (Requiere aprobación).</Form.Text>
+                <Form.Text className="text-muted">Sacos con humedad, faltos, olor o daños (Requiere aprobación).</Form.Text>
               </Form.Group>
             </Col>
           </Row>
@@ -164,7 +201,7 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
             </Col>
           </Row>
 
-          {sacosFaltos > 0 && (
+          {numFaltos > 0 && (
             <Alert variant="warning" className="border-2 border-warning-200">
               <Alert.Heading className="text-sm font-bold flex items-center gap-2">
                 <AlertTriangle size={16}/> Justificación de Sacos Faltos
@@ -175,7 +212,7 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
                 placeholder="Explique por qué estos sacos son faltos (humedad, olor, etc.)"
                 value={observaciones}
                 onChange={(e) => setObservaciones(e.target.value)}
-                required={sacosFaltos > 0}
+                required={numFaltos > 0}
               />
               <p className="mt-2 mb-0 text-xs">
                 * Este registro se enviará a gerencia para su aprobación antes de poder pesarse.
@@ -194,7 +231,7 @@ export default function NotaPatioModal({ show, item, estibas, tiposEmpaque, onCl
           <Button 
             variant="primary" 
             type="submit" 
-            disabled={idEstiba === 0 || (sacosFaltos > 0 && !observaciones)}
+            disabled={idEstiba === 0 || (numFaltos > 0 && !observaciones.trim())}
           >
             Confirmar Nota de Patio
           </Button>

@@ -25,6 +25,11 @@ export default function CatalogosHeader({
   const options = tabs.map(t => ({ value: t.id, label: t.label }));
   const defaultValue = options.find(o => o.value === activeTab);
 
+  const getSingularLabel = (label: string) => {
+    if (label.startsWith("Tipos de")) return label.replace("Tipos de", "Tipo de");
+    return label.replace("es", "").replace("as", "a");
+  };
+
   return (
     <>
       <div className="d-md-flex d-block align-items-center justify-content-between my-4 page-header-breadcrumb">
@@ -35,7 +40,7 @@ export default function CatalogosHeader({
             className="btn-wave"
             onClick={onAdd}
           >
-            <Plus className="w-4 h-4 me-1 inline-block" /> Nuevo {currentTabLabel.replace("es", "").replace("as", "a")}
+            <Plus className="w-4 h-4 me-1 inline-block" /> Nuevo {getSingularLabel(currentTabLabel)}
           </Button>
         </div>
       </div>

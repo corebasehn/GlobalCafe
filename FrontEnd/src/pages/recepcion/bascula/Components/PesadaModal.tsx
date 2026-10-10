@@ -142,23 +142,6 @@ export default function PesadaModal({
               </Form.Text>
             </Form.Group>
 
-            {/* Observaciones (Solo en SALIDA) */}
-            {modalMode === "SALIDA" && (
-              <Form.Group className="pt-3 border-top">
-                <Form.Label className="fw-bold">Observaciones</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  placeholder="Ingrese observaciones sobre la salida del vehículo..."
-                  value={observaciones}
-                  onChange={(e) => onObservacionesChange(e.target.value)}
-                  maxLength={500}
-                />
-                <Form.Text className="text-muted">
-                  {observaciones.length}/500 caracteres
-                </Form.Text>
-              </Form.Group>
-            )}
 
             {/* Selector de Bodega (Solo en ENTRADA) */}
             {modalMode === "ENTRADA" && (

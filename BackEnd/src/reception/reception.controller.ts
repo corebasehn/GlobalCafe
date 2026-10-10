@@ -184,8 +184,24 @@ export class ReceptionController {
   @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('PESAR_EQUIPO')
   @Put('bascula/salida/:id')
-  registrarPesadaSalida(@Param('id') id: string, @Body('peso') peso: number, @Request() req) {
-    return this.receptionService.registrarPesadaSalida(+id, peso, req.user?.id);
+  registrarPesadaSalida(
+    @Param('id') id: string, 
+    @Body('peso') peso: number, 
+    @Body('observaciones') observaciones: string, 
+    @Request() req
+  ) {
+    return this.receptionService.registrarPesadaSalida(+id, peso, req.user?.id, observaciones);
+  }
+
+  @UseGuards(AuthGuard, PermissionsGuard)
+  @RequirePermissions('PESAR_EQUIPO')
+  @Patch('detalle/:id/observaciones')
+  actualizarObservacionesDetalle(
+    @Param('id') id: string,
+    @Body('observaciones') observaciones: string,
+    @Request() req
+  ) {
+    return this.receptionService.actualizarObservacionesDetalle(+id, observaciones, req.user?.id);
   }
 
   // ==========================================

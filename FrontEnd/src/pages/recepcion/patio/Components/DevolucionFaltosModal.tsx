@@ -6,7 +6,7 @@ export interface DevolucionFaltosModalProps {
   show: boolean;
   item: any | null;
   onClose: () => void;
-  onConfirm: (decision: "APROBAR" | "DEVOLVER", obs: string) => void;
+  onConfirm: (decision: "APROBAR" | "DEVOLVER", obs: string) => Promise<boolean | void> | void;
   submitting: boolean;
 }
 
@@ -17,10 +17,10 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
 
   if (!item) return null;
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!decision) return;
-    onConfirm(decision, obs);
-    if (decision === "DEVOLVER") {
+    const ok = await onConfirm(decision, obs);
+    if (ok !== false && decision === "DEVOLVER") {
       setShowPrint(true);
     }
   };
@@ -42,36 +42,48 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
           <style>{`
             @media print {
               @page { margin: 0; size: letter portrait; }
-              body * { visibility: hidden; }
-              #print-boleta {
-                position: fixed;
-                left: 0;
-                top: 0;
-                width: 100%;
-                visibility: visible;
-                padding: 2cm;
+              html, body {
+                height: 100vh !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
               }
-              #print-boleta * { visibility: visible; }
+              body * { visibility: hidden; }
+              * { transform: none !important; }
+              #print-boleta {
+                position: fixed !important;
+                left: 0.5cm !important;
+                top: 0.5cm !important;
+                margin: 0 !important;
+                padding: 1cm !important;
+                width: calc(100% - 1cm) !important;
+                visibility: visible !important;
+                font-family: sans-serif;
+                border: none !important;
+                border: 2px solid black !important;
+                box-sizing: border-box !important;
+              }
+              #print-boleta * { visibility: visible !important; }
             }
           `}</style>
 
           <div id="print-boleta" className="p-5 border border-dark rounded bg-white text-dark shadow-sm">
             <div className="text-center mb-4 border-bottom border-dark pb-3">
               <h4 className="fw-bold mb-1">GLOBAL COFFEE GROUP</h4>
-              <h6 className="text-danger fw-bold mb-0">BOLETA DE DEVOLUCIÓN DE CARGA (FALTOS)</h6>
+              <h6 className="text-danger fw-bold mb-0">BOLETA DE DEVOLUCIÓN DE CARGA (SACOS CON PROBLEMAS)</h6>
             </div>
 
             <Row className="g-3 mb-4 fs-13">
               <Col xs={6}>
-                <p className="mb-1"><strong>N° Ingreso:</strong> {item.recepcion.numero_entrada}</p>
-                <p className="mb-1"><strong>Remisión:</strong> {item.remision}</p>
+                <p className="mb-1"><strong>N° Ingreso:</strong> {item.recepcion?.numero_entrada || "N/A"}</p>
+                <p className="mb-1"><strong>Remisión:</strong> {item.remision || "N/A"}</p>
                 <p className="mb-1"><strong>Tipo de Café:</strong> {item.tipo_cafe?.tipo_cafe || "N/A"}</p>
                 <p className="mb-1"><strong>Fecha:</strong> {new Date().toLocaleString()}</p>
               </Col>
               <Col xs={6}>
-                <p className="mb-1"><strong>Proveedor:</strong> {item.proveedor.nombre}</p>
+                <p className="mb-1"><strong>Proveedor:</strong> {item.proveedor?.nombre || "N/A"}</p>
                 <p className="mb-1"><strong>Sacos Devueltos:</strong> {item.cantidad_sacos}</p>
-                <p className="mb-1"><strong>Transporte:</strong> {item.recepcion.placa_cabezal.placa}</p>
+                <p className="mb-1"><strong>Transporte:</strong> {item.recepcion?.placa_cabezal?.placa || "N/A"}</p>
               </Col>
             </Row>
 
@@ -113,13 +125,13 @@ export default function DevolucionFaltosModal({ show, item, onClose, onConfirm, 
   return (
     <Modal show={show} onHide={resetAndClose} backdrop="static" centered>
       <Modal.Header closeButton>
-        <Modal.Title className="fs-18">Decisión de Gerencia: <span className="text-primary">Sacos Faltos</span></Modal.Title>
+        <Modal.Title className="fs-18">Decisión de Gerencia: <span className="text-primary">Sacos con Problemas</span></Modal.Title>
       </Modal.Header>
       <Modal.Body className="p-4">
         <Alert variant="secondary" className="border-0 shadow-none bg-primary-transparent">
           <div className="d-flex justify-content-between align-items-center mb-1">
             <span className="fw-bold fs-14 text-primary">{item.recepcion.numero_entrada}</span>
-            <Badge bg="danger-transparent" className="rounded-pill px-3 fs-12">{item.cantidad_sacos} Sacos Faltos</Badge>
+            <Badge bg="danger-transparent" className="rounded-pill px-3 fs-12">{item.cantidad_sacos} Sacos con Problemas</Badge>
           </div>
           <p className="fs-12 text-muted mb-0">
             {item.proveedor?.nombre || "N/A"}{item.tipo_cafe?.tipo_cafe ? ` • ${item.tipo_cafe.tipo_cafe}` : ""}

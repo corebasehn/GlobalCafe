@@ -225,7 +225,7 @@ export default function BoletaDevolucionPage() {
 
         <div className="dev-grid-info">
           <div>
-            <span className="dev-lbl">N° Ingreso:</span>
+            <span className="dev-lbl"># Recepción:</span>
             <span>{recepcion?.numero_entrada ?? "—"}</span>
           </div>
           <div>

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { FileText, Search, Printer, Download, CheckCircle, Clock } from "lucide-react";
 import PageHeader from "../../components/layout/PageHeader";
-import { Card, Table, Badge, Button, Modal, Form, InputGroup, Tabs, Tab, Spinner } from 'react-bootstrap';
+import { Card, Table, Badge, Button, Modal, Form, InputGroup, Tabs, Tab, Spinner, Pagination } from 'react-bootstrap';
 import { moduleColors } from "../../config/colors.config";
 import { getPendientesLiquidarApi, getNotasPesoApi, crearNotaPesoApi, getNotaPesoByIdApi, NotaDePeso } from "../../api/nota-peso.api";
 import { toast } from "react-toastify";
@@ -14,6 +14,14 @@ export default function NotaPesoPage() {
   const [notasEmitidas, setNotasEmitidas] = useState<NotaDePeso[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [pagePendientes, setPagePendientes] = useState(1);
+  const [pageNotas, setPageNotas] = useState(1);
+  const PAGE_SIZE = 10;
+
+  useEffect(() => {
+    setPagePendientes(1);
+    setPageNotas(1);
+  }, [searchTerm]);
   const [selectedNota, setSelectedNota] = useState<NotaDePeso | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -50,11 +58,15 @@ export default function NotaPesoPage() {
   };
 
   const handleOpenLiquidar = (detalle: any) => {
-    const humedadInicial = detalle.analisis_calidad?.[0]?.humedad != null
-      ? Number(detalle.analisis_calidad[0].humedad)
+    const analisisGeneral = detalle.analisis_calidad?.find(
+      (a: any) => a.tipo_analisis === "Muestra General" || a.tipo_analisis?.toLowerCase().includes("general")
+    ) || detalle.analisis_calidad?.[0];
+
+    const humedadInicial = analisisGeneral?.humedad != null
+      ? Number(analisisGeneral.humedad)
       : 0;
-    const danoInicial = detalle.analisis_calidad?.[0]?.dano != null
-      ? Number(detalle.analisis_calidad[0].dano)
+    const danoInicial = analisisGeneral?.dano != null
+      ? Number(analisisGeneral.dano)
       : 0;
 
     setFormHumedad(humedadInicial);
@@ -117,6 +129,52 @@ export default function NotaPesoPage() {
   const calcTotalDescQQ = calcDescHumedadQQ + calcDescDanoQQ + calcDescOtrosQQ;
   const calcPesoNetoFinalQQ = Math.max(0, calcSubtotalQQ - calcTotalDescQQ);
 
+  // Filtrado y paginación para Pendientes de Liquidar
+  const filteredPendientes = pendientes.filter((p) => {
+    // Excluir otros movimientos (ej. CAS-...)
+    const esOtroMovimiento = p.recepcion?.id_tipo_movimiento && p.recepcion.id_tipo_movimiento !== 1;
+    const esCasulla = p.recepcion?.numero_entrada?.startsWith("CAS-");
+    if (esOtroMovimiento || esCasulla) return false;
+
+    const term = searchTerm.toLowerCase();
+    const proveedor = p.proveedor?.nombre?.toLowerCase() || "";
+    const remision = p.remision?.toLowerCase() || "";
+    const entrada = p.recepcion?.numero_entrada?.toLowerCase() || "";
+    const tipoCafe = p.tipo_cafe?.tipo_cafe?.toLowerCase() || "";
+    return proveedor.includes(term) || remision.includes(term) || entrada.includes(term) || tipoCafe.includes(term);
+  });
+
+  const totalPagesPendientes = Math.ceil(filteredPendientes.length / PAGE_SIZE) || 1;
+  const safePagePendientes = Math.min(Math.max(1, pagePendientes), totalPagesPendientes);
+  const paginatedPendientes = filteredPendientes.slice(
+    (safePagePendientes - 1) * PAGE_SIZE,
+    safePagePendientes * PAGE_SIZE
+  );
+
+  // Filtrado y paginación para Historial de Notas
+  const filteredNotas = notasEmitidas.filter((n) => {
+    const term = searchTerm.toLowerCase();
+    const noNota = n.numero_nota_peso?.toLowerCase() || "";
+    const proveedor = n.detalle_recepcion?.proveedor?.nombre?.toLowerCase() || "";
+    const entrada = n.detalle_recepcion?.recepcion?.numero_entrada?.toLowerCase() || "";
+    const remision = n.detalle_recepcion?.remision?.toLowerCase() || "";
+    const tipoCafe = n.detalle_recepcion?.tipo_cafe?.tipo_cafe?.toLowerCase() || "";
+    return (
+      noNota.includes(term) ||
+      proveedor.includes(term) ||
+      entrada.includes(term) ||
+      remision.includes(term) ||
+      tipoCafe.includes(term)
+    );
+  });
+
+  const totalPagesNotas = Math.ceil(filteredNotas.length / PAGE_SIZE) || 1;
+  const safePageNotas = Math.min(Math.max(1, pageNotas), totalPagesNotas);
+  const paginatedNotas = filteredNotas.slice(
+    (safePageNotas - 1) * PAGE_SIZE,
+    safePageNotas * PAGE_SIZE
+  );
+
   return (
     <div className="pb-5">
       <PageHeader title="Nota de Peso" subtitle="Liquidación de entregas de café" icon={FileText} iconBg={colors.bg} iconColor={colors.icon} />
@@ -144,6 +202,7 @@ export default function NotaPesoPage() {
                   <tr>
                     <th className="px-4 py-3">Ingreso / Remisión</th>
                     <th>Proveedor</th>
+                    <th>Tipo de Café</th>
                     <th>Cosecha</th>
                     <th className="text-end">Sacos</th>
                     <th className="text-end">Peso Neto (LB)</th>
@@ -151,43 +210,105 @@ export default function NotaPesoPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {pendientes.length === 0 ? (
-                    <tr><td colSpan={6} className="text-center py-5 text-neutral-500">No hay entregas pendientes de liquidación</td></tr>
+                  {filteredPendientes.length === 0 ? (
+                    <tr><td colSpan={7} className="text-center py-5 text-neutral-500">No hay entregas pendientes de liquidación</td></tr>
                   ) : (
-                    pendientes
-                      .filter((p) => {
-                        const term = searchTerm.toLowerCase();
-                        const proveedor = p.proveedor?.nombre?.toLowerCase() || "";
-                        const remision = p.remision?.toLowerCase() || "";
-                        const entrada = p.recepcion?.numero_entrada?.toLowerCase() || "";
-                        return proveedor.includes(term) || remision.includes(term) || entrada.includes(term);
-                      })
-                      .map((p) => (
-                        <tr key={p.id_detalle_recepcion}>
-                          <td className="px-4">
-                            <div className="font-semibold text-coffee-700">{p.recepcion.numero_entrada}</div>
-                            <div className="text-xs text-neutral-500">Rem: {p.remision}</div>
-                          </td>
-                          <td>{p.proveedor.nombre}</td>
-                          <td><Badge bg="light" className="text-neutral-700 border">{p.recepcion.cosecha.cosecha}</Badge></td>
-                          <td className="text-end font-medium">{p.cantidad_sacos}</td>
-                          <td className="text-end font-bold text-amber-700">{Number(p.peso_neto).toLocaleString()} LB</td>
-                          <td className="text-center">
-                            <Button 
-                              variant="primary" 
-                              size="sm" 
-                              className="px-3"
-                              disabled={processing}
-                              onClick={() => handleOpenLiquidar(p)}
-                            >
-                              Liquidar
-                            </Button>
-                          </td>
-                        </tr>
-                      ))
+                    paginatedPendientes.map((p) => (
+                      <tr key={p.id_detalle_recepcion}>
+                        <td className="px-4">
+                          <div className="font-semibold text-coffee-700">{p.recepcion.numero_entrada}</div>
+                          <div className="text-xs text-neutral-500">Rem: {p.remision}</div>
+                        </td>
+                        <td>{p.proveedor.nombre}</td>
+                        <td>
+                          <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                            {p.tipo_cafe?.tipo_cafe || "—"}
+                          </Badge>
+                        </td>
+                        <td>
+                          <Badge bg="light" text="dark" className="border text-dark fw-semibold" style={{ color: "#212529" }}>
+                            {p.recepcion?.cosecha?.cosecha || "—"}
+                          </Badge>
+                        </td>
+                        <td className="text-end font-medium">{p.cantidad_sacos}</td>
+                        <td className="text-end font-bold text-amber-700">{Number(p.peso_neto).toLocaleString()} LB</td>
+                        <td className="text-center">
+                          {(() => {
+                            const tieneMuestraGeneral = p.analisis_calidad?.some(
+                              (a: any) => a.tipo_analisis === "Muestra General" || a.tipo_analisis?.toLowerCase().includes("general")
+                            );
+                            const puedeLiquidar = Boolean(p.omitir_analisis || tieneMuestraGeneral);
+
+                            if (!puedeLiquidar) {
+                              return (
+                                <Badge bg="danger-transparent" className="text-danger fw-semibold fs-11 py-1 px-2 border border-danger-subtle">
+                                  Pendiente de crear muestra general
+                                </Badge>
+                              );
+                            }
+
+                            return (
+                              <Button 
+                                variant="primary" 
+                                size="sm" 
+                                className="px-3"
+                                disabled={processing}
+                                onClick={() => handleOpenLiquidar(p)}
+                              >
+                                Liquidar
+                              </Button>
+                            );
+                          })()}
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </Table>
+            )}
+
+            {!loading && filteredPendientes.length > 0 && (
+              <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+                <span className="text-muted small">
+                  {totalPagesPendientes > 1 ? `Página ${safePagePendientes} de ${totalPagesPendientes} — ` : ""}
+                  {filteredPendientes.length} {filteredPendientes.length === 1 ? "registro" : "registros"}
+                </span>
+
+                {totalPagesPendientes > 1 && (
+                  <Pagination size="sm" className="mb-0">
+                    <Pagination.First onClick={() => setPagePendientes(1)} disabled={safePagePendientes === 1} />
+                    <Pagination.Prev onClick={() => setPagePendientes((p) => Math.max(1, p - 1))} disabled={safePagePendientes === 1} />
+                    {Array.from({ length: totalPagesPendientes }, (_, i) => i + 1)
+                      .filter((p) => p === 1 || p === totalPagesPendientes || Math.abs(p - safePagePendientes) <= 2)
+                      .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, idx) =>
+                        p === "..." ? (
+                          <Pagination.Ellipsis key={`e-${idx}`} disabled />
+                        ) : (
+                          <Pagination.Item
+                            key={p}
+                            active={p === safePagePendientes}
+                            onClick={() => setPagePendientes(p as number)}
+                          >
+                            {p}
+                          </Pagination.Item>
+                        )
+                      )}
+                    <Pagination.Next
+                      onClick={() => setPagePendientes((p) => Math.min(totalPagesPendientes, p + 1))}
+                      disabled={safePagePendientes === totalPagesPendientes}
+                    />
+                    <Pagination.Last
+                      onClick={() => setPagePendientes(totalPagesPendientes)}
+                      disabled={safePagePendientes === totalPagesPendientes}
+                    />
+                  </Pagination>
+                )}
+              </div>
             )}
           </Card>
         </Tab>
@@ -216,59 +337,95 @@ export default function NotaPesoPage() {
                     <th>Ingreso / Remisión</th>
                     <th>Fecha</th>
                     <th>Proveedor</th>
+                    <th>Tipo de Café</th>
                     <th className="text-end">Peso Neto (QQ)</th>
                     <th className="text-center">Estado</th>
                     <th className="text-center">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {notasEmitidas.length === 0 ? (
-                    <tr><td colSpan={7} className="text-center py-5 text-neutral-500">No se han emitido notas de peso</td></tr>
+                  {filteredNotas.length === 0 ? (
+                    <tr><td colSpan={8} className="text-center py-5 text-neutral-500">No se han emitido notas de peso</td></tr>
                   ) : (
-                    notasEmitidas
-                      .filter((n) => {
-                        const term = searchTerm.toLowerCase();
-                        const noNota = n.numero_nota_peso?.toLowerCase() || "";
-                        const proveedor = n.detalle_recepcion?.proveedor?.nombre?.toLowerCase() || "";
-                        const entrada = n.detalle_recepcion?.recepcion?.numero_entrada?.toLowerCase() || "";
-                        const remision = n.detalle_recepcion?.remision?.toLowerCase() || "";
-                        return (
-                          noNota.includes(term) ||
-                          proveedor.includes(term) ||
-                          entrada.includes(term) ||
-                          remision.includes(term)
-                        );
-                      })
-                      .map((nota) => (
-                        <tr key={nota.id_nota_peso}>
-                          <td className="px-4 font-bold text-coffee-800">{nota.numero_nota_peso}</td>
-                          <td>
-                            <div className="font-semibold text-coffee-700">
-                              {nota.detalle_recepcion?.recepcion?.numero_entrada || "-"}
-                            </div>
-                            <div className="text-xs text-neutral-500">
-                              Rem: {nota.detalle_recepcion?.remision || "-"}
-                            </div>
-                          </td>
-                          <td>{new Date(nota.fecha_nota_peso).toLocaleDateString()}</td>
-                          <td>{nota.detalle_recepcion?.proveedor?.nombre || "-"}</td>
-                          <td className="text-end font-bold">{Number(nota.detalles[0]?.peso_neto || 0).toFixed(2)} QQ</td>
-                          <td className="text-center"><Badge bg="success">EMITIDA</Badge></td>
-                          <td className="text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Button variant="outline-secondary" size="sm" onClick={() => handleVerDetalle(nota.id_nota_peso)}>
-                                <FileText className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline-primary" size="sm">
-                                <Printer className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                    paginatedNotas.map((nota) => (
+                      <tr key={nota.id_nota_peso}>
+                        <td className="px-4 font-bold text-coffee-800">{nota.numero_nota_peso}</td>
+                        <td>
+                          <div className="font-semibold text-coffee-700">
+                            {nota.detalle_recepcion?.recepcion?.numero_entrada || "-"}
+                          </div>
+                          <div className="text-xs text-neutral-500">
+                            Rem: {nota.detalle_recepcion?.remision || "-"}
+                          </div>
+                        </td>
+                        <td>{new Date(nota.fecha_nota_peso).toLocaleDateString()}</td>
+                        <td>{nota.detalle_recepcion?.proveedor?.nombre || "-"}</td>
+                        <td>
+                          <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                            {nota.detalle_recepcion?.tipo_cafe?.tipo_cafe || "—"}
+                          </Badge>
+                        </td>
+                        <td className="text-end font-bold">{Number(nota.detalles[0]?.peso_neto || 0).toFixed(2)} QQ</td>
+                        <td className="text-center"><Badge bg="success">EMITIDA</Badge></td>
+                        <td className="text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button variant="outline-secondary" size="sm" onClick={() => handleVerDetalle(nota.id_nota_peso)}>
+                              <FileText className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline-primary" size="sm">
+                              <Printer className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </Table>
+            )}
+
+            {!loading && filteredNotas.length > 0 && (
+              <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+                <span className="text-muted small">
+                  {totalPagesNotas > 1 ? `Página ${safePageNotas} de ${totalPagesNotas} — ` : ""}
+                  {filteredNotas.length} {filteredNotas.length === 1 ? "registro" : "registros"}
+                </span>
+
+                {totalPagesNotas > 1 && (
+                  <Pagination size="sm" className="mb-0">
+                    <Pagination.First onClick={() => setPageNotas(1)} disabled={safePageNotas === 1} />
+                    <Pagination.Prev onClick={() => setPageNotas((p) => Math.max(1, p - 1))} disabled={safePageNotas === 1} />
+                    {Array.from({ length: totalPagesNotas }, (_, i) => i + 1)
+                      .filter((p) => p === 1 || p === totalPagesNotas || Math.abs(p - safePageNotas) <= 2)
+                      .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, idx) =>
+                        p === "..." ? (
+                          <Pagination.Ellipsis key={`e-${idx}`} disabled />
+                        ) : (
+                          <Pagination.Item
+                            key={p}
+                            active={p === safePageNotas}
+                            onClick={() => setPageNotas(p as number)}
+                          >
+                            {p}
+                          </Pagination.Item>
+                        )
+                      )}
+                    <Pagination.Next
+                      onClick={() => setPageNotas((p) => Math.min(totalPagesNotas, p + 1))}
+                      disabled={safePageNotas === totalPagesNotas}
+                    />
+                    <Pagination.Last
+                      onClick={() => setPageNotas(totalPagesNotas)}
+                      disabled={safePageNotas === totalPagesNotas}
+                    />
+                  </Pagination>
+                )}
+              </div>
             )}
           </Card>
         </Tab>
@@ -293,7 +450,7 @@ export default function NotaPesoPage() {
               {/* DATOS DE LA ENTREGA */}
               <div className="bg-light p-3 rounded mb-3 border">
                 <div className="row g-2 text-sm">
-                  <div className="col-sm-6">
+                  <div className="col-sm-4">
                     <span className="text-muted small d-block">Proveedor</span>
                     <strong className="text-dark">{liquidarModal.detalle.proveedor?.nombre}</strong>
                   </div>
@@ -302,9 +459,17 @@ export default function NotaPesoPage() {
                     <strong>{liquidarModal.detalle.recepcion?.numero_entrada}</strong>
                     <span className="text-muted small ms-1">({liquidarModal.detalle.remision})</span>
                   </div>
-                  <div className="col-sm-3">
+                  <div className="col-sm-2">
                     <span className="text-muted small d-block">Cosecha</span>
-                    <Badge bg="light" className="text-dark border">{liquidarModal.detalle.recepcion?.cosecha?.cosecha}</Badge>
+                    <Badge bg="light" text="dark" className="text-dark border fw-semibold" style={{ color: "#212529" }}>
+                      {liquidarModal.detalle.recepcion?.cosecha?.cosecha || "—"}
+                    </Badge>
+                  </div>
+                  <div className="col-sm-3">
+                    <span className="text-muted small d-block">Tipo de Café</span>
+                    <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                      {liquidarModal.detalle.tipo_cafe?.tipo_cafe || "—"}
+                    </Badge>
                   </div>
                   <div className="col-sm-3">
                     <span className="text-muted small d-block">Sacos</span>
@@ -523,18 +688,22 @@ export default function NotaPesoPage() {
                 </div>
 
                 {/* INFO GENERAL */}
-                <div className="grid grid-cols-3 gap-4 border-y border-neutral-300 py-3 mb-6 text-sm">
+                <div className="grid grid-cols-4 gap-4 border-y border-neutral-300 py-3 mb-6 text-sm">
                   <div>
                     <span className="text-neutral-500 uppercase text-[10px] font-bold block">Cosecha</span>
-                    <span className="font-medium">{selectedNota.detalle_recepcion.recepcion.cosecha.cosecha}</span>
+                    <span className="font-medium">{selectedNota.detalle_recepcion?.recepcion?.cosecha?.cosecha || "—"}</span>
                   </div>
                   <div>
                     <span className="text-neutral-500 uppercase text-[10px] font-bold block">Fecha</span>
                     <span className="font-medium">{new Date(selectedNota.fecha_nota_peso).toLocaleDateString('es-HN')}</span>
                   </div>
+                  <div>
+                    <span className="text-neutral-500 uppercase text-[10px] font-bold block">Tipo de Café</span>
+                    <span className="font-medium">{selectedNota.detalle_recepcion?.tipo_cafe?.tipo_cafe || "—"}</span>
+                  </div>
                   <div className="text-right">
                     <span className="text-neutral-500 uppercase text-[10px] font-bold block">Ingreso #</span>
-                    <span className="font-medium">{selectedNota.detalle_recepcion.recepcion.numero_entrada}</span>
+                    <span className="font-medium">{selectedNota.detalle_recepcion?.recepcion?.numero_entrada || "—"}</span>
                   </div>
                 </div>
 
@@ -548,7 +717,9 @@ export default function NotaPesoPage() {
 
                 {/* TABLA DE PRODUCTO */}
                 <div className="mb-4">
-                  <div className="bg-neutral-800 text-white px-3 py-1 text-xs font-bold mb-1">PRODUCTO: PERGAMINO SECO LAVADO</div>
+                  <div className="bg-neutral-800 text-white px-3 py-1 text-xs font-bold mb-1">
+                    PRODUCTO: {selectedNota.detalle_recepcion?.tipo_cafe?.tipo_cafe?.toUpperCase() || "PERGAMINO SECO LAVADO"}
+                  </div>
                   <Table bordered size="sm" className="text-center text-[11px] mb-0 table-nota">
                     <thead className="bg-neutral-100">
                       <tr>

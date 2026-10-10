@@ -1,5 +1,5 @@
 import { useState, useEffect, KeyboardEvent } from "react";
-import { Search, Printer, GitCompare } from "lucide-react";
+import { Search, Printer, GitCompare, CalendarRange } from "lucide-react";
 import { Badge, Button, Card, Form, InputGroup } from "react-bootstrap";
 import toast from "react-hot-toast";
 import { useAuth } from "../../../../auth/useAuth";
@@ -15,7 +15,8 @@ import LabTable from "../Components/LabTable";
 import CatacionModal from "../Components/CatacionModal";
 import BoletaModal from "../Components/BoletaModal";
 import ModalReimpresionAnalisis from "../Components/ModalReimpresionAnalisis";
-import ModalComparativoAnalisis from "../Components/ModalComparativoAnalisis";
+import ModalComparativoAnalisis, { GrupoComparativo } from "../Components/ModalComparativoAnalisis";
+import ModalComparativoFechas from "../Components/ModalComparativoFechas";
 
 export interface MuestraPendiente extends DetalleRecepcion {
   numero_entrada: string;
@@ -115,6 +116,8 @@ export default function LaboratorioPage() {
 
   const [showReimpresion, setShowReimpresion] = useState(false);
   const [showComparativo, setShowComparativo] = useState(false);
+  const [showComparativoFechas, setShowComparativoFechas] = useState(false);
+  const [comparativoInitialGrupo, setComparativoInitialGrupo] = useState<GrupoComparativo | null>(null);
   const canReimprimir = hasPermission("REIMPRESION_ANALISIS_INGRESO");
 
   const handleOpenModal = (muestra: MuestraPendiente) => setSelectedMuestra(muestra);
@@ -196,9 +199,21 @@ export default function LaboratorioPage() {
                   variant="outline-primary"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  onClick={() => setShowComparativo(true)}
+                  onClick={() => {
+                    setComparativoInitialGrupo(null);
+                    setShowComparativo(true);
+                  }}
                 >
                   <GitCompare size={14} /> Comparativo
+                </Button>
+
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="d-flex align-items-center gap-1"
+                  onClick={() => setShowComparativoFechas(true)}
+                >
+                  <CalendarRange size={14} /> Comparativo por Fechas
                 </Button>
               </>
             )}
@@ -271,7 +286,20 @@ export default function LaboratorioPage() {
 
       <ModalComparativoAnalisis
         show={showComparativo}
-        onClose={() => setShowComparativo(false)}
+        onClose={() => {
+          setShowComparativo(false);
+          setComparativoInitialGrupo(null);
+        }}
+        initialGrupo={comparativoInitialGrupo}
+      />
+
+      <ModalComparativoFechas
+        show={showComparativoFechas}
+        onClose={() => setShowComparativoFechas(false)}
+        onVerReporteIndividual={(grupo) => {
+          setComparativoInitialGrupo(grupo);
+          setShowComparativo(true);
+        }}
       />
     </div>
   );

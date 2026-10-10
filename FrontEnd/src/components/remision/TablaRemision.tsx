@@ -236,7 +236,20 @@ export default function TablaRemision({
                       </td>
                     )}
 
-                    <td className="font-bold text-coffee-700">{r.numero_entrada}</td>
+                    <td>
+                      <div className="d-flex align-items-center gap-2">
+                        <span className="fw-bold text-coffee-700">{r.numero_entrada}</span>
+                        {r.numero_entrada?.startsWith("INT") ? (
+                          <span className="badge bg-info-transparent text-info border border-info-subtle px-1 py-0 fs-10 fw-semibold">
+                            Interno
+                          </span>
+                        ) : r.numero_entrada?.startsWith("EXT") ? (
+                          <span className="badge bg-primary-transparent text-primary border border-primary-subtle px-1 py-0 fs-10 fw-semibold">
+                            Externo
+                          </span>
+                        ) : null}
+                      </div>
+                    </td>
                     <td>{new Date(r.fecha_entrada).toLocaleString(undefined, { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</td>
                     <td>{transporte}</td>
                     <td>

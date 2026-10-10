@@ -1,17 +1,20 @@
-import { useState, useRef, KeyboardEvent } from "react";
-import { Search, Loader2, Printer, GitCompare, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
+import { Search, Loader2, Printer, GitCompare, ArrowLeft, CheckCircle2, AlertCircle, FileSpreadsheet } from "lucide-react";
 import { Modal, Button, Form, InputGroup, Table, Badge } from "react-bootstrap";
+import * as XLSX from "xlsx";
 import { buscarAnalisisApi } from "../../../../api/analisis.api";
 
 interface Props {
   show: boolean;
   onClose: () => void;
+  initialGrupo?: GrupoComparativo | null;
 }
 
-interface GrupoComparativo {
+export interface GrupoComparativo {
   id_detalle: number;
   numero_entrada: string;
   remision: string;
+  tipo_cafe?: string;
   proveedor_nombre: string;
   cantidad_qq: number;
   placa_cabezal?: string;
@@ -20,7 +23,7 @@ interface GrupoComparativo {
   otros: any[];
 }
 
-export default function ModalComparativoAnalisis({ show, onClose }: Props) {
+export default function ModalComparativoAnalisis({ show, onClose, initialGrupo = null }: Readonly<Props>) {
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
   const [buscado, setBuscado] = useState(false);
@@ -28,6 +31,14 @@ export default function ModalComparativoAnalisis({ show, onClose }: Props) {
   const [grupoSeleccionado, setGrupoSeleccionado] = useState<GrupoComparativo | null>(null);
   const [esCopia, setEsCopia] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialGrupo) {
+      setGrupoSeleccionado(initialGrupo);
+      setGrupos([initialGrupo]);
+      setBuscado(true);
+    }
+  }, [initialGrupo]);
 
   const agruparAnalisis = (analisisList: any[]): GrupoComparativo[] => {
     const mapa = new Map<number, GrupoComparativo>();
@@ -41,6 +52,7 @@ export default function ModalComparativoAnalisis({ show, onClose }: Props) {
           id_detalle: idDet,
           numero_entrada: det?.recepcion?.numero_entrada ?? "—",
           remision: det?.remision ?? "—",
+          tipo_cafe: det?.tipo_cafe?.tipo_cafe ?? "—",
           proveedor_nombre: det?.proveedor?.nombre ?? "—",
           cantidad_qq: Number(det?.cantidad_qq || 0),
           placa_cabezal: det?.recepcion?.placa_cabezal?.placa ?? det?.placa_cabezal?.placa ?? "",
@@ -120,6 +132,88 @@ export default function ModalComparativoAnalisis({ show, onClose }: Props) {
     const diff = Number((numG - numP).toFixed(2));
     const sign = diff > 0 ? `+${diff}` : `${diff}`;
     return { diff, sign };
+  };
+
+  const exportarExcelIndividual = () => {
+    if (!grupoSeleccionado) return;
+
+    const deltaHum = calcDelta(grupoSeleccionado.previa?.humedad, grupoSeleccionado.general?.humedad);
+    const deltaDano = calcDelta(grupoSeleccionado.previa?.dano, grupoSeleccionado.general?.dano);
+    const deltaRend1 = calcDelta(grupoSeleccionado.previa?.primer_rendimiento, grupoSeleccionado.general?.primer_rendimiento);
+    const deltaRend2 = calcDelta(grupoSeleccionado.previa?.segundo_rendimiento, grupoSeleccionado.general?.segundo_rendimiento);
+
+    const filasParametros = [
+      {
+        "Parámetro": "Calidad Asignada",
+        "Muestra Previa": grupoSeleccionado.previa?.calidad?.nombre || "—",
+        "Muestra General": grupoSeleccionado.general?.calidad?.nombre || "—",
+        "Variación (Δ)":
+          grupoSeleccionado.previa?.calidad?.nombre === grupoSeleccionado.general?.calidad?.nombre
+            ? "Sin cambio"
+            : "Modificada",
+      },
+      {
+        "Parámetro": "Humedad (%)",
+        "Muestra Previa": grupoSeleccionado.previa?.humedad != null ? `${grupoSeleccionado.previa.humedad}%` : "—",
+        "Muestra General": grupoSeleccionado.general?.humedad != null ? `${grupoSeleccionado.general.humedad}%` : "—",
+        "Variación (Δ)": deltaHum ? `${deltaHum.sign}%` : "—",
+      },
+      {
+        "Parámetro": "Daño Total (%)",
+        "Muestra Previa": grupoSeleccionado.previa?.dano != null ? `${grupoSeleccionado.previa.dano}%` : "—",
+        "Muestra General": grupoSeleccionado.general?.dano != null ? `${grupoSeleccionado.general.dano}%` : "—",
+        "Variación (Δ)": deltaDano ? `${deltaDano.sign}%` : "—",
+      },
+      {
+        "Parámetro": "Primer Rendimiento (g/lb)",
+        "Muestra Previa": grupoSeleccionado.previa?.primer_rendimiento ?? "—",
+        "Muestra General": grupoSeleccionado.general?.primer_rendimiento ?? "—",
+        "Variación (Δ)": deltaRend1 ? deltaRend1.sign : "—",
+      },
+      {
+        "Parámetro": "Segundo Rendimiento (g/lb)",
+        "Muestra Previa": grupoSeleccionado.previa?.segundo_rendimiento ?? "—",
+        "Muestra General": grupoSeleccionado.general?.segundo_rendimiento ?? "—",
+        "Variación (Δ)": deltaRend2 ? deltaRend2.sign : "—",
+      },
+      {
+        "Parámetro": "Catador Responsable",
+        "Muestra Previa": grupoSeleccionado.previa?.catador?.nombre || "—",
+        "Muestra General": grupoSeleccionado.general?.catador?.nombre || "—",
+        "Variación (Δ)": "—",
+      },
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const wsParametros = XLSX.utils.json_to_sheet(filasParametros);
+    XLSX.utils.book_append_sheet(wb, wsParametros, "Parámetros y Rendimiento");
+
+    // Defectos
+    const defectosPrevia = grupoSeleccionado.previa?.analisis_defectos || [];
+    const defectosGeneral = grupoSeleccionado.general?.analisis_defectos || [];
+    const nombresDefectos = Array.from(
+      new Set([
+        ...defectosPrevia.map((d: any) => d.defecto?.nombre).filter(Boolean),
+        ...defectosGeneral.map((d: any) => d.defecto?.nombre).filter(Boolean),
+      ])
+    );
+
+    if (nombresDefectos.length > 0) {
+      const filasDefectos = nombresDefectos.map((nombre) => {
+        const cantP = defectosPrevia.find((d: any) => d.defecto?.nombre === nombre)?.cantidad || 0;
+        const cantG = defectosGeneral.find((d: any) => d.defecto?.nombre === nombre)?.cantidad || 0;
+        return {
+          "Defecto Físico": nombre,
+          "Cantidad Previa": cantP,
+          "Cantidad General": cantG,
+          "Diferencia (Δ)": cantG - cantP,
+        };
+      });
+      const wsDefectos = XLSX.utils.json_to_sheet(filasDefectos);
+      XLSX.utils.book_append_sheet(wb, wsDefectos, "Defectos Físicos");
+    }
+
+    XLSX.writeFile(wb, `Comparativo_${grupoSeleccionado.numero_entrada}_Rem_${grupoSeleccionado.remision}.xlsx`);
   };
 
   return (
@@ -247,6 +341,14 @@ export default function ModalComparativoAnalisis({ show, onClose }: Props) {
                 />
                 <Button
                   size="sm"
+                  variant="success"
+                  onClick={exportarExcelIndividual}
+                  className="d-inline-flex align-items-center gap-1 text-white shadow-sm"
+                >
+                  <FileSpreadsheet size={14} /> Exportar Excel
+                </Button>
+                <Button
+                  size="sm"
                   variant="primary"
                   onClick={() => window.print()}
                   className="d-inline-flex align-items-center gap-1"
@@ -356,18 +458,21 @@ export default function ModalComparativoAnalisis({ show, onClose }: Props) {
                   <div>
                     <strong>N° Remisión:</strong> {grupoSeleccionado.remision}
                   </div>
-                  <div style={{ gridColumn: "span 2" }}>
-                    <strong>Proveedor / Finca:</strong> {grupoSeleccionado.proveedor_nombre}
+                  <div>
+                    <strong>Tipo de Café:</strong> {grupoSeleccionado.tipo_cafe || "—"}
                   </div>
                   <div>
                     <strong>Volumen:</strong> {grupoSeleccionado.cantidad_qq.toFixed(2)} QQ
+                  </div>
+                  <div style={{ gridColumn: grupoSeleccionado.placa_cabezal ? "span 2" : "span 3" }}>
+                    <strong>Proveedor / Finca:</strong> {grupoSeleccionado.proveedor_nombre}
                   </div>
                   {grupoSeleccionado.placa_cabezal && (
                     <div>
                       <strong>Placa Cabezal:</strong> {grupoSeleccionado.placa_cabezal}
                     </div>
                   )}
-                  <div style={{ gridColumn: "span 2", textAlign: "right", color: "#555" }}>
+                  <div style={{ gridColumn: "span 4", textAlign: "right", color: "#555" }}>
                     <strong>Fecha Emisión:</strong> {new Date().toLocaleString()}
                   </div>
                 </div>

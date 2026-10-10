@@ -81,7 +81,7 @@ export default function ModalImprimirBoleta({
         </div>
 
         <div id="print-area">
-          <div className="print-field coord-numero">N° Ingreso: {recepcion.numero_entrada}</div>
+          <div className="print-field coord-numero"># Recepción: {recepcion.numero_entrada}</div>
           <div className="print-field coord-fecha">Fecha: {new Date(recepcion.fecha_entrada).toLocaleString()}</div>
           {recepcion.cantidad_impresiones > 0 && (
             <div className="print-field coord-reimpresion">*** REIMPRESIÓN ***</div>

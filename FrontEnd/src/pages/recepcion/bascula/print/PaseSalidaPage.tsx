@@ -243,7 +243,7 @@ export default function PaseSalidaPage() {
         {/* Datos del vehículo — 2 columnas */}
         <div className="ps-body">
           <div className="ps-row">
-            <span className="ps-lbl">DESPACHO Nº:</span>
+            <span className="ps-lbl"># RECEPCIÓN:</span>
             <span className="ps-val">{recepcion?.numero_entrada ?? "—"}</span>
           </div>
           <div className="ps-row">

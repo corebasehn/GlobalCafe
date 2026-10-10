@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateAnalisisDto, VeredictoGerenciaDto } from './dto/create-analisis.dto';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
@@ -237,6 +237,63 @@ export class AnalisisService {
           } 
         },
         catador: true, calidad: true, estado_transaccion: true,
+        analisis_defectos: { include: { defecto: true } },
+        analisis_zarandas: { include: { zaranda: true } },
+        analisis_tazas: { include: { taza: true } }
+      },
+      orderBy: { fecha_analisis: 'desc' }
+    });
+  }
+
+  // 5. COMPARATIVO POR RANGO DE FECHAS
+  async buscarComparativoFechas(fechaInicio: string, fechaFin: string) {
+    if (!fechaInicio || !fechaFin) return [];
+
+    const startStr = fechaInicio.includes('T') ? fechaInicio : `${fechaInicio}T00:00:00`;
+    const endStr = fechaFin.includes('T') ? fechaFin : `${fechaFin}T23:59:59.999`;
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Formato de fechas inválido');
+    }
+
+    // Identificar los id_detalle_recepcion con análisis o recepción dentro del rango
+    const analisisEnRango = await this.prisma.analisisCalidad.findMany({
+      where: {
+        OR: [
+          { fecha_analisis: { gte: start, lte: end } },
+          { detalle_recepcion: { recepcion: { fecha_entrada: { gte: start, lte: end } } } }
+        ]
+      },
+      select: { id_detalle_recepcion: true }
+    });
+
+    const idsDetalle = Array.from(new Set(analisisEnRango.map((a) => a.id_detalle_recepcion)));
+
+    if (idsDetalle.length === 0) return [];
+
+    // Obtener todos los análisis asociados para completar la comparación (Previa y General)
+    return this.prisma.analisisCalidad.findMany({
+      where: {
+        id_detalle_recepcion: { in: idsDetalle }
+      },
+      include: {
+        detalle_recepcion: {
+          include: {
+            proveedor: true,
+            recepcion: {
+              include: {
+                placa_cabezal: true
+              }
+            },
+            estado_transaccion: true,
+            tipo_cafe: true,
+          }
+        },
+        catador: true,
+        calidad: true,
+        estado_transaccion: true,
         analisis_defectos: { include: { defecto: true } },
         analisis_zarandas: { include: { zaranda: true } },
         analisis_tazas: { include: { taza: true } }

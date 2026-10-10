@@ -44,6 +44,10 @@ export class CreateReceptionDto {
   @IsInt() 
   id_sucursal?: number;
 
+  @IsOptional()
+  @IsInt()
+  id_tipo_remision?: number;
+
   @IsInt() 
   @IsNotEmpty()
   id_cosecha: number;
