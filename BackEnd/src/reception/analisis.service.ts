@@ -1,13 +1,13 @@
 import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateAnalisisDto, VeredictoGerenciaDto } from './dto/create-analisis.dto';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AnalisisService {
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsGateway
+    private notificationsService: NotificationsService
   ) {}
 
   // 1. GUARDAR ANÁLISIS (Desde pantalla de Laboratorio)
@@ -102,14 +102,17 @@ export class AnalisisService {
     }
 
     try {
-      this.notifications.emitNotification('new_notification', {
-        title: 'Análisis de Laboratorio Completado',
-        message: `Se registraron resultados para ${correlativo}. Esperando veredicto de Gerencia.`,
-        type: 'warning',
-        module: 'RECEPCION'
+      await this.notificationsService.create({
+        rol_destino: 'gerencia',
+        titulo: 'Análisis de Laboratorio Completado',
+        mensaje: `Resultados registrados para ${correlativo}. Esperando veredicto de Gerencia.`,
+        tipo: 'warning',
+        icono: 'ri-flask-line',
+        referencia_id: String(resultado.id_analisis_calidad),
+        ruta: '/recepcion/aprobacion-gerencia',
       });
     } catch (notifErr: any) {
-      console.warn('[createAnalisis] Notificación WebSocket falló (no crítico):', notifErr?.message);
+      console.warn('[createAnalisis] Notificación falló (no crítico):', notifErr?.message);
     }
 
     return resultado;
@@ -179,12 +182,39 @@ export class AnalisisService {
       return { success: true, estado: estadoDetalleNombre };
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Veredicto de Gerencia Tomado',
-      message: `El análisis ${analisis.numero_analisis} fue dictaminado como: ${estadoAnalisisNombre}.`,
-      type: dto.veredicto === 'APROBAR' ? 'success' : 'error',
-      module: 'RECEPCION'
-    });
+    try {
+      let rolDestino = 'bascula';
+      let rutaDestino = '/recepcion/bascula';
+      let mensaje = `El análisis ${analisis.numero_analisis} fue APROBADO por Gerencia. Listo para pesaje en báscula.`;
+      let tipoNotif = 'success';
+      let iconoNotif = 'ri-checkbox-circle-line';
+
+      if (dto.veredicto === 'SEGUNDA_MUESTRA') {
+        rolDestino = 'muestreo';
+        rutaDestino = '/recepcion/muestreo';
+        mensaje = `Gerencia solicitó SEGUNDA MUESTRA para el análisis ${analisis.numero_analisis}.`;
+        tipoNotif = 'warning';
+        iconoNotif = 'ri-repeat-line';
+      } else if (dto.veredicto === 'DEVOLUCION') {
+        rolDestino = 'bascula';
+        rutaDestino = '/recepcion/bascula';
+        mensaje = `Gerencia RECHAZÓ el lote del análisis ${analisis.numero_analisis}. Generar pase de salida.`;
+        tipoNotif = 'danger';
+        iconoNotif = 'ri-close-circle-line';
+      }
+
+      await this.notificationsService.create({
+        rol_destino: rolDestino,
+        titulo: `Veredicto de Gerencia: ${dto.veredicto}`,
+        mensaje,
+        tipo: tipoNotif,
+        icono: iconoNotif,
+        referencia_id: String(idAnalisis),
+        ruta: rutaDestino,
+      });
+    } catch (notifErr: any) {
+      console.warn('[veredictoGerencia] Notificación falló (no crítico):', notifErr?.message);
+    }
 
     return resultado;
   }

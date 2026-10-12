@@ -1,7 +1,10 @@
-import { Printer } from "lucide-react";
+import { useState } from "react";
+import { Printer, Loader2 } from "lucide-react";
 import { Button, Modal } from "react-bootstrap";
+import toast from "react-hot-toast";
 import { Recepcion } from "../../api/reception.api";
 import { Conductor, PlacaCabezal, PlacaFurgon, Proveedor, Transporte, Municipio } from "../../api/catalogs.api";
+import { imprimirMatricialRecepcion } from "../../api/printer.api";
 
 type Props = {
   show: boolean;
@@ -21,7 +24,28 @@ export default function ModalImprimirBoleta({
   conductores, transportes, placasCabezal, placasFurgon, proveedores, municipios,
   onHide, onConfirmPrint,
 }: Readonly<Props>) {
+  const [imprimiendo, setImprimiendo] = useState(false);
+
   if (!recepcion) return null;
+
+  const handlePrintMatricial = async () => {
+    setImprimiendo(true);
+    try {
+      const res = await imprimirMatricialRecepcion(recepcion.id_recepcion, false);
+      if (res.success) {
+        toast.success(`🖨️ ${res.message}`);
+        onHide();
+      } else {
+        toast.error(res.message);
+        if (res.fallbackNeeded) {
+          toast("Abriendo vista de impresión tradicional...", { icon: "📄" });
+          onConfirmPrint();
+        }
+      }
+    } finally {
+      setImprimiendo(false);
+    }
+  };
 
   const cond = conductores.find(c => c.id_conductor === recepcion.id_conductor);
   const transp = transportes.find(t => t.id_transporte === cond?.id_transporte);
@@ -114,11 +138,30 @@ export default function ModalImprimirBoleta({
           </table>
         </div>
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className="d-flex justify-content-between align-items-center">
         <Button variant="secondary" onClick={onHide}>Cancelar</Button>
-        <Button variant="primary" onClick={onConfirmPrint} className="d-flex align-items-center gap-2">
-          <Printer className="w-4 h-4" /> Imprimir Formato
-        </Button>
+        <div className="d-flex align-items-center gap-2">
+          <Button
+            variant="outline-secondary"
+            onClick={onConfirmPrint}
+            className="d-flex align-items-center gap-2"
+            title="Imprimir usando vista del navegador"
+          >
+            <Printer className="w-4 h-4" /> Vista Web
+          </Button>
+          <Button
+            variant="success"
+            onClick={handlePrintMatricial}
+            disabled={imprimiendo}
+            className="d-flex align-items-center gap-2"
+          >
+            {imprimiendo ? (
+              <><Loader2 className="w-4 h-4 spinner-border spinner-border-sm" /> Imprimiendo...</>
+            ) : (
+              <><Printer className="w-4 h-4" /> Imprimir en FX-890II (Matricial)</>
+            )}
+          </Button>
+        </div>
       </Modal.Footer>
     </Modal>
   );

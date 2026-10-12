@@ -20,7 +20,7 @@ export class AuthService {
       throw new UnauthorizedException('Usuario inactivo');
     }
     
-    const roles = user.roles.map((r) => r.rol.nombre);
+    const roles = user.roles.flatMap((r) => [r.rol.nombre, r.rol.codigo]);
     
     // 1. Extraemos y aplanamos todos los códigos de permisos de los roles del usuario
     const permisos = user.roles.flatMap(ur => 

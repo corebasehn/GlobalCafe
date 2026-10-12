@@ -5,9 +5,9 @@ import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 import { useAuth } from "../../../../auth/useAuth";
 
-// APIs
 import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi, actualizarObservacionesDetalleApi } from "../../../../api/reception.api";
 import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal, getConductoresApi, Conductor } from "../../../../api/catalogs.api";
+import { imprimirMatricialPesada, imprimirMatricialPaseSalida } from "../../../../api/printer.api";
 
 // Estado IDs (según catálogo de base de datos)
 const ESTADO_PESADA_ABIERTA = 7;  // "Pesada Abierta"
@@ -148,7 +148,13 @@ export default function BasculaEntradaPage() {
         toast.success("Destarse de cabezal registrado. La carga queda 'Sin Cabezal'.");
         // Imprimir Pase de Salida para el cabezal que sale
         const base = import.meta.env.BASE_URL;
-        window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
+        imprimirMatricialPaseSalida(selectedCarga.id_detalle_recepcion).then((res) => {
+          if (res.success) {
+            toast.success(`🖨️ ${res.message}`);
+          } else if (res.fallbackNeeded) {
+            window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
+          }
+        });
       } else if (modalMode === "ENTRADA_CABEZAL") {
         resultado = await registrarEntradaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
         // Actualizar cabezal y conductor en la recepción
@@ -172,10 +178,22 @@ export default function BasculaEntradaPage() {
 
         if (resultado.id_estado_transaccion === ESTADO_PESADA_ABIERTA) {
           // Primera Pesada
-          window.open(`${base}print/boleta-pesada/${idDet}/primera`, "_blank");
+          imprimirMatricialPesada(idDet, "primera", false).then((res) => {
+            if (res.success) {
+              toast.success(`🖨️ ${res.message}`);
+            } else if (res.fallbackNeeded) {
+              window.open(`${base}print/boleta-pesada/${idDet}/primera`, "_blank");
+            }
+          });
         } else if (resultado.id_estado_transaccion === ESTADO_PESADA_CERRADA) {
           // Segunda Pesada (se emite siempre al registrar tara)
-          window.open(`${base}print/boleta-pesada/${idDet}/segunda`, "_blank");
+          imprimirMatricialPesada(idDet, "segunda", false).then((res) => {
+            if (res.success) {
+              toast.success(`🖨️ ${res.message}`);
+            } else if (res.fallbackNeeded) {
+              window.open(`${base}print/boleta-pesada/${idDet}/segunda`, "_blank");
+            }
+          });
 
           // Si todos los detalles del viaje cerraron pesada → Levantar modal para Observaciones de Pase de Salida
           if (resultado.allClosed) {
@@ -204,7 +222,13 @@ export default function BasculaEntradaPage() {
         await actualizarObservacionesDetalleApi(idDet, observaciones.trim());
       }
       const base = import.meta.env.BASE_URL;
-      window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+      imprimirMatricialPaseSalida(idDet).then((res) => {
+        if (res.success) {
+          toast.success(`🖨️ ${res.message}`);
+        } else if (res.fallbackNeeded) {
+          window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+        }
+      });
       setPaseSalidaModal({ show: false, recepcion: null, detalle: null });
       loadData();
     } catch (err: any) {

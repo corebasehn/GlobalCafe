@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getBoletaPesadaApi } from "../../../../api/reception.api";
+import { enviarImpresionMatricial } from "../../../../api/printer.api";
 
 const PAGE_W = "24.13cm";
 const PAGE_H = "13.97cm";
@@ -29,6 +30,7 @@ export default function PaseSalidaPage() {
   const [error, setError] = useState<string | null>(null);
   const [fontFamily, setFontFamily] = useState<string>("Courier New");
   const [fontSize, setFontSize] = useState<string>("9pt");
+  const [imprimiendoMatricial, setImprimiendoMatricial] = useState(false);
 
   // Función para calcular tamaños de fuente relativos
   const getFontSize = (multiplier: number) => {
@@ -58,6 +60,21 @@ export default function PaseSalidaPage() {
       .catch(() => setError("Error al obtener los datos del pase de salida."))
       .finally(() => setLoading(false));
   }, [idDetalle]);
+
+  const handlePrintMatricial = async () => {
+    if (!data) return;
+    setImprimiendoMatricial(true);
+    try {
+      const res = await enviarImpresionMatricial("pase_salida", data);
+      if (res.success) {
+        alert("🖨️ " + res.message);
+      } else {
+        alert("Error de impresión matricial: " + res.message);
+      }
+    } finally {
+      setImprimiendoMatricial(false);
+    }
+  };
 
   useEffect(() => {
     if (!data || loading) return;
@@ -222,7 +239,14 @@ export default function PaseSalidaPage() {
 
       {/* Botones en pantalla */}
       <div className="no-print">
-        <button onClick={() => window.print()}>🖨️ Imprimir</button>
+        <button
+          style={{ backgroundColor: "#198754", color: "white", fontWeight: "bold" }}
+          onClick={handlePrintMatricial}
+          disabled={imprimiendoMatricial}
+        >
+          {imprimiendoMatricial ? "Enviando..." : "🖨️ Imprimir en FX-890II (Matricial)"}
+        </button>
+        <button onClick={() => window.print()}>Imprimir (Navegador)</button>
         <button onClick={() => window.close()}>✕ Cerrar</button>
       </div>
 

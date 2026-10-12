@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../auth/useAuth";
 import { getBoletaRecepcionApi } from "../../../../api/reception.api";
+import { enviarImpresionMatricial } from "../../../../api/printer.api";
 
 const PAGE_W = "24.13cm";
 const PAGE_H = "13.97cm";
@@ -45,6 +46,23 @@ export default function BoletaRecepcionPage() {
       .catch(() => setError("Error al obtener los datos de la boleta de recepción."))
       .finally(() => setLoading(false));
   }, [idRecepcion]);
+
+  const [imprimiendoMatricial, setImprimiendoMatricial] = useState(false);
+
+  const handlePrintMatricial = async () => {
+    if (!data) return;
+    setImprimiendoMatricial(true);
+    try {
+      const res = await enviarImpresionMatricial("boleta_recepcion", data, esCopia);
+      if (res.success) {
+        alert("🖨️ " + res.message);
+      } else {
+        alert("Error de impresión matricial: " + res.message);
+      }
+    } finally {
+      setImprimiendoMatricial(false);
+    }
+  };
 
   useEffect(() => {
     if (!data || loading) return;
@@ -196,7 +214,14 @@ export default function BoletaRecepcionPage() {
       `}</style>
 
       <div className="no-print">
-        <button onClick={() => window.print()}>Imprimir</button>
+        <button
+          style={{ backgroundColor: "#198754", color: "white", fontWeight: "bold" }}
+          onClick={handlePrintMatricial}
+          disabled={imprimiendoMatricial}
+        >
+          {imprimiendoMatricial ? "Enviando..." : "🖨️ Imprimir en FX-890II (Matricial)"}
+        </button>
+        <button onClick={() => window.print()}>Imprimir (Navegador)</button>
         <button onClick={() => window.close()}>Cerrar</button>
       </div>
 

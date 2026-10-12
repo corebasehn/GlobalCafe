@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { getBoletaDevolucionApi } from "../../../../api/reception.api";
+import { enviarImpresionMatricial } from "../../../../api/printer.api";
 import { Row, Col } from "react-bootstrap";
 
 export default function BoletaDevolucionPage() {
@@ -11,6 +12,7 @@ export default function BoletaDevolucionPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imprimiendoMatricial, setImprimiendoMatricial] = useState(false);
 
   useEffect(() => {
     if (!idDetalle) return;
@@ -19,6 +21,21 @@ export default function BoletaDevolucionPage() {
       .catch(() => setError("Error al obtener los datos del reporte de devolución."))
       .finally(() => setLoading(false));
   }, [idDetalle]);
+
+  const handlePrintMatricial = async () => {
+    if (!data) return;
+    setImprimiendoMatricial(true);
+    try {
+      const res = await enviarImpresionMatricial("boleta_devolucion", data, esCopia);
+      if (res.success) {
+        alert("🖨️ " + res.message);
+      } else {
+        alert("Error de impresión matricial: " + res.message);
+      }
+    } finally {
+      setImprimiendoMatricial(false);
+    }
+  };
 
   useEffect(() => {
     if (!data || loading) return;
@@ -211,7 +228,14 @@ export default function BoletaDevolucionPage() {
       `}</style>
 
       <div className="no-print">
-        <button onClick={() => window.print()}>Imprimir Reporte</button>
+        <button
+          style={{ backgroundColor: "#198754", color: "white", fontWeight: "bold" }}
+          onClick={handlePrintMatricial}
+          disabled={imprimiendoMatricial}
+        >
+          {imprimiendoMatricial ? "Enviando..." : "🖨️ Imprimir en FX-890II (Matricial)"}
+        </button>
+        <button onClick={() => window.print()}>Imprimir Reporte (Navegador)</button>
         <button onClick={() => window.close()}>Cerrar</button>
       </div>
 

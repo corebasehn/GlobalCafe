@@ -3,13 +3,13 @@ import { PrismaService } from '../prisma.service';
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
 import { CreateOtroMovimientoDto } from './dto/create-otro-movimiento.dto';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ReceptionService {
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsGateway
+    private notificationsService: NotificationsService
   ) {}
 
   // 1. CREAR (Incluye Usuario ID del Guardián)
@@ -88,12 +88,19 @@ export class ReceptionService {
     });
 
     const tipoLabel = prefix === 'INT' ? 'Interno' : 'Externo';
-    this.notifications.emitNotification('new_notification', {
-      title: `Nuevo Vehículo en Portería (${tipoLabel})`,
-      message: `Se registró el ingreso ${correlativo} del transporte ${dto.tipo_vehiculo}.`,
-      type: 'info',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'muestreo',
+        titulo: `Nuevo Ingreso (${tipoLabel}) - ${correlativo}`,
+        mensaje: `Vehículo ${dto.tipo_vehiculo} registrado. Listo para muestreo en patio.`,
+        tipo: 'info',
+        icono: 'ri-truck-line',
+        referencia_id: String(nuevaRecepcion.id_recepcion),
+        ruta: '/recepcion/muestreo',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de nuevo ingreso:', err?.message);
+    }
 
     return nuevaRecepcion;
   }
@@ -289,12 +296,19 @@ export class ReceptionService {
     });
 
     if (nombreEstado === 'Muestreado') {
-      this.notifications.emitNotification('new_notification', {
-        title: 'Muestra Física Tomada',
-        message: `El viaje ${detalleActualizado.recepcion.numero_entrada} ya fue muestreado en patio y pasó a Laboratorio.`,
-        type: 'info',
-        module: 'RECEPCION'
-      });
+      try {
+        await this.notificationsService.create({
+          rol_destino: 'laboratorio',
+          titulo: 'Muestra Física Tomada',
+          mensaje: `El viaje ${detalleActualizado.recepcion.numero_entrada} ya fue muestreado en patio. Listo para Laboratorio.`,
+          tipo: 'info',
+          icono: 'ri-flask-line',
+          referencia_id: String(detalleActualizado.id_detalle_recepcion),
+          ruta: '/recepcion/laboratorio',
+        });
+      } catch (err: any) {
+        console.warn('Error al registrar notificación:', err?.message);
+      }
     }
 
     return detalleActualizado;
@@ -485,12 +499,19 @@ export class ReceptionService {
       include: { recepcion: true }
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Peso Bruto Registrado',
-      message: `El vehículo del ingreso ${detalle.recepcion.numero_entrada} registró pesada de entrada (${peso.toLocaleString()} LB).`,
-      type: 'success',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'patio',
+        titulo: 'Báscula: 1ra Pesada Lista',
+        mensaje: `Ingreso ${detalle.recepcion.numero_entrada} registró peso de entrada (${peso.toLocaleString()} LB). Listo para Nota de Patio.`,
+        tipo: 'info',
+        icono: 'ri-scales-3-line',
+        referencia_id: String(detalle.id_detalle_recepcion),
+        ruta: '/recepcion/patio',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de báscula:', err?.message);
+    }
 
     return detalle;
   }
@@ -533,12 +554,19 @@ export class ReceptionService {
       });
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Destarse Realizado',
-      message: `El vehículo del ingreso ${detalleInfo?.recepcion.numero_entrada} quedó 'Sin Cabezal' en patio.`,
-      type: 'warning',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'patio',
+        titulo: 'Báscula: Destarse Realizado',
+        mensaje: `El vehículo del ingreso ${detalleInfo?.recepcion.numero_entrada} quedó 'Sin Cabezal' en patio.`,
+        tipo: 'warning',
+        icono: 'ri-alert-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/patio',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de destarse:', err?.message);
+    }
 
     return resultado;
   }
@@ -585,12 +613,19 @@ export class ReceptionService {
       });
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Reenganche Realizado',
-      message: `El vehículo del ingreso ${resultado.recepcion.numero_entrada} ha reenganchado un cabezal y espera Tara.`,
-      type: 'info',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: 'Báscula: Reenganche Realizado',
+        mensaje: `El vehículo del ingreso ${resultado.recepcion.numero_entrada} reenganchó cabezal. Listo para Tara de salida.`,
+        tipo: 'info',
+        icono: 'ri-truck-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/bascula',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de reenganche:', err?.message);
+    }
 
     return resultado;
   }
@@ -645,12 +680,19 @@ export class ReceptionService {
       include: { recepcion: true }
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Pesaje Completado',
-      message: `El vehículo del ingreso ${detalleActualizado.recepcion.numero_entrada} ha cerrado su pesada. Peso Neto: ${pesoNeto.toLocaleString()} LB.`,
-      type: 'success',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'recepcion',
+        titulo: 'Báscula: Pesaje Completado',
+        mensaje: `Ingreso ${detalleActualizado.recepcion.numero_entrada} cerró pesada. Peso Neto: ${pesoNeto.toLocaleString()} LB.`,
+        tipo: 'success',
+        icono: 'ri-checkbox-circle-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/nota-peso',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de pesaje completado:', err?.message);
+    }
 
     // Verificar si TODOS los detalles del viaje están ya en 'Pesada Cerrada'
     const todosDetallesViaje = await this.prisma.detalleRecepcion.findMany({
@@ -1066,12 +1108,19 @@ export class ReceptionService {
         }
       });
 
-      this.notifications.emitNotification('new_notification', {
-        title: 'Patio: Nota Creada',
-        message: `Se generó la nota ${correlativo} para el ingreso ${detalleOriginal.recepcion.numero_entrada}. Ya puede tomarse la muestra general.`,
-        type: 'success',
-        module: 'RECEPCION'
-      });
+      try {
+        await this.notificationsService.create({
+          rol_destino: 'laboratorio',
+          titulo: 'Patio: Nota Creada',
+          mensaje: `Nota ${correlativo} generada para ingreso ${detalleOriginal.recepcion.numero_entrada}. Muestra general requerida.`,
+          tipo: 'success',
+          icono: 'ri-file-list-3-line',
+          referencia_id: String(notaPatio.id_nota_patio),
+          ruta: '/recepcion/laboratorio',
+        });
+      } catch (err: any) {
+        console.warn('Error al registrar notificación de nota de patio:', err?.message);
+      }
 
       return notaPatio;
     });
@@ -1137,12 +1186,19 @@ export class ReceptionService {
           }
         });
 
-        this.notifications.emitNotification('new_notification', {
-          title: 'Gerencia: Faltos Aprobados',
-          message: `Se aprobó la descarga de los sacos faltos del ingreso ${detalle.recepcion.numero_entrada}. Ya puede pesarse en báscula.`,
-          type: 'success',
-          module: 'RECEPCION'
-        });
+        try {
+          await this.notificationsService.create({
+            rol_destino: 'bascula',
+            titulo: 'Gerencia: Faltos Aprobados',
+            mensaje: `Se aprobó descarga de sacos faltos del ingreso ${detalle.recepcion.numero_entrada}. Listo para pesaje.`,
+            tipo: 'success',
+            icono: 'ri-checkbox-circle-line',
+            referencia_id: String(idDetalle),
+            ruta: '/recepcion/bascula',
+          });
+        } catch (err: any) {
+          console.warn('Error al registrar notificación de faltos aprobados:', err?.message);
+        }
       } else {
         const estadoDevolucion = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Devolucion' } });
         await tx.detalleRecepcion.update({
@@ -1156,12 +1212,19 @@ export class ReceptionService {
           }
         });
 
-        this.notifications.emitNotification('new_notification', {
-          title: 'Gerencia: Carga Devuelta',
-          message: `Se ha ordenado la devolución de sacos faltos para el ingreso ${detalle.recepcion.numero_entrada}.`,
-          type: 'danger',
-          module: 'RECEPCION'
-        });
+        try {
+          await this.notificationsService.create({
+            rol_destino: 'bascula',
+            titulo: 'Gerencia: Carga Devuelta',
+            mensaje: `Se ordenó la devolución de sacos faltos para el ingreso ${detalle.recepcion.numero_entrada}.`,
+            tipo: 'danger',
+            icono: 'ri-close-circle-line',
+            referencia_id: String(idDetalle),
+            ruta: '/recepcion/bascula',
+          });
+        } catch (err: any) {
+          console.warn('Error al registrar notificación de devolución:', err?.message);
+        }
       }
       return { success: true };
     });
@@ -1281,12 +1344,19 @@ export class ReceptionService {
     });
 
     const nombreTipo = tipoMov?.nombre || 'Otro Movimiento';
-    this.notifications.emitNotification('new_notification', {
-      title: `Nuevo Movimiento de ${nombreTipo}`,
-      message: `Se registró el movimiento ${correlativo} para el transporte ${dto.tipo_vehiculo}.`,
-      type: 'info',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: `Nuevo Movimiento: ${nombreTipo}`,
+        mensaje: `Movimiento ${correlativo} registrado para ${dto.tipo_vehiculo}.`,
+        tipo: 'info',
+        icono: 'ri-exchange-line',
+        referencia_id: String(nuevaRecepcion.id_recepcion),
+        ruta: '/recepcion/otros-movimientos',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de otro movimiento:', err?.message);
+    }
 
     return nuevaRecepcion;
   }
@@ -1378,12 +1448,19 @@ export class ReceptionService {
     });
 
     const nombreTipo = detalleActualizado.recepcion.tipo_movimiento?.nombre || 'Otro Movimiento';
-    this.notifications.emitNotification('new_notification', {
-      title: `Báscula ${nombreTipo}: 1ra Pesada Realizada`,
-      message: `Vehículo ${detalleActualizado.recepcion.numero_entrada} pesó ${peso.toLocaleString()} LB.`,
-      type: 'info',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: `Báscula ${nombreTipo}: 1ra Pesada Realizada`,
+        mensaje: `Vehículo ${detalleActualizado.recepcion.numero_entrada} pesó ${peso.toLocaleString()} LB.`,
+        tipo: 'info',
+        icono: 'ri-scales-3-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/otros-movimientos',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de 1ra pesada de otro movimiento:', err?.message);
+    }
 
     return detalleActualizado;
   }
@@ -1453,12 +1530,19 @@ export class ReceptionService {
     });
 
     const nombreTipo = detalleActualizado.recepcion.tipo_movimiento?.nombre || 'Otro Movimiento';
-    this.notifications.emitNotification('new_notification', {
-      title: `Báscula ${nombreTipo}: Pesada Cerrada`,
-      message: `Vehículo ${detalleActualizado.recepcion.numero_entrada} finalizó pesaje. Neto: ${pesoNeto.toLocaleString()} LB.`,
-      type: 'success',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: `Báscula ${nombreTipo}: Pesada Cerrada`,
+        mensaje: `Vehículo ${detalleActualizado.recepcion.numero_entrada} finalizó pesaje. Neto: ${pesoNeto.toLocaleString()} LB.`,
+        tipo: 'success',
+        icono: 'ri-checkbox-circle-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/otros-movimientos',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de pesada cerrada de otro movimiento:', err?.message);
+    }
 
     return detalleActualizado;
   }

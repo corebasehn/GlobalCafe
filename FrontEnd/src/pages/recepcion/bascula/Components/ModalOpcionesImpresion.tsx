@@ -1,6 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal, Button, Card, Badge, Form } from "react-bootstrap";
-import { Printer, Scale, Truck, CheckCircle2, FileText, XCircle } from "lucide-react";
+import { Printer, Scale, Truck, CheckCircle2, FileText, XCircle, Loader2, ExternalLink, Settings } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  imprimirMatricialPesada,
+  imprimirMatricialRecepcion,
+  imprimirMatricialPaseSalida,
+  imprimirMatricialDevolucion,
+  obtenerImpresorasDisponibles,
+  guardarImpresoraConfig,
+} from "../../../../api/printer.api";
 
 export interface ModalOpcionesImpresionProps {
   show: boolean;
@@ -22,6 +31,29 @@ export default function ModalOpcionesImpresion({
 }: ModalOpcionesImpresionProps) {
   const base = import.meta.env.BASE_URL;
   const [esCopia, setEsCopia] = useState(true);
+  const [modoMatricial, setModoMatricial] = useState(true);
+  const [imprimiendo, setImprimiendo] = useState<string | null>(null);
+  const [listaImpresoras, setListaImpresoras] = useState<string[]>([]);
+  const [impresoraSeleccionada, setImpresoraSeleccionada] = useState<string>("");
+  const [agenteOnline, setAgenteOnline] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!show) return;
+    obtenerImpresorasDisponibles().then((res) => {
+      setAgenteOnline(res.online);
+      setListaImpresoras(res.impresoras);
+      if (res.activa) {
+        setImpresoraSeleccionada(res.activa);
+      }
+    });
+  }, [show]);
+
+  const handleChangeImpresora = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nueva = e.target.value;
+    setImpresoraSeleccionada(nueva);
+    await guardarImpresoraConfig(nueva);
+    toast.success(`Impresora matricial: ${nueva}`);
+  };
 
   if (!carga) return null;
 
@@ -66,25 +98,97 @@ export default function ModalOpcionesImpresion({
 
   const puedeImprimirDevolucion = esDevolucion || tieneDevolucionFaltos;
 
-  const handlePrintBoletaRecepcion = () => {
+  const handlePrintBoletaRecepcion = async (forzarWeb: boolean = false) => {
     if (!idRecepcion) return;
+    if (modoMatricial && !forzarWeb) {
+      setImprimiendo("recepcion");
+      try {
+        const res = await imprimirMatricialRecepcion(idRecepcion, esCopia);
+        if (res.success) {
+          toast.success(`🖨️ ${res.message}`);
+          return;
+        }
+        toast.error(res.message);
+        if (res.fallbackNeeded) {
+          toast("Abriendo vista previa en navegador...", { icon: "📄" });
+        } else {
+          return;
+        }
+      } finally {
+        setImprimiendo(null);
+      }
+    }
     const copiaParam = esCopia ? "?copia=true" : "";
     window.open(`${base}print/boleta-recepcion/${idRecepcion}${copiaParam}`, "_blank");
   };
 
-  const handlePrintBoleta = (tipo: "primera" | "segunda") => {
+  const handlePrintBoleta = async (tipo: "primera" | "segunda", forzarWeb: boolean = false) => {
     if (!idDetalle) return;
+    if (modoMatricial && !forzarWeb) {
+      setImprimiendo(tipo);
+      try {
+        const res = await imprimirMatricialPesada(idDetalle, tipo, esCopia);
+        if (res.success) {
+          toast.success(`🖨️ ${res.message}`);
+          return;
+        }
+        toast.error(res.message);
+        if (res.fallbackNeeded) {
+          toast("Abriendo vista previa en navegador...", { icon: "📄" });
+        } else {
+          return;
+        }
+      } finally {
+        setImprimiendo(null);
+      }
+    }
     const copiaParam = esCopia ? "?copia=true" : "";
     window.open(`${base}print/boleta-pesada/${idDetalle}/${tipo}${copiaParam}`, "_blank");
   };
 
-  const handlePrintPaseSalida = () => {
+  const handlePrintPaseSalida = async (forzarWeb: boolean = false) => {
     if (!idDetalle) return;
+    if (modoMatricial && !forzarWeb) {
+      setImprimiendo("salida");
+      try {
+        const res = await imprimirMatricialPaseSalida(idDetalle);
+        if (res.success) {
+          toast.success(`🖨️ ${res.message}`);
+          return;
+        }
+        toast.error(res.message);
+        if (res.fallbackNeeded) {
+          toast("Abriendo vista previa en navegador...", { icon: "📄" });
+        } else {
+          return;
+        }
+      } finally {
+        setImprimiendo(null);
+      }
+    }
     window.open(`${base}print/pase-salida/${idDetalle}`, "_blank");
   };
 
-  const handlePrintBoletaDevolucion = () => {
+  const handlePrintBoletaDevolucion = async (forzarWeb: boolean = false) => {
     if (!idDetalleDevolucion) return;
+    if (modoMatricial && !forzarWeb) {
+      setImprimiendo("devolucion");
+      try {
+        const res = await imprimirMatricialDevolucion(idDetalleDevolucion, esCopia);
+        if (res.success) {
+          toast.success(`🖨️ ${res.message}`);
+          return;
+        }
+        toast.error(res.message);
+        if (res.fallbackNeeded) {
+          toast("Abriendo vista previa en navegador...", { icon: "📄" });
+        } else {
+          return;
+        }
+      } finally {
+        setImprimiendo(null);
+      }
+    }
     const copiaParam = esCopia ? "?copia=true" : "";
     window.open(`${base}print/boleta-devolucion/${idDetalleDevolucion}${copiaParam}`, "_blank");
   };
@@ -142,9 +246,46 @@ export default function ModalOpcionesImpresion({
           </Card.Body>
         </Card>
 
-        {/* Toggle para marca de COPIA */}
-        <div className="d-flex justify-content-between align-items-center mb-3 px-1">
-          <span className="small text-muted fw-semibold">Seleccione el documento que desea reimprimir:</span>
+        {/* Toggles para modo Matricial, selector de impresora y marca de COPIA */}
+        <div className="bg-light p-2 rounded mb-3 border d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <div className="d-flex align-items-center gap-3 flex-wrap">
+            <Form.Check
+              type="switch"
+              id="switch-matricial-modal"
+              label={
+                <span className="small fw-bold text-success d-flex align-items-center gap-1">
+                  🖨️ Impresión Matricial Directa
+                </span>
+              }
+              checked={modoMatricial}
+              onChange={(e) => setModoMatricial(e.target.checked)}
+            />
+
+            {modoMatricial && agenteOnline && listaImpresoras.length > 0 && (
+              <div className="d-flex align-items-center gap-1">
+                <span className="text-muted small">Impresora:</span>
+                <Form.Select
+                  size="sm"
+                  style={{ width: "auto", minWidth: "170px", maxWidth: "250px", fontSize: "0.82rem" }}
+                  value={impresoraSeleccionada}
+                  onChange={handleChangeImpresora}
+                >
+                  {listaImpresoras.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </Form.Select>
+              </div>
+            )}
+
+            {modoMatricial && !agenteOnline && (
+              <span className="badge bg-warning text-dark small" title="El agente local no está activo en 127.0.0.1:4000">
+                Agente matricial local no detectado
+              </span>
+            )}
+          </div>
+
           <Form.Check
             type="switch"
             id="switch-copia-modal"
@@ -178,15 +319,28 @@ export default function ModalOpcionesImpresion({
                 </div>
               </div>
 
-              <div>
+              <div className="d-flex align-items-center gap-2">
                 <Button
                   variant="outline-info"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  disabled={!idRecepcion}
-                  onClick={handlePrintBoletaRecepcion}
+                  disabled={!idRecepcion || imprimiendo === "recepcion"}
+                  onClick={() => handlePrintBoletaRecepcion(false)}
                 >
-                  <Printer size={14} /> Imprimir Remisión
+                  {imprimiendo === "recepcion" ? (
+                    <><Loader2 size={14} className="spinner-border spinner-border-sm" /> Enviando...</>
+                  ) : (
+                    <><Printer size={14} /> Imprimir Remisión</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  title="Abrir vista previa web en el navegador"
+                  disabled={!idRecepcion}
+                  onClick={() => handlePrintBoletaRecepcion(true)}
+                >
+                  <ExternalLink size={13} />
                 </Button>
               </div>
             </Card.Body>
@@ -228,15 +382,28 @@ export default function ModalOpcionesImpresion({
                 </div>
               </div>
 
-              <div>
+              <div className="d-flex align-items-center gap-2">
                 <Button
                   variant="outline-primary"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  disabled={!tieneEntrada}
-                  onClick={() => handlePrintBoleta("primera")}
+                  disabled={!tieneEntrada || imprimiendo === "primera"}
+                  onClick={() => handlePrintBoleta("primera", false)}
                 >
-                  <Printer size={14} /> Imprimir 1ª Pesada
+                  {imprimiendo === "primera" ? (
+                    <><Loader2 size={14} className="spinner-border spinner-border-sm" /> Enviando...</>
+                  ) : (
+                    <><Printer size={14} /> Imprimir 1ª Pesada</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  title="Abrir vista previa web en el navegador"
+                  disabled={!tieneEntrada}
+                  onClick={() => handlePrintBoleta("primera", true)}
+                >
+                  <ExternalLink size={13} />
                 </Button>
               </div>
             </Card.Body>
@@ -282,15 +449,28 @@ export default function ModalOpcionesImpresion({
                 </div>
               </div>
 
-              <div>
+              <div className="d-flex align-items-center gap-2">
                 <Button
                   variant="outline-success"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  disabled={!tieneSalida}
-                  onClick={() => handlePrintBoleta("segunda")}
+                  disabled={!tieneSalida || imprimiendo === "segunda"}
+                  onClick={() => handlePrintBoleta("segunda", false)}
                 >
-                  <Printer size={14} /> Imprimir 2ª Pesada
+                  {imprimiendo === "segunda" ? (
+                    <><Loader2 size={14} className="spinner-border spinner-border-sm" /> Enviando...</>
+                  ) : (
+                    <><Printer size={14} /> Imprimir 2ª Pesada</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  title="Abrir vista previa web en el navegador"
+                  disabled={!tieneSalida}
+                  onClick={() => handlePrintBoleta("segunda", true)}
+                >
+                  <ExternalLink size={13} />
                 </Button>
               </div>
             </Card.Body>
@@ -329,15 +509,28 @@ export default function ModalOpcionesImpresion({
                 </div>
               </div>
 
-              <div>
+              <div className="d-flex align-items-center gap-2">
                 <Button
                   variant="outline-secondary"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  disabled={!tienePaseSalida && !tieneEntrada}
-                  onClick={handlePrintPaseSalida}
+                  disabled={(!tienePaseSalida && !tieneEntrada) || imprimiendo === "salida"}
+                  onClick={() => handlePrintPaseSalida(false)}
                 >
-                  <Printer size={14} /> Imprimir Pase de Salida
+                  {imprimiendo === "salida" ? (
+                    <><Loader2 size={14} className="spinner-border spinner-border-sm" /> Enviando...</>
+                  ) : (
+                    <><Printer size={14} /> Imprimir Pase de Salida</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  title="Abrir vista previa web en el navegador"
+                  disabled={!tienePaseSalida && !tieneEntrada}
+                  onClick={() => handlePrintPaseSalida(true)}
+                >
+                  <ExternalLink size={13} />
                 </Button>
               </div>
             </Card.Body>
@@ -386,15 +579,28 @@ export default function ModalOpcionesImpresion({
                 </div>
               </div>
 
-              <div>
+              <div className="d-flex align-items-center gap-2">
                 <Button
                   variant="outline-danger"
                   size="sm"
                   className="d-flex align-items-center gap-1"
-                  disabled={!idDetalleDevolucion || !puedeImprimirDevolucion}
-                  onClick={handlePrintBoletaDevolucion}
+                  disabled={!idDetalleDevolucion || !puedeImprimirDevolucion || imprimiendo === "devolucion"}
+                  onClick={() => handlePrintBoletaDevolucion(false)}
                 >
-                  <Printer size={14} /> Imprimir Boleta Devolución
+                  {imprimiendo === "devolucion" ? (
+                    <><Loader2 size={14} className="spinner-border spinner-border-sm" /> Enviando...</>
+                  ) : (
+                    <><Printer size={14} /> Imprimir Boleta Devolución</>
+                  )}
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  size="sm"
+                  title="Abrir vista previa web en el navegador"
+                  disabled={!idDetalleDevolucion || !puedeImprimirDevolucion}
+                  onClick={() => handlePrintBoletaDevolucion(true)}
+                >
+                  <ExternalLink size={13} />
                 </Button>
               </div>
             </Card.Body>

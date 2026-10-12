@@ -14,6 +14,7 @@ import pystray
 from PIL import Image, ImageDraw
 import tkinter as tk
 from tkinter import ttk, messagebox
+import impresion_core
 
 app = Flask(__name__)
 CORS(app)
@@ -186,6 +187,49 @@ def ver_raw_stream():
         return jsonify({"error": str(e)}), 500
     finally:
         _cerrar_puerto()
+
+
+@app.route('/impresoras', methods=['GET'])
+def listar_impresoras_endpoint():
+    imp_cfg = cfg.get('impresora', '')
+    return jsonify({
+        'impresoras': impresion_core.listar_impresoras(),
+        'activa': impresion_core.obtener_impresora_activa(imp_cfg)
+    })
+
+
+@app.route('/imprimir', methods=['POST'])
+def imprimir_documento():
+    try:
+        from flask import request
+        payload = request.get_json(force=True, silent=True) or {}
+        tipo = payload.get('tipo', 'boleta_pesada')
+        es_copia = bool(payload.get('esCopia', False))
+        datos = payload.get('datos', {})
+        imp_req = payload.get('impresora') or cfg.get('impresora', '')
+
+        impresora_destino = impresion_core.obtener_impresora_activa(imp_req)
+        if not impresora_destino:
+            return jsonify({
+                'estado': 'error',
+                'mensaje': 'No se encontró ninguna impresora matricial instalada.'
+            }), 404
+
+        if 'rawText' in payload and payload['rawText']:
+            raw_bytes = impresion_core.init_boleta() + impresion_core.encode_cp850(payload['rawText']) + impresion_core.ESC_FORM_FEED
+        else:
+            raw_bytes = impresion_core.generar_bytes_documento(tipo, datos, es_copia=es_copia)
+
+        doc_titulo = f"GlobalCafe_{tipo}"
+        impresion_core.enviar_raw(impresora_destino, raw_bytes, titulo_doc=doc_titulo)
+
+        return jsonify({
+            'estado': 'exito',
+            'mensaje': f"Documento '{tipo}' enviado a '{impresora_destino}'",
+            'impresora': impresora_destino
+        })
+    except Exception as e:
+        return jsonify({'estado': 'error', 'mensaje': str(e)}), 500
 
 
 # ── System Tray ───────────────────────────────────────────────────────────────

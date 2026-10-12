@@ -900,3 +900,21 @@ model tipo_movimiento {
   created_at     DateTime?   @default(now()) @db.Timestamp(6)
   recepcion      Recepcion[]
 }
+
+model Notificacion {
+  id            Int       @id @default(autoincrement())
+  titulo        String    @db.VarChar(150)
+  mensaje       String
+  rol_destino   String?   @db.VarChar(50)
+  usuario_id    Int?
+  tipo          String?   @default("info") @db.VarChar(30)
+  icono         String?   @default("ri-notification-line") @db.VarChar(100)
+  leido         Boolean   @default(false)
+  referencia_id String?   @db.VarChar(100)
+  ruta          String?   @db.VarChar(255)
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @updatedAt @db.Timestamptz(6)
+
+  @@index([rol_destino, leido], map: "idx_notificacion_rol_leido")
+  @@index([usuario_id, leido], map: "idx_notificacion_usuario_leido")
+}
