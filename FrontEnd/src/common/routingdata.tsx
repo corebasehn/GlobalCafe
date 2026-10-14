@@ -144,6 +144,9 @@ import MermaPage from "../pages/industrial/MermaPage";
 import CargaPage from "../pages/despacho/CargaPage";
 import BasculaSalidaPage from "../pages/despacho/BasculaSalidaPage";
 import DocumentacionPage from "../pages/despacho/DocumentacionPage";
+// Módulo Exportación
+import ContratosListPage from "../pages/exportacion/contratos/ContratosListPage";
+import ContratoDetallePage from "../pages/exportacion/contratos/ContratoDetallePage";
 // Módulo 5: Ventas Locales
 import KardexPage from "../pages/ventas/KardexPage";
 import OrdenVentaPage from "../pages/ventas/OrdenVentaPage";
@@ -322,6 +325,9 @@ export const Routingdata = [
   { path: `${import.meta.env.BASE_URL}despacho/carga`, element: <RequirePermission permission="VER_CARGA"><CargaPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, element: <RequirePermission permission="VER_BASCULA_SALIDA"><BasculaSalidaPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}despacho/documentacion`, element: <RequirePermission permission="VER_DOCUMENTOS"><DocumentacionPage /></RequirePermission> },
+  // Módulo Exportación (prototipo frontend, sin permisos hasta que exista backend real)
+  { path: `${import.meta.env.BASE_URL}exportacion/contratos`, element: <ContratosListPage /> },
+  { path: `${import.meta.env.BASE_URL}exportacion/contratos/:id`, element: <ContratoDetallePage /> },
   // Módulo 5: Ventas Locales
   { path: `${import.meta.env.BASE_URL}ventas/kardex`, element: <RequirePermission permission="VER_KARDEX"><KardexPage /></RequirePermission> },
   { path: `${import.meta.env.BASE_URL}ventas/orden-venta`, element: <RequirePermission permission="VER_ORDEN_VENTA"><OrdenVentaPage /></RequirePermission> },

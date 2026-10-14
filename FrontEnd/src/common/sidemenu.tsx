@@ -61,6 +61,7 @@ const industrialSvg = <svg xmlns="http://www.w3.org/2000/svg" className="side-me
 const despachoSvg = <svg xmlns="http://www.w3.org/2000/svg" className="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M13 11h2v2h-2zm-4 0h2v2h-2zm-2 4h10v2H7z"/></svg>; // Placeholder for truck icon
 const ventasSvg = <svg xmlns="http://www.w3.org/2000/svg" className="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M16 11h-3V8h-2v3H8v2h3v3h2v-3h3v-2z"/></svg>; // Placeholder for shopping cart icon
 const adminSvg = <svg xmlns="http://www.w3.org/2000/svg" className="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M11 11h2v6h-2zM11 7h2v2h-2z"/></svg>; // Placeholder for users icon
+const exportacionSvg = <svg xmlns="http://www.w3.org/2000/svg" className="side-menu__icon" width="24" height="24" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"/><path d="M7 11h6.586l-2.293-2.293 1.414-1.414L16.414 11H17v2h-.586l-3.707 3.707-1.414-1.414L13.586 13H7z"/></svg>; // Placeholder for export/shipment icon
 
 
 export interface Menuitemtype {
@@ -354,6 +355,11 @@ export const MENUITEMS: Menuitemtype[] = [
       { path: `${import.meta.env.BASE_URL}despacho/carga`, type: "link", active: false, selected: false, dirchange: false, title: "Carga de Contenedor", requirePermission: "VER_CARGA" },
       { path: `${import.meta.env.BASE_URL}despacho/bascula-salida`, type: "link", active: false, selected: false, dirchange: false, title: "Báscula de Salida", requirePermission: "VER_BASCULA_SALIDA" },
       { path: `${import.meta.env.BASE_URL}despacho/documentacion`, type: "link", active: false, selected: false, dirchange: false, title: "Documentación Final", requirePermission: "VER_DOCUMENTOS" },
+    ]
+  },
+  {
+    title: "Exportación", icon: exportacionSvg, type: "sub", active: false, selected: false, dirchange: false, children: [
+      { path: `${import.meta.env.BASE_URL}exportacion/contratos`, type: "link", active: false, selected: false, dirchange: false, title: "Contratos" },
     ]
   },
   {

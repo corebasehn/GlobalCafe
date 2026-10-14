@@ -130,6 +130,12 @@ export const moduleColors = {
     text: '#991b1b',
     icon: '#dc2626',
   },
+  exportacion: {
+    bg: '#cffafe',      // Cian claro
+    border: '#06b6d4',
+    text: '#155e75',
+    icon: '#0891b2',
+  },
 } as const;
 
 /**
