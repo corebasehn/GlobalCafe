@@ -1,9 +1,10 @@
-import { Controller, Get, Post, Param, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, UseGuards, Request } from '@nestjs/common';
 import { NotaPesoService } from './nota-peso.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { LiquidarNotaPesoDto } from './dto/liquidar-nota-peso.dto';
 
 @ApiTags('nota-peso')
 @ApiBearerAuth()
@@ -21,8 +22,12 @@ export class NotaPesoController {
   @UseGuards(AuthGuard, PermissionsGuard)
   @RequirePermissions('CREAR_NOTA_PESO')
   @Post('liquidar/:idDetalle')
-  crearNotaPeso(@Param('idDetalle') idDetalle: string, @Request() req) {
-    return this.notaPesoService.crearNotaPeso(+idDetalle, req.user?.id);
+  crearNotaPeso(
+    @Param('idDetalle') idDetalle: string,
+    @Body() dto: LiquidarNotaPesoDto,
+    @Request() req,
+  ) {
+    return this.notaPesoService.crearNotaPeso(+idDetalle, req.user?.id, dto);
   }
 
   @UseGuards(AuthGuard, PermissionsGuard)

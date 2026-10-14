@@ -2,13 +2,14 @@ import { Injectable, NotFoundException, InternalServerErrorException } from '@ne
 import { PrismaService } from '../prisma.service'; 
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { CreateOtroMovimientoDto } from './dto/create-otro-movimiento.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class ReceptionService {
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsGateway
+    private notificationsService: NotificationsService
   ) {}
 
   // 1. CREAR (Incluye Usuario ID del Guardián)
@@ -21,8 +22,33 @@ export class ReceptionService {
       throw new InternalServerErrorException('El estado inicial "Pendiente de Muestrear" no existe en el catálogo.');
     }
 
-    const count = await this.prisma.recepcion.count();
-    const correlativo = `REC-${String(count + 1).padStart(5, '0')}`;
+    // 2. Determinar prefijo según Tipo de Remisión (INT- para Interno, EXT- para Externo)
+    const idTipoRem = dto.id_tipo_remision || dto.detalles?.[0]?.id_tipo_remision;
+    let tipoRem: any = null;
+    if (idTipoRem) {
+      tipoRem = await this.prisma.tipoRemision.findUnique({
+        where: { id_tipo_remision: idTipoRem },
+      });
+    }
+
+    let prefix = 'EXT';
+    const nombreTipo = tipoRem?.tipo_remision?.toLowerCase() || '';
+    if (idTipoRem === 1 || nombreTipo.includes('int')) {
+      prefix = 'INT';
+    } else if (idTipoRem === 2 || nombreTipo.includes('ext')) {
+      prefix = 'EXT';
+    }
+
+    // Correlativo independiente por prefijo
+    const countExistentes = await this.prisma.recepcion.count({
+      where: { numero_entrada: { startsWith: `${prefix}-` } },
+    });
+    let seq = countExistentes + 1;
+    let correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
+    while (await this.prisma.recepcion.findUnique({ where: { numero_entrada: correlativo } })) {
+      seq++;
+      correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
+    }
 
     const countMuestras = await this.prisma.detalleRecepcion.count();
 
@@ -50,7 +76,7 @@ export class ReceptionService {
             cantidad_sacos: det.cantidad_sacos,
             cantidad_qq: det.cantidad_qq,
             remision: det.remision,
-            id_tipo_remision: det.id_tipo_remision ?? null,
+            id_tipo_remision: det.id_tipo_remision ?? idTipoRem ?? null,
             id_tipo_cafe: det.id_tipo_cafe ?? null,
             id_tipo_empaque: det.id_tipo_empaque ?? null,
             observaciones: det.observaciones,
@@ -61,27 +87,48 @@ export class ReceptionService {
       include: { detalles: true },
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Nuevo Vehículo en Portería',
-      message: `Se registró el ingreso ${correlativo} del transporte ${dto.tipo_vehiculo}.`,
-      type: 'info',
-      module: 'RECEPCION'
-    });
+    const tipoLabel = prefix === 'INT' ? 'Interno' : 'Externo';
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'muestreo',
+        titulo: `Nuevo Ingreso (${tipoLabel}) - ${correlativo}`,
+        mensaje: `Vehículo ${dto.tipo_vehiculo} registrado. Listo para muestreo en patio.`,
+        tipo: 'info',
+        icono: 'ri-truck-line',
+        referencia_id: String(nuevaRecepcion.id_recepcion),
+        ruta: '/recepcion/muestreo',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de nuevo ingreso:', err?.message);
+    }
 
     return nuevaRecepcion;
   }
 
-  // 2. LEER TODOS
+  // 2. LEER TODOS (Solo Café)
   findAll() {
     return this.prisma.recepcion.findMany({
-      where: { estado: true },
+      where: { 
+        estado: true,
+        OR: [
+          { id_tipo_movimiento: 1 },
+          { id_tipo_movimiento: null }
+        ]
+      },
       include: { 
         detalles: {
           include: { 
             estado_transaccion: true,
             tipo_remision: true,
             tipo_cafe: true,
-            tipo_empaque: true
+            tipo_empaque: true,
+            notas_patio: true,
+            analisis_calidad: {
+              select: {
+                id_analisis_calidad: true,
+                tipo_analisis: true,
+              }
+            }
           }
         } 
       },
@@ -249,12 +296,19 @@ export class ReceptionService {
     });
 
     if (nombreEstado === 'Muestreado') {
-      this.notifications.emitNotification('new_notification', {
-        title: 'Muestra Física Tomada',
-        message: `El viaje ${detalleActualizado.recepcion.numero_entrada} ya fue muestreado en patio y pasó a Laboratorio.`,
-        type: 'info',
-        module: 'RECEPCION'
-      });
+      try {
+        await this.notificationsService.create({
+          rol_destino: 'laboratorio',
+          titulo: 'Muestra Física Tomada',
+          mensaje: `El viaje ${detalleActualizado.recepcion.numero_entrada} ya fue muestreado en patio. Listo para Laboratorio.`,
+          tipo: 'info',
+          icono: 'ri-flask-line',
+          referencia_id: String(detalleActualizado.id_detalle_recepcion),
+          ruta: '/recepcion/laboratorio',
+        });
+      } catch (err: any) {
+        console.warn('Error al registrar notificación:', err?.message);
+      }
     }
 
     return detalleActualizado;
@@ -336,11 +390,15 @@ export class ReceptionService {
   // MÓDULO BÁSCULA DE ENTRADA
   // ==========================================
 
-  // Obtiene los viajes completos que tienen al menos una carga lista para pesarse
+  // Obtiene los viajes completos que tienen al menos una carga lista para pesarse (Solo Café)
   async getPendientesBascula() {
     return this.prisma.recepcion.findMany({
       where: {
         estado: true,
+        OR: [
+          { id_tipo_movimiento: 1 },
+          { id_tipo_movimiento: null }
+        ],
         detalles: {
           some: {
             estado: true,
@@ -441,12 +499,19 @@ export class ReceptionService {
       include: { recepcion: true }
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Peso Bruto Registrado',
-      message: `El vehículo del ingreso ${detalle.recepcion.numero_entrada} registró pesada de entrada (${peso.toLocaleString()} LB).`,
-      type: 'success',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'patio',
+        titulo: 'Báscula: 1ra Pesada Lista',
+        mensaje: `Ingreso ${detalle.recepcion.numero_entrada} registró peso de entrada (${peso.toLocaleString()} LB). Listo para Nota de Patio.`,
+        tipo: 'info',
+        icono: 'ri-scales-3-line',
+        referencia_id: String(detalle.id_detalle_recepcion),
+        ruta: '/recepcion/patio',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de báscula:', err?.message);
+    }
 
     return detalle;
   }
@@ -489,12 +554,19 @@ export class ReceptionService {
       });
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Destarse Realizado',
-      message: `El vehículo del ingreso ${detalleInfo?.recepcion.numero_entrada} quedó 'Sin Cabezal' en patio.`,
-      type: 'warning',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'patio',
+        titulo: 'Báscula: Destarse Realizado',
+        mensaje: `El vehículo del ingreso ${detalleInfo?.recepcion.numero_entrada} quedó 'Sin Cabezal' en patio.`,
+        tipo: 'warning',
+        icono: 'ri-alert-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/patio',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de destarse:', err?.message);
+    }
 
     return resultado;
   }
@@ -541,18 +613,25 @@ export class ReceptionService {
       });
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Reenganche Realizado',
-      message: `El vehículo del ingreso ${resultado.recepcion.numero_entrada} ha reenganchado un cabezal y espera Tara.`,
-      type: 'info',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: 'Báscula: Reenganche Realizado',
+        mensaje: `El vehículo del ingreso ${resultado.recepcion.numero_entrada} reenganchó cabezal. Listo para Tara de salida.`,
+        tipo: 'info',
+        icono: 'ri-truck-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/bascula',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de reenganche:', err?.message);
+    }
 
     return resultado;
   }
 
   // Registra la Tara final considerando si hubo o no cambio de cabezal
-  async registrarPesadaSalida(idDetalle: number, peso: number, usuarioId: number) {
+  async registrarPesadaSalida(idDetalle: number, peso: number, usuarioId: number, observaciones?: string) {
     const detalle = await this.prisma.detalleRecepcion.findUnique({ 
       where: { id_detalle_recepcion: idDetalle },
       include: {
@@ -580,21 +659,40 @@ export class ReceptionService {
 
     const pesoNeto = pesoBrutoReal - peso;
 
+    const dataUpdate: any = { 
+      pesada_salida: peso, 
+      fecha_salida_bascula: new Date(), 
+      peso_neto: pesoNeto, 
+      id_estado_transaccion: estadoCompletado.id_estado_transaccion, 
+      usuario_modificacion: usuarioId, 
+      fecha_modificacion: new Date() 
+    };
+
+    if (observaciones && observaciones.trim().length > 0) {
+      dataUpdate.observaciones = detalle.observaciones
+        ? `${detalle.observaciones} | Pase de Salida: ${observaciones.trim()}`
+        : observaciones.trim();
+    }
+
     const detalleActualizado = await this.prisma.detalleRecepcion.update({
       where: { id_detalle_recepcion: idDetalle },
-      data: { 
-        pesada_salida: peso, fecha_salida_bascula: new Date(), peso_neto: pesoNeto, 
-        id_estado_transaccion: estadoCompletado.id_estado_transaccion, usuario_modificacion: usuarioId, fecha_modificacion: new Date() 
-      },
+      data: dataUpdate,
       include: { recepcion: true }
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Báscula: Pesaje Completado',
-      message: `El vehículo del ingreso ${detalleActualizado.recepcion.numero_entrada} ha cerrado su pesada. Peso Neto: ${pesoNeto.toLocaleString()} LB.`,
-      type: 'success',
-      module: 'RECEPCION'
-    });
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'recepcion',
+        titulo: 'Báscula: Pesaje Completado',
+        mensaje: `Ingreso ${detalleActualizado.recepcion.numero_entrada} cerró pesada. Peso Neto: ${pesoNeto.toLocaleString()} LB.`,
+        tipo: 'success',
+        icono: 'ri-checkbox-circle-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/nota-peso',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de pesaje completado:', err?.message);
+    }
 
     // Verificar si TODOS los detalles del viaje están ya en 'Pesada Cerrada'
     const todosDetallesViaje = await this.prisma.detalleRecepcion.findMany({
@@ -606,6 +704,34 @@ export class ReceptionService {
     return { ...detalleActualizado, allClosed };
   }
 
+  // Actualizar observaciones específicas del detalle (usado para el Pase de Salida)
+  async actualizarObservacionesDetalle(idDetalle: number, observaciones: string, usuarioId: number) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+    });
+    if (!detalle) throw new NotFoundException('Detalle de recepción no encontrado');
+
+    const obsLimpia = observaciones?.trim() || '';
+    let nuevaObs = detalle.observaciones || '';
+    if (obsLimpia) {
+      if (nuevaObs.includes('Pase de Salida:')) {
+        nuevaObs = nuevaObs.replace(/(\|\s*)?Pase de Salida:.*$/, '').trim();
+        nuevaObs = nuevaObs ? `${nuevaObs} | Pase de Salida: ${obsLimpia}` : obsLimpia;
+      } else {
+        nuevaObs = nuevaObs ? `${nuevaObs} | Pase de Salida: ${obsLimpia}` : obsLimpia;
+      }
+    }
+
+    return this.prisma.detalleRecepcion.update({
+      where: { id_detalle_recepcion: idDetalle },
+      data: {
+        observaciones: nuevaObs,
+        usuario_modificacion: usuarioId,
+        fecha_modificacion: new Date(),
+      },
+    });
+  }
+
   // ==========================================
   // BOLETAS DE IMPRESIÓN (BÁSCULA)
   // ==========================================
@@ -613,14 +739,14 @@ export class ReceptionService {
   async buscarPesadas(q: string) {
     if (!q || q.trim().length < 2) return [];
     const term = q.trim().toLowerCase();
-    return this.prisma.recepcion.findMany({
+    const recepciones = await this.prisma.recepcion.findMany({
       where: {
         estado: true,
         OR: [
           { numero_entrada: { contains: term, mode: 'insensitive' } },
           { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
           { placa_furgon: { placa: { contains: term, mode: 'insensitive' } } },
-          { detalles: { some: { remision: { contains: term, mode: 'insensitive' }, estado: true } } },
+          { detalles: { some: { remision: { contains: term, mode: 'insensitive' } } } },
         ],
         detalles: { some: { estado: true, pesada_entrada: { not: null } } },
       },
@@ -630,13 +756,128 @@ export class ReceptionService {
         conductor: { include: { transporte: true } },
         detalles: {
           where: { estado: true, pesada_entrada: { not: null } },
-          include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
+          include: { proveedor: true, estado_transaccion: true, tipo_remision: true, tipo_cafe: true },
           orderBy: { id_detalle_recepcion: 'asc' },
         },
       },
       orderBy: { id_recepcion: 'desc' },
       take: 30,
     });
+
+    if (recepciones.length === 0) return [];
+
+    const recepcionIds = recepciones.map(r => r.id_recepcion);
+    const devoluciones = await this.prisma.detalleRecepcion.findMany({
+      where: {
+        id_recepcion: { in: recepcionIds },
+        OR: [
+          { remision: { contains: '-F' } },
+          { estado_transaccion: { nombre: { contains: 'Devolucion', mode: 'insensitive' } } },
+        ],
+      },
+      include: {
+        tipo_cafe: true,
+        estado_transaccion: true,
+      },
+    });
+
+    return recepciones.map(rec => {
+      const recDevoluciones = devoluciones.filter(d => d.id_recepcion === rec.id_recepcion);
+      const detallesConDevolucion = rec.detalles.map(detalle => {
+        const devFalto = recDevoluciones.find(d => d.remision === `${detalle.remision}-F`);
+        if (devFalto && !devFalto.tipo_cafe && detalle.tipo_cafe) {
+          devFalto.tipo_cafe = detalle.tipo_cafe;
+        }
+        return {
+          ...detalle,
+          devolucion: devFalto || null,
+        };
+      });
+
+      return {
+        ...rec,
+        detalles: detallesConDevolucion,
+      };
+    });
+  }
+
+  async getBoletaRecepcion(id: number) {
+    const recepcion = await this.prisma.recepcion.findUnique({
+      where: { id_recepcion: id },
+      include: {
+        cosecha: true,
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: {
+          include: { transporte: true },
+        },
+        municipio: {
+          include: { departamento: true },
+        },
+        detalles: {
+          where: { estado: true },
+          include: {
+            proveedor: true,
+            tipo_remision: true,
+            tipo_cafe: true,
+            tipo_empaque: true,
+            estado_transaccion: true,
+          },
+          orderBy: { id_detalle_recepcion: 'asc' },
+        },
+      },
+    });
+
+    if (!recepcion) {
+      throw new NotFoundException(`Recepción #${id} no encontrada`);
+    }
+
+    return recepcion;
+  }
+
+  async getBoletaDevolucion(idDetalle: number) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: {
+        proveedor: true,
+        estado_transaccion: true,
+        tipo_cafe: true,
+        recepcion: {
+          include: {
+            cosecha: true,
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: { include: { transporte: true } },
+          },
+        },
+        analisis_calidad: {
+          include: {
+            catador: true,
+            estado_transaccion: true,
+          },
+          orderBy: { id_analisis_calidad: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!detalle) {
+      throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
+    }
+
+    // Si no tiene tipo_cafe asignado directamente y es un falto (-F), heredar del original
+    if (!detalle.tipo_cafe && detalle.remision?.endsWith('-F')) {
+      const remisionBase = detalle.remision.replace(/-F$/, '');
+      const original = await this.prisma.detalleRecepcion.findFirst({
+        where: { id_recepcion: detalle.id_recepcion, remision: remisionBase },
+        include: { tipo_cafe: true },
+      });
+      if (original?.tipo_cafe) {
+        detalle.tipo_cafe = original.tipo_cafe;
+      }
+    }
+
+    return detalle;
   }
 
   async getBoletaPesada(idDetalle: number) {
@@ -657,7 +898,7 @@ export class ReceptionService {
             cosecha: true,
             placa_cabezal: true,
             placa_furgon: true,
-            conductor: true,
+            conductor: { include: { transporte: true } },
           }
         }
       }
@@ -670,7 +911,6 @@ export class ReceptionService {
       where: {
         id_recepcion: detalle.id_recepcion,
         remision: detalle.remision + '-F',
-        estado: true,
       },
       select: {
         id_detalle_recepcion: true,
@@ -708,7 +948,7 @@ export class ReceptionService {
           some: {
             estado: true,
             id_tipo_remision: 2,
-            OR: [{ omitir_analisis: false }, { omitir_analisis: null }],
+            omitir_analisis: false,
           },
         },
       },
@@ -720,7 +960,7 @@ export class ReceptionService {
           where: {
             estado: true,
             id_tipo_remision: 2,
-            OR: [{ omitir_analisis: false }, { omitir_analisis: null }],
+            omitir_analisis: false,
           },
           include: { proveedor: true, estado_transaccion: true, tipo_remision: true },
           orderBy: { id_detalle_recepcion: 'asc' },
@@ -782,14 +1022,15 @@ export class ReceptionService {
           }
         },
         proveedor: true,
-        estado_transaccion: true
+        estado_transaccion: true,
+        tipo_empaque: true
       },
       orderBy: { fecha_entrada_bascula: 'asc' }
     });
   }
 
   async crearNotaPatio(dto: any, usuarioId: number) {
-    const { id_detalle_recepcion, id_estiba, cantidad_sacos_buenos, cantidad_sacos_faltos, observaciones_faltos } = dto;
+    const { id_detalle_recepcion, id_estiba, cantidad_sacos_buenos, cantidad_sacos_faltos, observaciones_faltos, id_tipo_empaque } = dto;
 
     const detalleOriginal = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion },
@@ -797,6 +1038,8 @@ export class ReceptionService {
     });
 
     if (!detalleOriginal) throw new NotFoundException('Detalle de recepción no encontrado');
+
+    const empaqueFinalId = id_tipo_empaque ? Number(id_tipo_empaque) : detalleOriginal.id_tipo_empaque;
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Si hay faltos, creamos un nuevo detalle bloqueado
@@ -818,7 +1061,10 @@ export class ReceptionService {
             cantidad_qq: (Number(detalleOriginal.cantidad_qq) / detalleOriginal.cantidad_sacos) * cantidad_sacos_faltos,
             remision: `${detalleOriginal.remision}-F`,
             numero_muestra: `MUE-${String(countMuestras + 1).padStart(5, '0')}`,
-            observaciones: `Sacos Faltos: ${observaciones_faltos}`,
+            observaciones: `${observaciones_faltos}`,
+            id_tipo_empaque: empaqueFinalId,
+            id_tipo_cafe: detalleOriginal.id_tipo_cafe,
+            id_tipo_remision: detalleOriginal.id_tipo_remision,
             estado: true, // Lo dejamos activo pero el estado_transaccion lo bloquea de báscula
             usuario_creacion: usuarioId
           }
@@ -835,6 +1081,7 @@ export class ReceptionService {
         where: { id_detalle_recepcion },
         data: {
           cantidad_sacos: cantidad_sacos_buenos,
+          id_tipo_empaque: empaqueFinalId,
           // El peso se mantiene igual (es el peso bruto del equipo)
           id_estado_transaccion: estadoMuestreoGeneral?.id_estado_transaccion || detalleOriginal.id_estado_transaccion,
           usuario_modificacion: usuarioId,
@@ -861,29 +1108,60 @@ export class ReceptionService {
         }
       });
 
-      this.notifications.emitNotification('new_notification', {
-        title: 'Patio: Nota Creada',
-        message: `Se generó la nota ${correlativo} para el ingreso ${detalleOriginal.recepcion.numero_entrada}. Ya puede tomarse la muestra general.`,
-        type: 'success',
-        module: 'RECEPCION'
-      });
+      try {
+        await this.notificationsService.create({
+          rol_destino: 'laboratorio',
+          titulo: 'Patio: Nota Creada',
+          mensaje: `Nota ${correlativo} generada para ingreso ${detalleOriginal.recepcion.numero_entrada}. Muestra general requerida.`,
+          tipo: 'success',
+          icono: 'ri-file-list-3-line',
+          referencia_id: String(notaPatio.id_nota_patio),
+          ruta: '/recepcion/laboratorio',
+        });
+      } catch (err: any) {
+        console.warn('Error al registrar notificación de nota de patio:', err?.message);
+      }
 
       return notaPatio;
     });
   }
 
   async getPendientesAprobacionFaltos() {
-    return this.prisma.detalleRecepcion.findMany({
+    const faltos = await this.prisma.detalleRecepcion.findMany({
       where: {
         estado: true,
         estado_transaccion: { nombre: 'Pendiente de Aprobación por Faltos' }
       },
       include: {
-        recepcion: { include: { placa_cabezal: true, conductor: true } },
+        recepcion: {
+          include: {
+            placa_cabezal: true,
+            conductor: true,
+            detalles: {
+              include: { tipo_cafe: true }
+            }
+          }
+        },
         proveedor: true,
-        estado_transaccion: true
+        estado_transaccion: true,
+        tipo_cafe: true
       },
       orderBy: { fecha_creacion: 'asc' }
+    });
+
+    return faltos.map((f: any) => {
+      let tipoCafe = f.tipo_cafe;
+      if (!tipoCafe && f.remision?.endsWith('-F')) {
+        const remisionBase = f.remision.replace(/-F$/, '');
+        const original = f.recepcion?.detalles?.find((d: any) => d.remision === remisionBase && d.tipo_cafe);
+        if (original) {
+          tipoCafe = original.tipo_cafe;
+        }
+      }
+      return {
+        ...f,
+        tipo_cafe: tipoCafe
+      };
     });
   }
 
@@ -908,12 +1186,19 @@ export class ReceptionService {
           }
         });
 
-        this.notifications.emitNotification('new_notification', {
-          title: 'Gerencia: Faltos Aprobados',
-          message: `Se aprobó la descarga de los sacos faltos del ingreso ${detalle.recepcion.numero_entrada}. Ya puede pesarse en báscula.`,
-          type: 'success',
-          module: 'RECEPCION'
-        });
+        try {
+          await this.notificationsService.create({
+            rol_destino: 'bascula',
+            titulo: 'Gerencia: Faltos Aprobados',
+            mensaje: `Se aprobó descarga de sacos faltos del ingreso ${detalle.recepcion.numero_entrada}. Listo para pesaje.`,
+            tipo: 'success',
+            icono: 'ri-checkbox-circle-line',
+            referencia_id: String(idDetalle),
+            ruta: '/recepcion/bascula',
+          });
+        } catch (err: any) {
+          console.warn('Error al registrar notificación de faltos aprobados:', err?.message);
+        }
       } else {
         const estadoDevolucion = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Devolucion' } });
         await tx.detalleRecepcion.update({
@@ -927,14 +1212,362 @@ export class ReceptionService {
           }
         });
 
-        this.notifications.emitNotification('new_notification', {
-          title: 'Gerencia: Carga Devuelta',
-          message: `Se ha ordenado la devolución de sacos faltos para el ingreso ${detalle.recepcion.numero_entrada}.`,
-          type: 'danger',
-          module: 'RECEPCION'
-        });
+        try {
+          await this.notificationsService.create({
+            rol_destino: 'bascula',
+            titulo: 'Gerencia: Carga Devuelta',
+            mensaje: `Se ordenó la devolución de sacos faltos para el ingreso ${detalle.recepcion.numero_entrada}.`,
+            tipo: 'danger',
+            icono: 'ri-close-circle-line',
+            referencia_id: String(idDetalle),
+            ruta: '/recepcion/bascula',
+          });
+        } catch (err: any) {
+          console.warn('Error al registrar notificación de devolución:', err?.message);
+        }
       }
       return { success: true };
     });
+  }
+
+  // ==========================================
+  // OTROS MOVIMIENTOS (CASULLA / SUBPRODUCTOS)
+  // Pesaje invertido: 1ra pesada = Tara (vacío), 2da pesada = Bruto (cargado)
+  // ==========================================
+
+  async createOtroMovimiento(dto: CreateOtroMovimientoDto, usuarioId: number) {
+    let idCosecha = dto.id_cosecha;
+    if (!idCosecha) {
+      const cosechaActiva = await this.prisma.cosecha.findFirst({
+        where: { estado: true },
+        orderBy: { id_cosecha: 'desc' }
+      });
+      idCosecha = cosechaActiva ? cosechaActiva.id_cosecha : 1;
+    }
+
+    let idMunicipio = dto.id_municipio;
+    if (!idMunicipio) {
+      const muni = await this.prisma.municipio.findFirst({
+        where: { estado: true }
+      });
+      idMunicipio = muni ? muni.id_municipio : 1;
+    }
+
+    let idProveedor = dto.id_proveedor;
+    if (!idProveedor) {
+      const prov = await this.prisma.proveedor.findFirst({
+        where: { estado: true }
+      });
+      idProveedor = prov ? prov.id_proveedor : 1;
+    }
+
+    const idTipoMov = dto.id_tipo_movimiento || 2;
+    const tipoMov = await this.prisma.tipo_movimiento.findUnique({
+      where: { id: idTipoMov }
+    });
+
+    let prefix = 'MOV';
+    if (tipoMov?.codigo) {
+      if (tipoMov.codigo === 'CASULLA') {
+        prefix = 'CAS';
+      } else if (tipoMov.codigo.length <= 4) {
+        prefix = tipoMov.codigo.toUpperCase();
+      } else {
+        prefix = tipoMov.codigo.substring(0, 4).toUpperCase();
+      }
+    }
+
+    const countOtros = await this.prisma.recepcion.count({
+      where: { id_tipo_movimiento: idTipoMov }
+    });
+    let seq = countOtros + 1;
+    let correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
+    while (await this.prisma.recepcion.findUnique({ where: { numero_entrada: correlativo } })) {
+      seq++;
+      correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
+    }
+
+    const estadoPesadaAbierta = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Abierta' }
+    });
+    const estadoPendiente = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pendiente de Muestrear' }
+    });
+
+    const tieneTaraInicial = dto.peso_tara_inicial !== undefined && dto.peso_tara_inicial !== null && dto.peso_tara_inicial > 0;
+    const estadoId = tieneTaraInicial 
+      ? (estadoPesadaAbierta?.id_estado_transaccion || 7) 
+      : (estadoPendiente?.id_estado_transaccion || 1);
+
+    const nuevaRecepcion = await this.prisma.recepcion.create({
+      data: {
+        numero_entrada: correlativo,
+        id_sucursal: dto.id_sucursal || 1,
+        id_cosecha: idCosecha,
+        tipo_vehiculo: dto.tipo_vehiculo,
+        id_placa_cabezal: dto.id_placa_cabezal,
+        id_placa_furgon: dto.id_placa_furgon || null,
+        id_conductor: dto.id_conductor,
+        id_municipio: idMunicipio,
+        id_tipo_movimiento: idTipoMov,
+        observaciones: dto.observaciones,
+        estado: true,
+        usuario_creacion: usuarioId,
+        detalles: {
+          create: [{
+            remision: dto.remision || correlativo,
+            id_proveedor: idProveedor,
+            id_estado_transaccion: estadoId,
+            cantidad_sacos: 0,
+            cantidad_qq: 0,
+            numero_muestra: 'N/A',
+            omitir_analisis: true,
+            pesada_entrada: tieneTaraInicial ? dto.peso_tara_inicial : null,
+            fecha_entrada_bascula: tieneTaraInicial ? new Date() : null,
+            observaciones: dto.observaciones,
+            usuario_creacion: usuarioId,
+          }]
+        }
+      },
+      include: {
+        detalles: {
+          include: {
+            proveedor: true,
+            estado_transaccion: true
+          }
+        },
+        conductor: { include: { transporte: true } },
+        placa_cabezal: true,
+        placa_furgon: true,
+        tipo_movimiento: true,
+      }
+    });
+
+    const nombreTipo = tipoMov?.nombre || 'Otro Movimiento';
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: `Nuevo Movimiento: ${nombreTipo}`,
+        mensaje: `Movimiento ${correlativo} registrado para ${dto.tipo_vehiculo}.`,
+        tipo: 'info',
+        icono: 'ri-exchange-line',
+        referencia_id: String(nuevaRecepcion.id_recepcion),
+        ruta: '/recepcion/otros-movimientos',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de otro movimiento:', err?.message);
+    }
+
+    return nuevaRecepcion;
+  }
+
+  async findOtrosMovimientos(q?: string) {
+    const where: any = {
+      estado: true,
+      id_tipo_movimiento: { not: 1 }
+    };
+
+    if (q && q.trim().length > 0) {
+      const term = q.trim().toLowerCase();
+      where.OR = [
+        { numero_entrada: { contains: term, mode: 'insensitive' } },
+        { tipo_movimiento: { nombre: { contains: term, mode: 'insensitive' } } },
+        { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
+        { placa_furgon: { placa: { contains: term, mode: 'insensitive' } } },
+        { conductor: { nombre: { contains: term, mode: 'insensitive' } } },
+        { detalles: { some: { remision: { contains: term, mode: 'insensitive' } } } },
+      ];
+    }
+
+    return this.prisma.recepcion.findMany({
+      where,
+      include: {
+        tipo_movimiento: true,
+        placa_cabezal: true,
+        placa_furgon: true,
+        conductor: { include: { transporte: true } },
+        municipio: true,
+        detalles: {
+          where: { estado: true },
+          include: {
+            proveedor: true,
+            estado_transaccion: true,
+          },
+          orderBy: { id_detalle_recepcion: 'asc' }
+        }
+      },
+      orderBy: { id_recepcion: 'desc' }
+    });
+  }
+
+  async registrarPrimeraPesadaOtroMovimiento(idDetalle: number, peso: number, usuarioId?: number, observaciones?: string) {
+    if (!peso || peso <= 0) {
+      throw new InternalServerErrorException('El peso de la primera pesada debe ser mayor a 0');
+    }
+
+    const estadoPesadaAbierta = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Abierta' }
+    });
+    if (!estadoPesadaAbierta) throw new InternalServerErrorException('El estado "Pesada Abierta" no existe en BD');
+
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: { recepcion: true }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
+
+    const dataUpdate: any = {
+      pesada_entrada: peso,
+      fecha_entrada_bascula: new Date(),
+      id_estado_transaccion: estadoPesadaAbierta.id_estado_transaccion,
+      usuario_modificacion: usuarioId,
+      fecha_modificacion: new Date(),
+    };
+    if (observaciones && observaciones.trim().length > 0) {
+      dataUpdate.observaciones = detalle.observaciones
+        ? `${detalle.observaciones} | ${observaciones.trim()}`
+        : observaciones.trim();
+    }
+
+    const detalleActualizado = await this.prisma.detalleRecepcion.update({
+      where: { id_detalle_recepcion: idDetalle },
+      data: dataUpdate,
+      include: {
+        recepcion: {
+          include: {
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: true,
+            tipo_movimiento: true
+          }
+        },
+        proveedor: true,
+        estado_transaccion: true
+      }
+    });
+
+    const nombreTipo = detalleActualizado.recepcion.tipo_movimiento?.nombre || 'Otro Movimiento';
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: `Báscula ${nombreTipo}: 1ra Pesada Realizada`,
+        mensaje: `Vehículo ${detalleActualizado.recepcion.numero_entrada} pesó ${peso.toLocaleString()} LB.`,
+        tipo: 'info',
+        icono: 'ri-scales-3-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/otros-movimientos',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de 1ra pesada de otro movimiento:', err?.message);
+    }
+
+    return detalleActualizado;
+  }
+
+  async registrarSegundaPesadaOtroMovimiento(idDetalle: number, peso: number, usuarioId?: number, observaciones?: string) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: { recepcion: { include: { tipo_movimiento: true } } }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle #${idDetalle} no encontrado`);
+    if (!detalle.pesada_entrada) {
+      throw new InternalServerErrorException('No se ha registrado la primera pesada para este movimiento.');
+    }
+
+    const esBrutoPrimero = detalle.recepcion?.tipo_movimiento?.sentido_pesaje === 'BRUTO_PRIMERO';
+    const peso1 = Number(detalle.pesada_entrada);
+    const peso2 = Number(peso);
+
+    let pesoNeto = 0;
+    if (esBrutoPrimero) {
+      if (peso2 >= peso1) {
+        throw new InternalServerErrorException(`El peso de la tara vacía (${peso2.toLocaleString()} LB) debe ser menor al peso bruto inicial (${peso1.toLocaleString()} LB).`);
+      }
+      pesoNeto = peso1 - peso2;
+    } else {
+      if (peso2 <= peso1) {
+        throw new InternalServerErrorException(`El peso cargado (${peso2.toLocaleString()} LB) debe ser mayor a la tara registrada (${peso1.toLocaleString()} LB).`);
+      }
+      pesoNeto = peso2 - peso1;
+    }
+
+    const estadoPesadaCerrada = await this.prisma.estadoTransaccion.findUnique({
+      where: { nombre: 'Pesada Cerrada' }
+    });
+    if (!estadoPesadaCerrada) throw new InternalServerErrorException('El estado "Pesada Cerrada" no existe en BD');
+
+    const dataUpdate: any = {
+      pesada_salida: peso2,
+      fecha_salida_bascula: new Date(),
+      peso_neto: pesoNeto,
+      id_estado_transaccion: estadoPesadaCerrada.id_estado_transaccion,
+      usuario_modificacion: usuarioId,
+      fecha_modificacion: new Date()
+    };
+    if (observaciones && observaciones.trim().length > 0) {
+      dataUpdate.observaciones = detalle.observaciones
+        ? `${detalle.observaciones} | ${observaciones.trim()}`
+        : observaciones.trim();
+    }
+
+    const detalleActualizado = await this.prisma.detalleRecepcion.update({
+      where: { id_detalle_recepcion: idDetalle },
+      data: dataUpdate,
+      include: {
+        recepcion: {
+          include: {
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: true,
+            tipo_movimiento: true
+          }
+        },
+        proveedor: true,
+        estado_transaccion: true
+      }
+    });
+
+    const nombreTipo = detalleActualizado.recepcion.tipo_movimiento?.nombre || 'Otro Movimiento';
+    try {
+      await this.notificationsService.create({
+        rol_destino: 'bascula',
+        titulo: `Báscula ${nombreTipo}: Pesada Cerrada`,
+        mensaje: `Vehículo ${detalleActualizado.recepcion.numero_entrada} finalizó pesaje. Neto: ${pesoNeto.toLocaleString()} LB.`,
+        tipo: 'success',
+        icono: 'ri-checkbox-circle-line',
+        referencia_id: String(idDetalle),
+        ruta: '/recepcion/otros-movimientos',
+      });
+    } catch (err: any) {
+      console.warn('Error al registrar notificación de pesada cerrada de otro movimiento:', err?.message);
+    }
+
+    return detalleActualizado;
+  }
+
+  async getBoletaPesadaOtroMovimiento(idDetalle: number) {
+    const detalle = await this.prisma.detalleRecepcion.findUnique({
+      where: { id_detalle_recepcion: idDetalle },
+      include: {
+        proveedor: true,
+        estado_transaccion: true,
+        recepcion: {
+          include: {
+            cosecha: true,
+            placa_cabezal: true,
+            placa_furgon: true,
+            conductor: { include: { transporte: true } },
+            tipo_movimiento: true,
+            municipio: { include: { departamento: true } },
+            sucursal: true
+          }
+        }
+      }
+    });
+
+    if (!detalle) throw new NotFoundException(`Detalle de pesaje #${idDetalle} no encontrado`);
+    return detalle;
   }
 }

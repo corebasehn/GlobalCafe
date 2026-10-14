@@ -322,4 +322,22 @@ export class CatalogsController {
   updateTipoEmpaque(@Param('id') id: string, @Body() data: any, @Request() req) {
     return this.catalogsService.updateTipoEmpaque(+id, data, req.user.id);
   }
+
+  // ==========================================
+  // TIPO MOVIMIENTO
+  // ==========================================
+  @Get('tipos-movimiento')
+  getTiposMovimiento() {
+    return this.catalogsService.getTiposMovimiento();
+  }
+
+  @Post('tipos-movimiento')
+  createTipoMovimiento(@Body() data: any) {
+    return this.catalogsService.createTipoMovimiento(data);
+  }
+
+  @Patch('tipos-movimiento/:id')
+  updateTipoMovimiento(@Param('id') id: string, @Body() data: any) {
+    return this.catalogsService.updateTipoMovimiento(+id, data);
+  }
 }

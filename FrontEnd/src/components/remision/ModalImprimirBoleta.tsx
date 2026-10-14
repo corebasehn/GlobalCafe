@@ -1,7 +1,14 @@
-import { Printer } from "lucide-react";
-import { Button, Modal } from "react-bootstrap";
+import { useState, useEffect } from "react";
+import { Printer, Loader2, CheckCircle2, AlertCircle, Settings } from "lucide-react";
+import { Button, Modal, Form, Badge } from "react-bootstrap";
+import toast from "react-hot-toast";
 import { Recepcion } from "../../api/reception.api";
 import { Conductor, PlacaCabezal, PlacaFurgon, Proveedor, Transporte, Municipio } from "../../api/catalogs.api";
+import {
+  imprimirMatricialRecepcion,
+  obtenerImpresorasDisponibles,
+  guardarImpresoraConfig,
+} from "../../api/printer.api";
 
 type Props = {
   show: boolean;
@@ -21,7 +28,50 @@ export default function ModalImprimirBoleta({
   conductores, transportes, placasCabezal, placasFurgon, proveedores, municipios,
   onHide, onConfirmPrint,
 }: Readonly<Props>) {
+  const [imprimiendo, setImprimiendo] = useState(false);
+  const [esCopia, setEsCopia] = useState(false);
+  const [listaImpresoras, setListaImpresoras] = useState<string[]>([]);
+  const [impresoraSeleccionada, setImpresoraSeleccionada] = useState<string>("");
+  const [agenteOnline, setAgenteOnline] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!show) return;
+    obtenerImpresorasDisponibles().then((res) => {
+      setAgenteOnline(res.online);
+      setListaImpresoras(res.impresoras);
+      if (res.activa) {
+        setImpresoraSeleccionada(res.activa);
+      }
+    });
+  }, [show]);
+
+  const handleChangeImpresora = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const nueva = e.target.value;
+    setImpresoraSeleccionada(nueva);
+    await guardarImpresoraConfig(nueva);
+    toast.success(`Impresora matricial: ${nueva}`);
+  };
+
   if (!recepcion) return null;
+
+  const handlePrintMatricial = async () => {
+    setImprimiendo(true);
+    try {
+      const res = await imprimirMatricialRecepcion(recepcion.id_recepcion, esCopia);
+      if (res.success) {
+        toast.success(`🖨️ ${res.message}`);
+        onHide();
+      } else {
+        toast.error(res.message);
+        if (res.fallbackNeeded) {
+          toast("Abriendo vista de impresión tradicional...", { icon: "📄" });
+          onConfirmPrint();
+        }
+      }
+    } finally {
+      setImprimiendo(false);
+    }
+  };
 
   const cond = conductores.find(c => c.id_conductor === recepcion.id_conductor);
   const transp = transportes.find(t => t.id_transporte === cond?.id_transporte);
@@ -33,10 +83,17 @@ export default function ModalImprimirBoleta({
   const depto = muni ? (muni as any).departamento?.nombre : "";
   const origen = muni ? (depto ? `${muni.nombre}, ${depto}` : muni.nombre) : "N/A";
 
+  const etiquetaBoton = impresoraSeleccionada
+    ? `Imprimir en ${impresoraSeleccionada}`
+    : "Imprimir Matricial Directo";
+
   return (
     <Modal show={show} onHide={onHide} size="lg">
       <Modal.Header closeButton>
-        <Modal.Title>Imprimir Boleta de Ingreso</Modal.Title>
+        <Modal.Title className="d-flex align-items-center gap-2">
+          <Printer className="w-5 h-5 text-primary" />
+          Imprimir Boleta de Ingreso
+        </Modal.Title>
       </Modal.Header>
       <Modal.Body>
         <style>{`
@@ -73,15 +130,73 @@ export default function ModalImprimirBoleta({
           }
         `}</style>
 
-        <div className="bg-warning-subtle border border-2 border-warning rounded-3 p-4 mb-4">
+        {/* Panel de Configuración de Impresión Matricial */}
+        <div className="bg-light border rounded-3 p-3 mb-3">
+          <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            <div className="d-flex align-items-center gap-2">
+              <Settings className="w-4 h-4 text-secondary" />
+              <span className="fw-semibold small">Impresora Matricial:</span>
+              {agenteOnline ? (
+                <Badge bg="success" className="d-flex align-items-center gap-1">
+                  <CheckCircle2 style={{ width: 12, height: 12 }} /> Agente en Línea
+                </Badge>
+              ) : (
+                <Badge bg="warning" text="dark" className="d-flex align-items-center gap-1">
+                  <AlertCircle style={{ width: 12, height: 12 }} /> Agente no detectado (:4000)
+                </Badge>
+              )}
+            </div>
+            <Form.Check
+              type="switch"
+              id="switch-copia-recepcion"
+              label="Marcar como Copia"
+              checked={esCopia}
+              onChange={(e) => setEsCopia(e.target.checked)}
+              className="small fw-medium mb-0"
+            />
+          </div>
+
+          <div className="row g-2 align-items-center">
+            <div className="col-12 col-md-8">
+              <Form.Select
+                size="sm"
+                value={impresoraSeleccionada}
+                onChange={handleChangeImpresora}
+                disabled={!agenteOnline || listaImpresoras.length === 0}
+              >
+                {listaImpresoras.length === 0 ? (
+                  <option value="">
+                    {agenteOnline
+                      ? "(Buscando impresoras matriciales...)"
+                      : "(Inicia el Agente de Impresión en esta PC)"}
+                  </option>
+                ) : (
+                  listaImpresoras.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))
+                )}
+              </Form.Select>
+            </div>
+            <div className="col-12 col-md-4 text-md-end">
+              <small className="text-muted">Papel continuo media carta (5.5")</small>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-warning-subtle border border-warning-subtle rounded-3 p-3 mb-3">
           <p className="text-warning-emphasis mb-0 fw-medium d-flex align-items-center gap-2 small">
-            <Printer className="w-4 h-4" />
-            Revise los datos. Al imprimir, el sistema usará las coordenadas para el formato preimpreso.
+            <Printer className="w-4 h-4 flex-shrink-0" />
+            <span>
+              <strong>Modo Matricial Directo:</strong> Envía texto nítido por agujas directamente a la impresora seleccionada.
+              (La <em>Vista Web</em> usa el diálogo tradicional del navegador).
+            </span>
           </p>
         </div>
 
-        <div id="print-area">
-          <div className="print-field coord-numero">N° Ingreso: {recepcion.numero_entrada}</div>
+        <div id="print-area" className="border rounded p-3 bg-white">
+          <div className="print-field coord-numero"># Recepción: {recepcion.numero_entrada}</div>
           <div className="print-field coord-fecha">Fecha: {new Date(recepcion.fecha_entrada).toLocaleString()}</div>
           {recepcion.cantidad_impresiones > 0 && (
             <div className="print-field coord-reimpresion">*** REIMPRESIÓN ***</div>
@@ -92,7 +207,7 @@ export default function ModalImprimirBoleta({
           <div className="print-field coord-origen">Origen del café: {origen}</div>
           <div className="print-field coord-marchamo">Marchamos: {recepcion.marchamo || "N/A"}</div>
 
-          <table className="print-field coord-tabla w-100 text-start">
+          <table className="print-field coord-tabla w-100 text-start mt-2">
             <thead className="border-bottom border-dark">
               <tr>
                 <th className="pb-1">Remisión</th>
@@ -114,11 +229,31 @@ export default function ModalImprimirBoleta({
           </table>
         </div>
       </Modal.Body>
-      <Modal.Footer>
+      <Modal.Footer className="d-flex justify-content-between align-items-center">
         <Button variant="secondary" onClick={onHide}>Cancelar</Button>
-        <Button variant="primary" onClick={onConfirmPrint} className="d-flex align-items-center gap-2">
-          <Printer className="w-4 h-4" /> Imprimir Formato
-        </Button>
+        <div className="d-flex align-items-center gap-2">
+          <Button
+            variant="outline-secondary"
+            onClick={onConfirmPrint}
+            className="d-flex align-items-center gap-2"
+            title="Imprimir usando vista tradicional del navegador"
+          >
+            <Printer className="w-4 h-4" /> Vista Web
+          </Button>
+          <Button
+            variant="success"
+            onClick={handlePrintMatricial}
+            disabled={imprimiendo || !agenteOnline}
+            className="d-flex align-items-center gap-2"
+            title={agenteOnline ? `Imprimir en ${impresoraSeleccionada}` : "Inicie el agente de impresión en esta PC"}
+          >
+            {imprimiendo ? (
+              <><Loader2 className="w-4 h-4 spinner-border spinner-border-sm" /> Imprimiendo...</>
+            ) : (
+              <><Printer className="w-4 h-4" /> {etiquetaBoton}</>
+            )}
+          </Button>
+        </div>
       </Modal.Footer>
     </Modal>
   );

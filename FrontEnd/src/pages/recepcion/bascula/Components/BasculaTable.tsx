@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Loader2, Scale, ChevronRight, ChevronDown, MoreVertical, Truck, ShieldCheck, FileSpreadsheet, Printer } from "lucide-react";
 import { Card, Table, Badge, Button, Dropdown, Pagination } from "react-bootstrap";
 import * as XLSX from "xlsx";
+import ModalOpcionesImpresion from "./ModalOpcionesImpresion";
+
 export type ModalMode = "ENTRADA" | "SALIDA" | "SALIDA_CABEZAL" | "ENTRADA_CABEZAL";
 
 export interface BasculaTableProps {
@@ -25,12 +27,11 @@ function getBadgeVariant(estado: string) {
 }
 
 export default function BasculaTable({ recepciones, loading, expandedRows, onToggleRow, onOpenModal, searchTerm, canReimprimir }: BasculaTableProps) {
-  const base = import.meta.env.BASE_URL;
-
-  const handleReimprimir = (carga: any) => {
-    const tipo = carga.pesada_salida != null ? "segunda" : "primera";
-    window.open(`${base}print/boleta-pesada/${carga.id_detalle_recepcion}/${tipo}?copia=true`, "_blank");
-  };
+  const [impresionModal, setImpresionModal] = useState<{
+    show: boolean;
+    carga: any | null;
+    recepcion: any | null;
+  }>({ show: false, carga: null, recepcion: null });
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
@@ -78,6 +79,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
             "Conductor": idx === 0 ? conductorName : "",
             "Teléfono": idx === 0 ? conductorTelefono : "",
             "Remisión": carga.remision,
+            "Tipo de Café": carga.tipo_cafe?.tipo_cafe || "N/A",
             "Proveedor / Finca": carga.proveedor?.nombre || "",
             "Sacos": carga.cantidad_sacos,
             "Pesada Entrada (LB)": carga.pesada_entrada ? Number(carga.pesada_entrada) : "",
@@ -95,7 +97,8 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
   };
 
   return (
-    <Card>
+    <>
+      <Card>
       {!loading && recepciones.length > 0 && (
         <Card.Header className="d-flex justify-content-end py-2 bg-white border-bottom">
           <Button variant="outline-success" size="sm" onClick={exportarExcel} className="d-flex align-items-center gap-1">
@@ -183,6 +186,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                 <tr>
                                   <th className="text-center" style={{ width: "80px" }}>Acciones</th>
                                   <th>Remisión</th>
+                                  <th>Tipo de Café</th>
                                   <th>Proveedor / Finca</th>
                                   <th className="text-center">Sacos</th>
                                   <th className="text-end">Pesada Entrada (Bruto)</th>
@@ -264,13 +268,13 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                               )}
                                               {hasPesada && (
                                                 <Dropdown.Item
-                                                  onClick={() => canReimprimir && handleReimprimir(carga)}
+                                                  onClick={() => canReimprimir && setImpresionModal({ show: true, carga, recepcion: r })}
                                                   className="d-flex align-items-center gap-2"
                                                   disabled={!canReimprimir}
                                                   title={!canReimprimir ? "No tiene permiso para reimprimir pesadas" : undefined}
                                                 >
                                                   <Printer size={15} className={canReimprimir ? "text-secondary" : "text-muted"} />
-                                                  <span className={!canReimprimir ? "text-muted" : ""}>Reimprimir Pesada</span>
+                                                  <span className={!canReimprimir ? "text-muted" : ""}>Reimprimir / Documentos</span>
                                                 </Dropdown.Item>
                                               )}
                                             </Dropdown.Menu>
@@ -286,6 +290,11 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                                         )}
                                       </td>
                                       <td className="font-medium text-neutral-700">{carga.remision}</td>
+                                      <td>
+                                        <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                                          {carga.tipo_cafe?.tipo_cafe || "---"}
+                                        </Badge>
+                                      </td>
                                       <td>{carga.proveedor?.nombre}</td>
                                       <td className="text-center">{carga.cantidad_sacos}</td>
                                       <td className="text-end font-monospace">{carga.pesada_entrada ? Number(carga.pesada_entrada).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "---"} LB</td>
@@ -302,7 +311,7 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
                               </tbody>
                               <tfoot className="table-light border-top border-2">
                                 <tr>
-                                  <td colSpan={3} className="text-end fw-bold text-neutral-600 py-1">
+                                  <td colSpan={4} className="text-end fw-bold text-neutral-600 py-1">
                                     Total ({detalles.length} {detalles.length === 1 ? "carga" : "cargas"}):
                                   </td>
                                   <td className="text-center fw-bold">{sumSacos.toLocaleString()}</td>
@@ -359,6 +368,14 @@ export default function BasculaTable({ recepciones, loading, expandedRows, onTog
           )}
         </div>
       )}
-    </Card>
+      </Card>
+
+      <ModalOpcionesImpresion
+        show={impresionModal.show}
+        carga={impresionModal.carga}
+        recepcion={impresionModal.recepcion}
+        onClose={() => setImpresionModal({ show: false, carga: null, recepcion: null })}
+      />
+    </>
   );
 }

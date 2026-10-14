@@ -83,6 +83,8 @@ export default function PesadaModal({
               <Row className="g-2 text-sm">
                 <Col xs={5} className="text-muted fw-medium">Ingreso / Remisión:</Col>
                 <Col xs={7} className="fw-bold text-end">{selectedRecepcion.numero_entrada} / {selectedCarga.remision}</Col>
+                <Col xs={5} className="text-muted fw-medium">Tipo de Café:</Col>
+                <Col xs={7} className="fw-bold text-end text-coffee-700">{selectedCarga.tipo_cafe?.tipo_cafe || "N/A"}</Col>
                 <Col xs={5} className="text-muted fw-medium">Proveedor:</Col>
                 <Col xs={7} className="fw-semibold text-end text-truncate">{selectedCarga.proveedor?.nombre}</Col>
                 <Col xs={5} className="text-muted fw-medium">Sacos Declarados:</Col>
@@ -140,23 +142,6 @@ export default function PesadaModal({
               </Form.Text>
             </Form.Group>
 
-            {/* Observaciones (Solo en SALIDA) */}
-            {modalMode === "SALIDA" && (
-              <Form.Group className="pt-3 border-top">
-                <Form.Label className="fw-bold">Observaciones</Form.Label>
-                <Form.Control
-                  as="textarea"
-                  rows={3}
-                  placeholder="Ingrese observaciones sobre la salida del vehículo..."
-                  value={observaciones}
-                  onChange={(e) => onObservacionesChange(e.target.value)}
-                  maxLength={500}
-                />
-                <Form.Text className="text-muted">
-                  {observaciones.length}/500 caracteres
-                </Form.Text>
-              </Form.Group>
-            )}
 
             {/* Selector de Bodega (Solo en ENTRADA) */}
             {modalMode === "ENTRADA" && (

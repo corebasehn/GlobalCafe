@@ -13,6 +13,7 @@ export interface RemisionDetalleForm {
 
 export interface RemisionFormData {
   id_cosecha: string;
+  id_tipo_remision: string;
   tipo_vehiculo: string;
   id_placa_cabezal: string;
   id_placa_furgon: string;
@@ -26,6 +27,7 @@ export interface RemisionFormData {
 
 export const initialState: RemisionFormData = {
   id_cosecha: "",
+  id_tipo_remision: "2",
   tipo_vehiculo: "Camión Rígido",
   id_placa_cabezal: "",
   id_placa_furgon: "",
@@ -39,7 +41,7 @@ export const initialState: RemisionFormData = {
     cantidad_sacos: "",
     cantidad_qq: "",
     remision: "",
-    id_tipo_remision: "",
+    id_tipo_remision: "2",
     id_tipo_cafe: "",
     id_tipo_empaque: "",
     observaciones: "",

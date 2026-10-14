@@ -22,3 +22,10 @@ lerna-debug.log*
 # temp directory
 .temp
 .tmp
+
+# Python / PyInstaller
+__pycache__/
+*.py[cod]
+*$py.class
+AgenteBascula/build/
+AgenteBascula/*.spec

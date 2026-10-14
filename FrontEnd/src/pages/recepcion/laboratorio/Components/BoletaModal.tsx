@@ -69,14 +69,23 @@ export default function BoletaModal({ muestra, onClose, esCopia = false }: Bolet
               {/* Encabezado */}
               <div style={{ textAlign: "center", borderBottom: "2px solid black", paddingBottom: "12px", marginBottom: "16px" }}>
                 <p style={{ fontSize: "20px", fontWeight: "bold", margin: "0 0 2px" }}>GLOBAL COFFEE GROUP</p>
-                <p style={{ fontSize: "13px", fontWeight: "600", margin: 0, letterSpacing: "0.05em" }}>BOLETA DE MUESTRA PREVIA</p>
+                <p style={{ fontSize: "13px", fontWeight: "600", margin: 0, letterSpacing: "0.05em" }}>
+                  {muestra.analisis.tipo_analisis?.toUpperCase().includes("GENERAL")
+                    ? "BOLETA DE MUESTRA GENERAL"
+                    : muestra.analisis.tipo_analisis?.toUpperCase().includes("PREVIA")
+                    ? "BOLETA DE MUESTRA PREVIA"
+                    : muestra.analisis.tipo_analisis
+                    ? `BOLETA DE ${muestra.analisis.tipo_analisis.toUpperCase()}`
+                    : "BOLETA DE MUESTRA PREVIA"}
+                </p>
               </div>
 
               {/* Datos — cuadrícula 2 columnas */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", rowGap: "6px", columnGap: "24px", marginBottom: "16px" }}>
                 <p style={{ margin: 0 }}><strong>N° Entrada:</strong> {muestra.numero_entrada}</p>
                 <p style={{ margin: 0 }}><strong>N° Remisión:</strong> {muestra.remision}</p>
-                <p style={{ margin: 0, gridColumn: "span 2" }}><strong>Proveedor:</strong> {muestra.proveedor_nombre}</p>
+                <p style={{ margin: 0 }}><strong>Proveedor:</strong> {muestra.proveedor_nombre}</p>
+                <p style={{ margin: 0 }}><strong>Tipo Café:</strong> {muestra.tipo_cafe?.tipo_cafe || "—"}</p>
                 <p style={{ margin: 0 }}><strong>Fecha/Hora:</strong> {new Date(muestra.analisis.fecha_analisis).toLocaleString()}</p>
                 <p style={{ margin: 0 }}><strong>Catador:</strong> {muestra.analisis.catador?.nombre || "—"}</p>
                 <p style={{ margin: 0 }}><strong>Humedad:</strong> {muestra.analisis.humedad}%</p>

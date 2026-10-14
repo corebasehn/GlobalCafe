@@ -45,9 +45,10 @@ export default function ModalConfirmarMuestra({
             Información de la Carga a Muestrear:
           </h2 >
           <Row className="g-2 text-blue-900">
-            <Col xs={4}><p className="mb-0"><strong>Ingreso:</strong> {carga.numero_entrada}</p></Col>
-            <Col xs={4}><p className="mb-0"><strong>Remisión:</strong> {carga.remision}</p></Col>
-            <Col xs={4}><p className="mb-0"><strong>Sacos:</strong> {carga.cantidad_sacos}</p></Col>
+            <Col xs={6} md={3}><p className="mb-0"><strong>Ingreso:</strong> {carga.numero_entrada}</p></Col>
+            <Col xs={6} md={3}><p className="mb-0"><strong>Remisión:</strong> {carga.remision}</p></Col>
+            <Col xs={6} md={3}><p className="mb-0"><strong>Tipo Café:</strong> {carga.tipo_cafe?.tipo_cafe || "—"}</p></Col>
+            <Col xs={6} md={3}><p className="mb-0"><strong>Sacos:</strong> {carga.cantidad_sacos}</p></Col>
             <Col xs={12}><p className="mb-0"><strong>Proveedor:</strong> {carga.proveedor_nombre}</p></Col>
           </Row>
         </div>
@@ -85,7 +86,7 @@ export default function ModalConfirmarMuestra({
             <div className="fs-6 flex-grow-1 d-flex flex-column justify-content-center">
               <p className="mb-1"><strong>ING:</strong> {carga.numero_entrada} | <strong>REM:</strong> {carga.remision}</p>
               <p className="text-truncate mb-1"><strong>PROV:</strong> {carga.proveedor_nombre}</p>
-              <p className="mb-1"><strong>SACOS:</strong> {carga.cantidad_sacos} | <strong>QQ:</strong> {carga.cantidad_qq}</p>
+              <p className="mb-1"><strong>CAFÉ:</strong> {carga.tipo_cafe?.tipo_cafe || "—"} | <strong>SACOS:</strong> {carga.cantidad_sacos} | <strong>QQ:</strong> {carga.cantidad_qq}</p>
               <p className="mb-0"><strong>FECHA:</strong> {new Date().toLocaleString()}</p>
             </div>
             <div className="text-center border-top border-dashed border-dark pt-1" style={{ fontSize: "10px" }}>

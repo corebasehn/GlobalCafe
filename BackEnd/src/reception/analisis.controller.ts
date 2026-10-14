@@ -38,4 +38,13 @@ export class AnalisisController {
   buscarAnalisis(@Query('q') q: string) {
     return this.analisisService.buscarAnalisis(q);
   }
+
+  @UseGuards(AuthGuard)
+  @Get('comparativo-fechas')
+  buscarComparativoFechas(
+    @Query('fechaInicio') fechaInicio: string,
+    @Query('fechaFin') fechaFin: string,
+  ) {
+    return this.analisisService.buscarComparativoFechas(fechaInicio, fechaFin);
+  }
 }

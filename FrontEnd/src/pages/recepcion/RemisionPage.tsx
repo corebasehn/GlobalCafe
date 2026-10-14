@@ -8,9 +8,9 @@ import toast from "react-hot-toast";
 import {
   getCosechasApi, getPlacasCabezalApi, getPlacasFurgonApi, getTransportesApi,
   getConductoresApi, getMunicipiosApi, getProveedoresApi,
-  getTiposCafeApi, getTiposRemisionApi, getTiposEmpaqueApi,
+  getTiposCafeApi, getTiposRemisionApi, getTiposEmpaqueApi, getDepartamentosApi,
   Cosecha, PlacaCabezal, PlacaFurgon, Conductor, Municipio, Proveedor, Transporte,
-  TipoCafe, TipoRemision, TipoEmpaque,
+  TipoCafe, TipoRemision, TipoEmpaque, Departamento,
 } from "../../api/catalogs.api";
 import {
   getReceptionsApi, createReceptionApi, updateReceptionApi, deleteReceptionApi,
@@ -22,6 +22,7 @@ import BuscadorRemision from "../../components/remision/BuscadorRemision";
 import TablaRemision from "../../components/remision/TablaRemision";
 import ModalRemision from "../../components/remision/ModalRemision";
 import ModalImprimirBoleta from "../../components/remision/ModalImprimirBoleta";
+import { CatalogoTipo } from "../../components/remision/ModalCreacionRapidaCatalogo";
 
 // Anular modal (small, stays here as it's trivial)
 import { Button, Modal } from "react-bootstrap";
@@ -44,6 +45,7 @@ export default function RemisionPage() {
   const [placasFurgon, setPlacasFurgon] = useState<PlacaFurgon[]>([]);
   const [conductores, setConductores] = useState<Conductor[]>([]);
   const [municipios, setMunicipios] = useState<Municipio[]>([]);
+  const [departamentos, setDepartamentos] = useState<Departamento[]>([]);
   const [proveedores, setProveedores] = useState<Proveedor[]>([]);
   const [transportes, setTransportes] = useState<Transporte[]>([]);
   const [tiposCafe, setTiposCafe] = useState<TipoCafe[]>([]);
@@ -66,11 +68,12 @@ export default function RemisionPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [cos, pc, pf, cond, mun, prov, trans, recs, tc, tr, te] = await Promise.all([
+      const [cos, pc, pf, cond, mun, prov, trans, recs, tc, tr, te, deps] = await Promise.all([
         getCosechasApi(), getPlacasCabezalApi(), getPlacasFurgonApi(),
         getConductoresApi(), getMunicipiosApi(), getProveedoresApi(),
         getTransportesApi(), getReceptionsApi(),
         getTiposCafeApi(), getTiposRemisionApi(), getTiposEmpaqueApi(),
+        getDepartamentosApi(),
       ]);
       setCosechas(cos);
       setPlacasCabezal(pc);
@@ -83,6 +86,7 @@ export default function RemisionPage() {
       setTiposCafe(tc);
       setTiposRemision(tr);
       setTiposEmpaque(te);
+      setDepartamentos(deps);
 
       const cosechaActual = cos.find(c => c.cosecha_actual);
       if (cosechaActual) {
@@ -102,6 +106,7 @@ export default function RemisionPage() {
     setFormData({
       ...initialState,
       id_cosecha: cosechaActual ? cosechaActual.id_cosecha.toString() : "",
+      id_tipo_remision: "2",
     });
     setIsModalOpen(true);
   };
@@ -109,8 +114,14 @@ export default function RemisionPage() {
   const handleEdit = (recepcion: Recepcion) => {
     setEditingId(recepcion.id_recepcion);
     const conductorInfo = conductores.find(c => c.id_conductor === recepcion.id_conductor);
+    const primerTipoRem = recepcion.detalles?.[0]?.id_tipo_remision;
+    const tipoRemCalculado = primerTipoRem
+      ? primerTipoRem.toString()
+      : (recepcion.numero_entrada?.startsWith("INT") ? "1" : "2");
+
     setFormData({
       id_cosecha: recepcion.id_cosecha.toString(),
+      id_tipo_remision: tipoRemCalculado,
       tipo_vehiculo: recepcion.tipo_vehiculo,
       id_placa_cabezal: recepcion.id_placa_cabezal.toString(),
       id_placa_furgon: recepcion.id_placa_furgon ? recepcion.id_placa_furgon.toString() : "",
@@ -125,7 +136,7 @@ export default function RemisionPage() {
         cantidad_sacos: d.cantidad_sacos.toString(),
         cantidad_qq: d.cantidad_qq.toString(),
         remision: d.remision,
-        id_tipo_remision: d.id_tipo_remision ? d.id_tipo_remision.toString() : "",
+        id_tipo_remision: d.id_tipo_remision ? d.id_tipo_remision.toString() : tipoRemCalculado,
         id_tipo_cafe: d.id_tipo_cafe ? d.id_tipo_cafe.toString() : "",
         id_tipo_empaque: d.id_tipo_empaque ? d.id_tipo_empaque.toString() : "",
         observaciones: d.observaciones || "",
@@ -140,6 +151,7 @@ export default function RemisionPage() {
     try {
       setSubmitting(true);
       const payload: CreateReceptionRequest = {
+        id_tipo_remision: formData.id_tipo_remision ? Number(formData.id_tipo_remision) : undefined,
         id_cosecha: Number(formData.id_cosecha),
         tipo_vehiculo: formData.tipo_vehiculo,
         id_placa_cabezal: Number(formData.id_placa_cabezal),
@@ -154,7 +166,7 @@ export default function RemisionPage() {
           cantidad_sacos: Number(d.cantidad_sacos),
           cantidad_qq: Number(d.cantidad_qq),
           remision: d.remision,
-          id_tipo_remision: d.id_tipo_remision ? Number(d.id_tipo_remision) : undefined,
+          id_tipo_remision: d.id_tipo_remision ? Number(d.id_tipo_remision) : (formData.id_tipo_remision ? Number(formData.id_tipo_remision) : undefined),
           id_tipo_cafe: d.id_tipo_cafe ? Number(d.id_tipo_cafe) : undefined,
           id_tipo_empaque: d.id_tipo_empaque ? Number(d.id_tipo_empaque) : undefined,
           observaciones: d.observaciones || undefined,
@@ -190,7 +202,7 @@ export default function RemisionPage() {
       ...formData,
       detalles: [...formData.detalles, {
         id_proveedor: "", cantidad_sacos: "", cantidad_qq: "",
-        remision: "", id_tipo_remision: "", id_tipo_cafe: "", id_tipo_empaque: "",
+        remision: "", id_tipo_remision: formData.id_tipo_remision || "2", id_tipo_cafe: "", id_tipo_empaque: "",
         observaciones: "", is_editable: true,
       }],
     });
@@ -257,6 +269,35 @@ export default function RemisionPage() {
     );
   });
 
+  const handleCatalogCreated = (tipo: CatalogoTipo, nuevoItem: any) => {
+    switch (tipo) {
+      case "municipio":
+        setMunicipios((prev) => [...prev, nuevoItem]);
+        break;
+      case "transporte":
+        setTransportes((prev) => [...prev, nuevoItem]);
+        break;
+      case "conductor":
+        setConductores((prev) => [...prev, nuevoItem]);
+        break;
+      case "placa_cabezal":
+        setPlacasCabezal((prev) => [...prev, nuevoItem]);
+        break;
+      case "placa_furgon":
+        setPlacasFurgon((prev) => [...prev, nuevoItem]);
+        break;
+      case "proveedor":
+        setProveedores((prev) => [...prev, nuevoItem]);
+        break;
+      case "tipo_cafe":
+        setTiposCafe((prev) => [...prev, nuevoItem]);
+        break;
+      case "tipo_empaque":
+        setTiposEmpaque((prev) => [...prev, nuevoItem]);
+        break;
+    }
+  };
+
   return (
     <div>
       <PageHeader
@@ -296,6 +337,7 @@ export default function RemisionPage() {
         submitting={submitting}
         cosechas={cosechas}
         municipios={municipios}
+        departamentos={departamentos}
         transportes={transportes}
         conductores={conductores}
         placasCabezal={placasCabezal}
@@ -310,6 +352,7 @@ export default function RemisionPage() {
         onDetalleChange={handleDetalleChange}
         onAddDetalle={addDetalle}
         onRemoveDetalle={removeDetalle}
+        onCatalogCreated={handleCatalogCreated}
       />
 
       <Modal show={isDeleteModalOpen} onHide={() => setIsDeleteModalOpen(false)} size="sm">

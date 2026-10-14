@@ -33,6 +33,9 @@ import { Toaster } from 'react-hot-toast';
 // Páginas de Impresión (sin layout, sin ProtectedRoute)
 import BoletaPesadaPage from './pages/recepcion/bascula/print/BoletaPesadaPage';
 import PaseSalidaPage from './pages/recepcion/bascula/print/PaseSalidaPage';
+import BoletaRecepcionPage from './pages/recepcion/bascula/print/BoletaRecepcionPage';
+import BoletaDevolucionPage from './pages/recepcion/bascula/print/BoletaDevolucionPage';
+import BoletaOtroMovimientoPage from './pages/recepcion/otros-movimientos/print/BoletaOtroMovimientoPage';
 
 //Form
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -55,8 +58,12 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path={`${import.meta.env.BASE_URL}login`} element={<LoginPage />} />
 
           {/* Rutas de impresión (sin sidebar/navbar, usan token de localStorage) */}
+          <Route path={`${import.meta.env.BASE_URL}print/boleta-recepcion/:idRecepcion`} element={<BoletaRecepcionPage />} />
           <Route path={`${import.meta.env.BASE_URL}print/boleta-pesada/:idDetalle/:tipo`} element={<BoletaPesadaPage />} />
           <Route path={`${import.meta.env.BASE_URL}print/pase-salida/:idDetalle`} element={<PaseSalidaPage />} />
+          <Route path={`${import.meta.env.BASE_URL}print/boleta-devolucion/:idDetalle`} element={<BoletaDevolucionPage />} />
+          <Route path={`${import.meta.env.BASE_URL}print/boleta-otro-movimiento/:idDetalle/:tipo`} element={<BoletaOtroMovimientoPage />} />
+          <Route path={`${import.meta.env.BASE_URL}print/boleta-otro-movimiento/:idDetalle`} element={<BoletaOtroMovimientoPage />} />
 
         </Routes>
       </BrowserRouter>

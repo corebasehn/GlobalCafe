@@ -55,15 +55,17 @@ export default function CatalogosTable({
 
     const term = searchTerm.toLowerCase();
     const filteredData = data.filter(item => {
-      const mainText = (item.nombre || item.placa || item.cosecha || item.tipo_cafe || item.tipo_remision || item.tipo_empaque || "").toLowerCase();
-      const secondaryText = (item.rtn || item.dni || item.licencia || "").toLowerCase();
+      const mainText = (item.nombre || item.placa || item.cosecha || item.tipo_cafe || item.tipo_remision || item.tipo_empaque || item.codigo || "").toLowerCase();
+      const secondaryText = (item.rtn || item.dni || item.licencia || item.descripcion || "").toLowerCase();
       const deptoText = (item.departamento?.nombre || "").toLowerCase();
       const bodegaText = (item.bodega?.nombre || "").toLowerCase();
+      const sentidoText = (item.sentido_pesaje || "").toLowerCase();
       
       return mainText.includes(term) || 
              secondaryText.includes(term) || 
              deptoText.includes(term) || 
-             bodegaText.includes(term);
+             bodegaText.includes(term) ||
+             sentidoText.includes(term);
     });
 
     if (filteredData.length === 0) {
@@ -193,6 +195,31 @@ export default function CatalogosTable({
             <td className="text-center"><Badge bg={item.estado ? "success-transparent" : "danger-transparent"} className="rounded-pill">{item.estado ? "Activo" : "Inactivo"}</Badge></td>
           </tr>
         ));
+      case "tipos-movimiento":
+        return filteredData.map((item) => {
+          const isActivo = item.activo ?? item.estado ?? true;
+          return (
+            <tr key={item.id}>
+              {renderActions(item, "id")}
+              <td className="fw-bold text-primary font-monospace">{item.codigo}</td>
+              <td className="fw-semibold">{item.nombre}</td>
+              <td className="text-muted text-wrap" style={{ maxWidth: '300px' }}>{item.descripcion || "—"}</td>
+              <td className="text-center">
+                <Badge 
+                  bg={item.sentido_pesaje === "BRUTO_PRIMERO" ? "primary-transparent" : "warning-transparent"} 
+                  className={`rounded-pill px-2 py-1 ${item.sentido_pesaje === "BRUTO_PRIMERO" ? "text-primary border border-primary-subtle" : "text-warning border border-warning-subtle"}`}
+                >
+                  {item.sentido_pesaje === "BRUTO_PRIMERO" ? "Bruto Primero (Cargado → Vacío)" : "Tara Primero (Vacío → Cargado)"}
+                </Badge>
+              </td>
+              <td className="text-center">
+                <Badge bg={isActivo ? "success-transparent" : "danger-transparent"} className="rounded-pill">
+                  {isActivo ? "Activo" : "Inactivo"}
+                </Badge>
+              </td>
+            </tr>
+          );
+        });
       default: // Catálogos simples (Catadores, Calidades, Defectos, Zarandas, Tazas)
         return filteredData.map((item) => {
           const idField = Object.keys(item).find(key => key.startsWith('id_')) || 'id';
@@ -213,7 +240,8 @@ export default function CatalogosTable({
         <thead>
           <tr>
             <th scope="col" className="text-center">Acciones</th>
-            <th scope="col">Descripción principal</th>
+            {activeTab === "tipos-movimiento" && <th scope="col">Código</th>}
+            <th scope="col">{activeTab === "tipos-movimiento" ? "Nombre del Movimiento" : "Descripción principal"}</th>
             {(activeTab === "proveedores" || activeTab === "transportes") && <th>RTN</th>}
             {activeTab === "conductores" && <th>DNI</th>}
             {activeTab === "conductores" && <th>Licencia</th>}
@@ -223,6 +251,8 @@ export default function CatalogosTable({
             {activeTab === "bodegas" && <th className="text-center">Tipo</th>}
             {activeTab === "estibas" && <th>Bodega</th>}
             {activeTab === "tipos-empaque" && <th>Tara</th>}
+            {activeTab === "tipos-movimiento" && <th>Descripción</th>}
+            {activeTab === "tipos-movimiento" && <th className="text-center">Sentido de Pesaje</th>}
             <th scope="col" className="text-center">Estado</th>
           </tr>
         </thead>

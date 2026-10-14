@@ -8,9 +8,16 @@ import { connect } from 'react-redux';
 import store from '../../common/redux/store';
 import { ThemeChanger } from '../../common/redux/action';
 import { MENUITEMS, Menuitemtype } from '../../common/sidemenu';
-import { ShoppingcartData, appData, carttype, notificationsData, notificationtype } from '../../common/commondata';
+import { ShoppingcartData, appData, carttype } from '../../common/commondata';
 import SimpleBar from 'simplebar-react';
 import { AuthContext } from '../../auth/AuthProvider';
+import { io } from 'socket.io-client';
+import {
+  getUnreadNotificationsApi,
+  markNotificationAsReadApi,
+  markAllNotificationsAsReadApi,
+  type NotificationItem,
+} from '../../api/notifications.api';
 
 interface ComponentProps { }
 
@@ -360,16 +367,148 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
     setRemainingCount1((prevCount) => prevCount - 1);
   };
 
-  //notification function
+  // Notificaciones reales
+  interface DisplayNotification {
+    id: number;
+    title: string;
+    message: string;
+    time: string;
+    bgColor: string;
+    iconClass: string;
+    ruta?: string | null;
+  }
 
-  const [notificationItems, setNotificationItems] = useState<notificationtype[]>(notificationsData);
-  const [remainingCount, setRemainingCount] = useState(notificationsData.length);
+  const mapToDisplayNotification = (item: NotificationItem): DisplayNotification => {
+    let bgColor = 'bg-primary';
+    if (item.tipo === 'warning') bgColor = 'bg-warning';
+    else if (item.tipo === 'danger') bgColor = 'bg-danger';
+    else if (item.tipo === 'success') bgColor = 'bg-success';
+    else if (item.tipo === 'info') bgColor = 'bg-info';
 
-  const removeFromnotificationlist = (index: number) => {
-    const updatedCart = [...notificationItems];
-    updatedCart.splice(index, 1);
-    setNotificationItems(updatedCart);
-    setRemainingCount((prevCount) => prevCount - 1);
+    const date = new Date(item.created_at);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    let timeStr = 'Hace un momento';
+    if (diffMinutes >= 1 && diffMinutes < 60) {
+      timeStr = `Hace ${diffMinutes} min`;
+    } else if (diffMinutes >= 60 && diffMinutes < 1440) {
+      const hours = Math.floor(diffMinutes / 60);
+      timeStr = `Hace ${hours} h`;
+    } else if (diffMinutes >= 1440) {
+      timeStr = date.toLocaleDateString();
+    }
+
+    return {
+      id: item.id,
+      title: item.titulo,
+      message: item.mensaje,
+      time: timeStr,
+      bgColor,
+      iconClass: item.icono || 'ri-notification-line',
+      ruta: item.ruta,
+    };
+  };
+
+  const [notificationItems, setNotificationItems] = useState<DisplayNotification[]>([]);
+  const [remainingCount, setRemainingCount] = useState<number>(0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchNotifications = async () => {
+      try {
+        const data = await getUnreadNotificationsApi();
+        console.log("🔔 [Header] Notificaciones no leídas cargadas:", data);
+        if (isMounted) {
+          const mapped = data.map(mapToDisplayNotification);
+          setNotificationItems(mapped);
+          setRemainingCount(mapped.length);
+        }
+      } catch (err) {
+        console.error("🔔 [Header] Error al cargar notificaciones:", err);
+      }
+    };
+
+    fetchNotifications();
+
+    // Conexión WebSocket para notificaciones en vivo
+    const apiUrl = import.meta.env.VITE_API_URL as string | undefined;
+    const socketBase = apiUrl ? apiUrl.replace(/\/api\/?$/, '') : 'http://localhost:3000';
+    const socket = io(socketBase, {
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('connect', () => {
+      console.log('🟢 [Header] Conectado exitosamente al WebSocket de notificaciones, ID:', socket.id);
+    });
+
+    socket.on('connect_error', (error) => {
+      console.warn('🟡 [Header] WebSocket de notificaciones no pudo conectar:', error?.message);
+    });
+
+    socket.on('nueva_notificacion', (nueva: NotificationItem) => {
+      console.log('🔔 [Header] Evento WebSocket recibido:', nueva);
+      const userRoles = (profile?.roles || []).map((r: string) => r.toLowerCase().trim());
+      const notifRole = nueva.rol_destino ? nueva.rol_destino.toLowerCase().trim() : null;
+
+      const isAdmin = userRoles.some((r: string) => r.includes('admin'));
+
+      const isForMe =
+        isAdmin ||
+        (!notifRole && !nueva.usuario_id) ||
+        (notifRole &&
+          userRoles.some(
+            (r: string) =>
+              r.includes(notifRole) ||
+              notifRole.includes(r) ||
+              (r.includes('aprob') && notifRole === 'gerencia') ||
+              (r.includes('lab') && notifRole === 'laboratorio')
+          )) ||
+        (nueva.usuario_id && (profile as any)?.id && nueva.usuario_id === (profile as any).id);
+
+      if (isForMe) {
+        setNotificationItems((prev) => {
+          if (prev.some((n) => n.id === nueva.id)) return prev;
+          return [mapToDisplayNotification(nueva), ...prev];
+        });
+        setRemainingCount((prev) => prev + 1);
+      }
+    });
+
+    socket.on('notificacion_leida', ({ id }: { id: number }) => {
+      setNotificationItems((prev) => prev.filter((n) => n.id !== id));
+      setRemainingCount((prev) => Math.max(0, prev - 1));
+    });
+
+    socket.on('todas_leidas', () => {
+      setNotificationItems([]);
+      setRemainingCount(0);
+    });
+
+    return () => {
+      isMounted = false;
+      socket.disconnect();
+    };
+  }, [profile?.roles]);
+
+  const removeFromnotificationlist = async (id: number) => {
+    try {
+      await markNotificationAsReadApi(id);
+      setNotificationItems((prev) => prev.filter((item) => item.id !== id));
+      setRemainingCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("Error al marcar notificación como leída:", err);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsReadApi();
+      setNotificationItems([]);
+      setRemainingCount(0);
+    } catch (err) {
+      console.error("Error al marcar todas las notificaciones como leídas:", err);
+    }
   };
 
   //rightsidebar function
@@ -464,13 +603,15 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
             <Dropdown className='header-element notifications-dropdown' autoClose='outside'>
               <Dropdown.Toggle variant="" as='a' className="header-link no-caret" id="dropdown-basic">
                 <svg xmlns="http://www.w3.org/2000/svg" className="header-link-icon" width="24" height="24" viewBox="0 0 24 24"><path d="M19 13.586V10c0-3.217-2.185-5.927-5.145-6.742C13.562 2.52 12.846 2 12 2s-1.562.52-1.855 1.258C7.185 4.074 5 6.783 5 10v3.586l-1.707 1.707A.996.996 0 0 0 3 16v2a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1v-2a.996.996 0 0 0-.293-.707L19 13.586zM19 17H5v-.586l1.707-1.707A.996.996 0 0 0 7 14v-4c0-2.757 2.243-5 5-5s5 2.243 5 5v4c0 .266.105.52.293.707L19 16.414V17zm-7 5a2.98 2.98 0 0 0 2.818-2H9.182A2.98 2.98 0 0 0 12 22z" /></svg>
-                <span className="badge bg-secondary rounded-pill header-icon-badge pulse pulse-secondary" id="notification-icon-badge">{remainingCount}</span>
+                {remainingCount > 0 && (
+                  <span className="badge bg-secondary rounded-pill header-icon-badge pulse pulse-secondary" id="notification-icon-badge">{remainingCount}</span>
+                )}
               </Dropdown.Toggle>
-              <Dropdown.Menu className='main-header-dropdown' align='end'>
+              <Dropdown.Menu className='main-header-dropdown' align='end' style={{ minWidth: '360px', maxWidth: '400px' }}>
                 <div className="p-3">
                   <div className="d-flex align-items-center justify-content-between">
-                    <p className="mb-0 fs-17 fw-semibold">Notifications</p>
-                    <span className="badge bg-secondary-transparent" id="notifiation-data">{remainingCount} Unread</span>
+                    <p className="mb-0 fs-17 fw-semibold">Notificaciones</p>
+                    <span className="badge bg-secondary-transparent" id="notifiation-data">{remainingCount} Pendientes</span>
                   </div>
                 </div>
                 <Dropdown.Divider />
@@ -481,31 +622,38 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
                       <span className="avatar avatar-xl avatar-rounded bg-secondary-transparent">
                         <i className="ri-notification-off-line fs-2"></i>
                       </span>
-                      <h6 className="fw-semibold mt-3">No New Notifications</h6>
+                      <h6 className="fw-semibold mt-3">Sin notificaciones pendientes</h6>
                     </div>
                   </div>
                 )}
 
-                <SimpleBar className="ul list-unstyled mb-0" id="header-notification-scroll">
-                  {notificationItems.map((notification, index) => (
-                    <Dropdown.Item key={index} className='p-3' as='li'>
+                <SimpleBar className="ul list-unstyled mb-0" id="header-notification-scroll" style={{ maxHeight: '380px' }}>
+                  {notificationItems.map((notification) => (
+                    <Dropdown.Item key={notification.id} className='p-3' as='li'>
                       <div className="d-flex align-items-start">
-                        <div className="pe-3">
+                        <div className="pe-3 pt-1">
                           <span className={`avatar ${notification.bgColor} rounded-3`}>
                             <i className={`${notification.iconClass} text-fixed-white fs-18`}></i>
                           </span>
                         </div>
-                        <div className="flex-grow-1 d-flex align-items-center justify-content-between">
-                          <div>
-                            <p className="mb-0 fw-semibold">
-                              <Link to={`${import.meta.env.BASE_URL}app/notification/`}>{notification.title}</Link>
+                        <div className="flex-grow-1 d-flex align-items-start justify-content-between">
+                          <div className="pe-2" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}>
+                            <p className="mb-1 fw-semibold" style={{ whiteSpace: 'normal', lineHeight: '1.3' }}>
+                              {notification.ruta ? (
+                                <Link to={notification.ruta} className="text-default">{notification.title}</Link>
+                              ) : (
+                                <span>{notification.title}</span>
+                              )}
                             </p>
-                            <span className="text-muted fw-normal fs-12 header-notification-text">
+                            <span className="text-muted fw-normal fs-12 d-block mb-1" style={{ whiteSpace: 'normal', lineHeight: '1.35' }}>
+                              {notification.message}
+                            </span>
+                            <span className="text-muted fw-normal fs-11 header-notification-text d-block">
                               {notification.time}
                             </span>
                           </div>
-                          <div>
-                            <Link to="#" className="min-w-fit-content text-muted me-1 dropdown-item-close1" onClick={() => removeFromnotificationlist(index)}>
+                          <div className="pt-1">
+                            <Link to="#" className="min-w-fit-content text-muted me-1 dropdown-item-close1" onClick={(e) => { e.preventDefault(); removeFromnotificationlist(notification.id); }}>
                               <i className="ti ti-x fs-16"></i>
                             </Link>
                           </div>
@@ -517,7 +665,9 @@ const Header: FC<ComponentProps> = ({ ThemeChanger }: any) => {
                 {remainingCount > 0 && (
                   <div className="p-2 empty-header-item1 border-top">
                     <div className="d-grid">
-                      <Link to={`${import.meta.env.BASE_URL}app/notification/`} className="btn btn-primary btn-sm">View All</Link>
+                      <Button variant="link" size="sm" className="btn btn-light btn-sm text-muted" onClick={handleMarkAllAsRead}>
+                        Marcar todas como leídas
+                      </Button>
                     </div>
                   </div>
                 )}

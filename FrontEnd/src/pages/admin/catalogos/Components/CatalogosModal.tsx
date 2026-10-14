@@ -338,6 +338,63 @@ export default function CatalogosModal({
             </Col>
           </Row>
         );
+      case "tipos-movimiento":
+        return (
+          <Row>
+            <Col md={4}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Código <span className="text-danger">*</span></Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Ej: CAFE, CASULLA" 
+                  value={formData.codigo || ""} 
+                  onChange={(e) => onChange({...formData, codigo: e.target.value.toUpperCase()})} 
+                  required 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={8}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Nombre del Movimiento <span className="text-danger">*</span></Form.Label>
+                <Form.Control 
+                  type="text" 
+                  placeholder="Ej: Recepción de Café" 
+                  value={formData.nombre || ""} 
+                  onChange={(e) => onChange({...formData, nombre: e.target.value})} 
+                  required 
+                />
+              </Form.Group>
+            </Col>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Sentido de Pesaje <span className="text-danger">*</span></Form.Label>
+                <Form.Select 
+                  value={formData.sentido_pesaje || "BRUTO_PRIMERO"} 
+                  onChange={(e) => onChange({...formData, sentido_pesaje: e.target.value})} 
+                  required
+                >
+                  <option value="BRUTO_PRIMERO">BRUTO_PRIMERO — 1ra Pesada Cargado (Bruto) → 2da Pesada Vacío (Tara)</option>
+                  <option value="TARA_PRIMERO">TARA_PRIMERO — 1ra Pesada Vacío (Tara) → 2da Pesada Cargado (Bruto)</option>
+                </Form.Select>
+                <Form.Text className="text-muted">
+                  Define el orden de las básculas en el flujo operativo de entrada y salida.
+                </Form.Text>
+              </Form.Group>
+            </Col>
+            <Col md={12}>
+              <Form.Group className="mb-3">
+                <Form.Label className="fw-semibold">Descripción (Opcional)</Form.Label>
+                <Form.Control 
+                  as="textarea" 
+                  rows={2} 
+                  placeholder="Observaciones o notas explicativas de este tipo de movimiento..." 
+                  value={formData.descripcion || ""} 
+                  onChange={(e) => onChange({...formData, descripcion: e.target.value})} 
+                />
+              </Form.Group>
+            </Col>
+          </Row>
+        );
       default:
         return (
           <Row>
@@ -366,8 +423,8 @@ export default function CatalogosModal({
                 <Form.Check 
                   type="checkbox" 
                   label="Registro Activo" 
-                  checked={formData.estado ?? true} 
-                  onChange={(e) => onChange({...formData, estado: e.target.checked})} 
+                  checked={formData.estado ?? formData.activo ?? true} 
+                  onChange={(e) => onChange({...formData, estado: e.target.checked, activo: e.target.checked})} 
                   className="mt-2" 
                 />
               </Col>

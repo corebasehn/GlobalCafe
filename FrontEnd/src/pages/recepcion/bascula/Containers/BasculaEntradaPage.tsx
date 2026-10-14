@@ -5,9 +5,9 @@ import toast from "react-hot-toast";
 import Pageheader from "../../../../layout/layoutcomponent/pageheader";
 import { useAuth } from "../../../../auth/useAuth";
 
-// APIs
-import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi } from "../../../../api/reception.api";
+import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi, actualizarObservacionesDetalleApi } from "../../../../api/reception.api";
 import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal, getConductoresApi, Conductor } from "../../../../api/catalogs.api";
+import { imprimirMatricialPesada, imprimirMatricialPaseSalida } from "../../../../api/printer.api";
 
 // Estado IDs (según catálogo de base de datos)
 const ESTADO_PESADA_ABIERTA = 7;  // "Pesada Abierta"
@@ -17,6 +17,7 @@ const ESTADO_PESADA_CERRADA = 8;  // "Pesada Cerrada"
 import BasculaTable, { type ModalMode } from "../Components/BasculaTable";
 import PesadaModal from "../Components/PesadaModal";
 import ModalReimpresionPesadasIngreso from "../Components/ModalReimpresionPesadasIngreso";
+import ModalPaseSalidaObservaciones from "../Components/ModalPaseSalidaObservaciones";
 
 export default function BasculaEntradaPage() {
   const { hasPermission } = useAuth();
@@ -41,6 +42,13 @@ export default function BasculaEntradaPage() {
   const [placaInput, setPlacaInput] = useState("");
   const [conductorInput, setConductorInput] = useState("");
   const [observacionesInput, setObservacionesInput] = useState("");
+
+  // Modal para Observaciones de Pase de Salida
+  const [paseSalidaModal, setPaseSalidaModal] = useState<{
+    show: boolean;
+    recepcion: any | null;
+    detalle: any | null;
+  }>({ show: false, recepcion: null, detalle: null });
 
   useEffect(() => {
     loadData();
@@ -140,7 +148,13 @@ export default function BasculaEntradaPage() {
         toast.success("Destarse de cabezal registrado. La carga queda 'Sin Cabezal'.");
         // Imprimir Pase de Salida para el cabezal que sale
         const base = import.meta.env.BASE_URL;
-        window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
+        imprimirMatricialPaseSalida(selectedCarga.id_detalle_recepcion).then((res) => {
+          if (res.success) {
+            toast.success(`🖨️ ${res.message}`);
+          } else if (res.fallbackNeeded) {
+            window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
+          }
+        });
       } else if (modalMode === "ENTRADA_CABEZAL") {
         resultado = await registrarEntradaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
         // Actualizar cabezal y conductor en la recepción
@@ -151,11 +165,6 @@ export default function BasculaEntradaPage() {
         toast.success("Nuevo cabezal enganchado. Peso Bruto corregido automáticamente.");
       } else {
         resultado = await registrarPesadaSalidaApi(selectedCarga.id_detalle_recepcion, peso);
-        if (observacionesInput.trim()) {
-          await updateReceptionApi(selectedRecepcion.id_recepcion, {
-            observaciones: observacionesInput.trim(),
-          });
-        }
         toast.success("Tara registrada. Pesaje completado correctamente.");
       }
 
@@ -169,19 +178,65 @@ export default function BasculaEntradaPage() {
 
         if (resultado.id_estado_transaccion === ESTADO_PESADA_ABIERTA) {
           // Primera Pesada
-          window.open(`${base}print/boleta-pesada/${idDet}/primera`, "_blank");
+          imprimirMatricialPesada(idDet, "primera", false).then((res) => {
+            if (res.success) {
+              toast.success(`🖨️ ${res.message}`);
+            } else if (res.fallbackNeeded) {
+              window.open(`${base}print/boleta-pesada/${idDet}/primera`, "_blank");
+            }
+          });
         } else if (resultado.id_estado_transaccion === ESTADO_PESADA_CERRADA) {
-          // Segunda Pesada
-          window.open(`${base}print/boleta-pesada/${idDet}/segunda`, "_blank");
-          // Si todos los detalles del viaje cerraron → Pase de Salida
+          // Segunda Pesada (se emite siempre al registrar tara)
+          imprimirMatricialPesada(idDet, "segunda", false).then((res) => {
+            if (res.success) {
+              toast.success(`🖨️ ${res.message}`);
+            } else if (res.fallbackNeeded) {
+              window.open(`${base}print/boleta-pesada/${idDet}/segunda`, "_blank");
+            }
+          });
+
+          // Si todos los detalles del viaje cerraron pesada → Levantar modal para Observaciones de Pase de Salida
           if (resultado.allClosed) {
-            window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+            setPaseSalidaModal({
+              show: true,
+              recepcion: selectedRecepcion,
+              detalle: { ...selectedCarga, id_detalle_recepcion: idDet },
+            });
           }
         }
       }
     } catch (error: any) {
       console.error(error);
       toast.error(error.response?.data?.message || "Error al registrar el peso en el sistema.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleConfirmPaseSalida = async (observaciones: string) => {
+    if (!paseSalidaModal.detalle) return;
+    const idDet = paseSalidaModal.detalle.id_detalle_recepcion;
+    try {
+      setSubmitting(true);
+      if (observaciones && observaciones.trim().length > 0) {
+        await actualizarObservacionesDetalleApi(idDet, observaciones.trim());
+      }
+      const base = import.meta.env.BASE_URL;
+      imprimirMatricialPaseSalida(idDet).then((res) => {
+        if (res.success) {
+          toast.success(`🖨️ ${res.message}`);
+        } else if (res.fallbackNeeded) {
+          window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+        }
+      });
+      setPaseSalidaModal({ show: false, recepcion: null, detalle: null });
+      loadData();
+    } catch (err: any) {
+      console.error("Error al guardar observaciones del pase de salida:", err);
+      toast.error("Error al registrar observaciones, emitiendo pase...");
+      const base = import.meta.env.BASE_URL;
+      window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+      setPaseSalidaModal({ show: false, recepcion: null, detalle: null });
     } finally {
       setSubmitting(false);
     }
@@ -314,6 +369,14 @@ export default function BasculaEntradaPage() {
         onConductorChange={setConductorInput}
         onObservacionesChange={setObservacionesInput}
         onSubmit={handleSubmitPeso}
+      />
+
+      <ModalPaseSalidaObservaciones
+        show={paseSalidaModal.show}
+        data={paseSalidaModal.recepcion && paseSalidaModal.detalle ? { recepcion: paseSalidaModal.recepcion, detalle: paseSalidaModal.detalle } : null}
+        submitting={submitting}
+        onClose={() => setPaseSalidaModal({ show: false, recepcion: null, detalle: null })}
+        onConfirm={handleConfirmPaseSalida}
       />
     </div>
   );

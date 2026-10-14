@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { LiquidarNotaPesoDto } from './dto/liquidar-nota-peso.dto';
 
 @Injectable()
 export class NotaPesoService {
@@ -9,13 +10,20 @@ export class NotaPesoService {
     private notifications: NotificationsGateway,
   ) {}
 
-  // 1. Obtener detalles de recepción listos para liquidar (Pesada Cerrada y sin Nota de Peso)
+  // 1. Obtener detalles de recepción listos para liquidar (Pesada Cerrada y sin Nota de Peso, solo Café normal)
   async getPendientesLiquidar() {
     return this.prisma.detalleRecepcion.findMany({
       where: {
         estado: true,
         estado_transaccion: { nombre: 'Pesada Cerrada' },
         notas_peso: { none: {} }, // Que no tengan nota de peso aún
+        recepcion: {
+          estado: true,
+          OR: [
+            { id_tipo_movimiento: 1 },
+            { id_tipo_movimiento: null },
+          ],
+        },
       },
       include: {
         recepcion: {
@@ -32,7 +40,6 @@ export class NotaPesoService {
         tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
-          take: 1,
         },
       },
       orderBy: { fecha_modificacion: 'desc' },
@@ -40,20 +47,33 @@ export class NotaPesoService {
   }
 
   // 2. Crear la Nota de Peso (Liquidación)
-  async crearNotaPeso(idDetalle: number, usuarioId: number) {
+  async crearNotaPeso(idDetalle: number, usuarioId: number, dto?: LiquidarNotaPesoDto) {
     const detalle = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion: idDetalle },
       include: {
         recepcion: true,
+        tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
-          take: 1,
         },
       },
     });
 
     if (!detalle) throw new NotFoundException('Detalle de recepción no encontrado');
+    if (detalle.recepcion?.id_tipo_movimiento && detalle.recepcion.id_tipo_movimiento !== 1) {
+      throw new InternalServerErrorException('Las transacciones de otros movimientos no se liquidan con nota de peso');
+    }
     if (!detalle.peso_neto) throw new InternalServerErrorException('El registro no tiene peso neto de báscula');
+
+    // Validación de Muestra General (obligatoria a menos que la recepción tenga omitir análisis externo)
+    if (!detalle.omitir_analisis) {
+      const tieneMuestraGeneral = detalle.analisis_calidad.some(
+        a => a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')
+      );
+      if (!tieneMuestraGeneral) {
+        throw new BadRequestException('No se puede liquidar: La muestra general no ha sido creada para este ingreso.');
+      }
+    }
 
     // --- LÓGICA DE CÁLCULO SEGÚN FORMATO ---
     
@@ -63,30 +83,44 @@ export class NotaPesoService {
     // 2. Convertir a Quintales (QQ) -> 1 QQ = 100 LB
     const pesoBrutoQQ = pesoNetoLB / 100;
     
-    // 3. Calcular Tara de Sacos (0.50 LB por saco es estándar en muchas empresas)
-    // Según el formato: Tara (QQ) = (Sacos * 0.5) / 100
-    const taraQQ = (detalle.cantidad_sacos * 0.5) / 100;
+    // 3. Calcular Tara de Sacos según tipo de empaque (fallback a 0.50 LB si no está configurado)
+    // Según el formato: Tara (QQ) = (Sacos * taraUnitariaLB) / 100
+    const taraUnitariaLB = detalle.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
+    const taraQQ = (detalle.cantidad_sacos * taraUnitariaLB) / 100;
     
     // 4. Peso Neto antes de descuentos
     const subtotalQQ = pesoBrutoQQ - taraQQ;
 
-    // 5. Obtener descuentos de Laboratorio
-    const analisis = detalle.analisis_calidad[0];
-    const humedadPerc = analisis?.humedad ? Number(analisis.humedad) : 0;
-    const danoPerc = analisis?.dano ? Number(analisis.dano) : 0;
+    // 5. Obtener descuentos (del DTO editado por el usuario o de la muestra de laboratorio como fallback)
+    const analisis = detalle.analisis_calidad.find(
+      a => a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')
+    ) || detalle.analisis_calidad[0];
+    const humedadPerc = dto?.humedad !== undefined && dto?.humedad !== null
+      ? Number(dto.humedad)
+      : (analisis?.humedad ? Number(analisis.humedad) : 0);
+
+    const danoPerc = dto?.dano !== undefined && dto?.dano !== null
+      ? Number(dto.dano)
+      : (analisis?.dano ? Number(analisis.dano) : 0);
+
+    const otrosPerc = dto?.otros_descuentos !== undefined && dto?.otros_descuentos !== null
+      ? Number(dto.otros_descuentos)
+      : 0;
 
     // Lógica de Descuento de Humedad: Si es mayor a 12%, se descuenta el excedente
-    // Nota: Esta es una fórmula común, se puede ajustar si el cliente pide otra.
     let descuentoHumedadQQ = 0;
     if (humedadPerc > 12) {
-        descuentoHumedadQQ = subtotalQQ * ((humedadPerc - 12) / 100);
+      descuentoHumedadQQ = subtotalQQ * ((humedadPerc - 12) / 100);
     }
 
     // Descuento por Daño
     const descuentoDanoQQ = subtotalQQ * (danoPerc / 100);
 
+    // Descuento por Otros
+    const descuentoOtrosQQ = subtotalQQ * (otrosPerc / 100);
+
     // 6. Peso Neto Final
-    const pesoNetoFinalQQ = subtotalQQ - descuentoHumedadQQ - descuentoDanoQQ;
+    const pesoNetoFinalQQ = Math.max(0, subtotalQQ - descuentoHumedadQQ - descuentoDanoQQ - descuentoOtrosQQ);
 
     return this.prisma.$transaction(async (tx) => {
       // Generar Correlativo NP-0000001
@@ -97,6 +131,7 @@ export class NotaPesoService {
         data: {
           id_detalle_recepcion: idDetalle,
           numero_nota_peso: correlativo,
+          observaciones: dto?.observaciones?.trim() || null,
           usuario_creacion: usuarioId,
           detalles: {
             create: {
@@ -105,6 +140,7 @@ export class NotaPesoService {
               tara: taraQQ,
               porcentaje_descuento_humedad: humedadPerc,
               porcentaje_descuento_dano: danoPerc,
+              porcentaje_descuento_peso: otrosPerc,
               peso_neto: pesoNetoFinalQQ,
               usuario_creacion: usuarioId,
             },
@@ -139,6 +175,7 @@ export class NotaPesoService {
               include: { cosecha: true }
             },
             proveedor: true,
+            tipo_cafe: true,
           },
         },
       },

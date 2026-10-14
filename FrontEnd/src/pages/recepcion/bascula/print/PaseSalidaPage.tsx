@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getBoletaPesadaApi } from "../../../../api/reception.api";
+import { enviarImpresionMatricial } from "../../../../api/printer.api";
 
 const PAGE_W = "24.13cm";
 const PAGE_H = "13.97cm";
@@ -27,8 +28,9 @@ export default function PaseSalidaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fontFamily, setFontFamily] = useState<string>("Arial");
-  const [fontSize, setFontSize] = useState<string>("8.5pt");
+  const [fontFamily, setFontFamily] = useState<string>("Courier New");
+  const [fontSize, setFontSize] = useState<string>("9pt");
+  const [imprimiendoMatricial, setImprimiendoMatricial] = useState(false);
 
   // Función para calcular tamaños de fuente relativos
   const getFontSize = (multiplier: number) => {
@@ -59,6 +61,21 @@ export default function PaseSalidaPage() {
       .finally(() => setLoading(false));
   }, [idDetalle]);
 
+  const handlePrintMatricial = async () => {
+    if (!data) return;
+    setImprimiendoMatricial(true);
+    try {
+      const res = await enviarImpresionMatricial("pase_salida", data);
+      if (res.success) {
+        alert("🖨️ " + res.message);
+      } else {
+        alert("Error de impresión matricial: " + res.message);
+      }
+    } finally {
+      setImprimiendoMatricial(false);
+    }
+  };
+
   useEffect(() => {
     if (!data || loading) return;
     const t = setTimeout(() => window.print(), 700);
@@ -77,11 +94,14 @@ export default function PaseSalidaPage() {
   }
   if (!data) return null;
 
-  const recepcion = data.detalle?.recepcion;
+  const detalle = data.detalle || data;
+  const recepcion = detalle?.recepcion;
   const ahora = new Date();
 
   // Detectar si es destarse (cabezal saliente): estado = "Sin Cabezal"
-  const esDestarse = data.detalle?.estado_transaccion?.nombre === "Sin Cabezal";
+  const esDestarse = detalle?.estado_transaccion?.nombre === "Sin Cabezal";
+  const clienteProveedor = detalle?.proveedor?.nombre ?? "—";
+  const transporte = recepcion?.conductor?.transporte?.nombre ?? "Particular";
 
   return (
     <>
@@ -90,13 +110,14 @@ export default function PaseSalidaPage() {
 
         @page {
           size: ${PAGE_W} ${PAGE_H};
-          margin: 0;
+          margin: 3cm 1.5cm 2cm 1.5cm;
         }
 
         body {
-          font-family: ${fontFamily}, Helvetica, sans-serif;
+          font-family: ${fontFamily}, "Courier New", Courier, monospace;
           font-size: ${fontSize};
           background: white;
+          color: #000000;
         }
 
         @media screen {
@@ -132,7 +153,16 @@ export default function PaseSalidaPage() {
         }
 
         @media print {
-          .pase-paper { padding: 1.5cm 1.5cm 1.5cm 1.5cm; }
+          * {
+            -webkit-font-smoothing: none !important;
+            font-smooth: never !important;
+            text-rendering: geometricPrecision !important;
+            color: #000000 !important;
+          }
+          body {
+            color: #000000 !important;
+          }
+          .pase-paper { padding: 0; }
           .no-print { display: none !important; }
         }
 
@@ -209,7 +239,14 @@ export default function PaseSalidaPage() {
 
       {/* Botones en pantalla */}
       <div className="no-print">
-        <button onClick={() => window.print()}>🖨️ Imprimir</button>
+        <button
+          style={{ backgroundColor: "#198754", color: "white", fontWeight: "bold" }}
+          onClick={handlePrintMatricial}
+          disabled={imprimiendoMatricial}
+        >
+          {imprimiendoMatricial ? "Enviando..." : "🖨️ Imprimir en FX-890II (Matricial)"}
+        </button>
+        <button onClick={() => window.print()}>Imprimir (Navegador)</button>
         <button onClick={() => window.close()}>✕ Cerrar</button>
       </div>
 
@@ -230,7 +267,7 @@ export default function PaseSalidaPage() {
         {/* Datos del vehículo — 2 columnas */}
         <div className="ps-body">
           <div className="ps-row">
-            <span className="ps-lbl">DESPACHO Nº:</span>
+            <span className="ps-lbl"># RECEPCIÓN:</span>
             <span className="ps-val">{recepcion?.numero_entrada ?? "—"}</span>
           </div>
           <div className="ps-row">
@@ -238,13 +275,26 @@ export default function PaseSalidaPage() {
             <span className="ps-val">{fmtFechaHora(ahora)}</span>
           </div>
           <div className="ps-row">
+            <span className="ps-lbl">CLIENTE / PROV:</span>
+            <span className="ps-val">{clienteProveedor}</span>
+          </div>
+          <div className="ps-row">
+            <span className="ps-lbl">TIPO VEHÍCULO:</span>
+            <span className="ps-val">{recepcion?.tipo_vehiculo ?? "—"}</span>
+          </div>
+          <div className="ps-row">
             <span className="ps-lbl">PLACA CABEZAL:</span>
             <span className="ps-val">{recepcion?.placa_cabezal?.placa ?? "—"}</span>
           </div>
-          {!esDestarse && (
+          {!esDestarse ? (
             <div className="ps-row">
               <span className="ps-lbl">PLACA FURGÓN:</span>
               <span className="ps-val">{recepcion?.placa_furgon?.placa ?? "—"}</span>
+            </div>
+          ) : (
+            <div className="ps-row">
+              <span className="ps-lbl">PLACA FURGÓN:</span>
+              <span className="ps-val">DESACOPLADO</span>
             </div>
           )}
           <div className="ps-row">
@@ -252,15 +302,15 @@ export default function PaseSalidaPage() {
             <span className="ps-val">{recepcion?.conductor?.nombre ?? "—"}</span>
           </div>
           <div className="ps-row">
-            <span className="ps-lbl">TIPO VEHÍCULO:</span>
-            <span className="ps-val">{recepcion?.tipo_vehiculo ?? "—"}</span>
+            <span className="ps-lbl">TRANSPORTE:</span>
+            <span className="ps-val">{transporte}</span>
           </div>
         </div>
 
         {/* Observaciones */}
         <div className="ps-obs">
           <div className="ps-obs-lbl">OBSERVACIONES:</div>
-          <div>{esDestarse ? "SALE POR DESACOPLO DEL FURGON" : (recepcion?.observaciones || "Sin observaciones.")}</div>
+          <div>{esDestarse ? "SALE POR DESACOPLO DEL FURGON" : (data.detalle?.observaciones || recepcion?.observaciones || "Sin observaciones.")}</div>
         </div>
 
         {/* Firmas */}

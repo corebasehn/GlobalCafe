@@ -1,5 +1,8 @@
-# Requerimientos para el Agente de Báscula
+# Requerimientos para los Agentes de Global Café (Báscula e Impresión)
 pyserial
 flask
 flask-cors
 pyinstaller
+pywin32
+pystray
+pillow

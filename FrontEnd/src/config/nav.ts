@@ -108,7 +108,7 @@ export const NAV: NavGroup[] = [
         requirePermission: "VER_BASCULA"
       },
       { 
-        label: "WMS Patio", 
+        label: "Nota de Patio", 
         to: "/recepcion/wms-patio", 
         icon: Warehouse,
         description: "Almacenamiento pergamino",

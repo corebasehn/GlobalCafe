@@ -1,13 +1,13 @@
-import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, NotFoundException, InternalServerErrorException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { CreateAnalisisDto, VeredictoGerenciaDto } from './dto/create-analisis.dto';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AnalisisService {
   constructor(
     private prisma: PrismaService,
-    private notifications: NotificationsGateway
+    private notificationsService: NotificationsService
   ) {}
 
   // 1. GUARDAR ANÁLISIS (Desde pantalla de Laboratorio)
@@ -74,15 +74,22 @@ export class AnalisisService {
         }
       });
 
-      // B. Cambiamos el estado de la carga para que viaje virtualmente a Gerencia
-      await tx.detalleRecepcion.update({
+      // B. Cambiamos el estado de la carga para que viaje virtualmente a Gerencia solo si no ha cerrado pesada
+      const detalleActual = await tx.detalleRecepcion.findUnique({
         where: { id_detalle_recepcion: dto.id_detalle_recepcion },
-        data: {
-          id_estado_transaccion: estadoDestino.id_estado_transaccion,
-          usuario_modificacion: usuarioId,
-          fecha_modificacion: new Date(),
-        }
+        include: { estado_transaccion: true }
       });
+
+      if (!detalleActual?.pesada_salida && detalleActual?.estado_transaccion?.nombre !== 'Pesada Cerrada') {
+        await tx.detalleRecepcion.update({
+          where: { id_detalle_recepcion: dto.id_detalle_recepcion },
+          data: {
+            id_estado_transaccion: estadoDestino.id_estado_transaccion,
+            usuario_modificacion: usuarioId,
+            fecha_modificacion: new Date(),
+          }
+        });
+      }
 
       return analisis;
     });
@@ -95,14 +102,17 @@ export class AnalisisService {
     }
 
     try {
-      this.notifications.emitNotification('new_notification', {
-        title: 'Análisis de Laboratorio Completado',
-        message: `Se registraron resultados para ${correlativo}. Esperando veredicto de Gerencia.`,
-        type: 'warning',
-        module: 'RECEPCION'
+      await this.notificationsService.create({
+        rol_destino: 'gerencia',
+        titulo: 'Análisis de Laboratorio Completado',
+        mensaje: `Resultados registrados para ${correlativo}. Esperando veredicto de Gerencia.`,
+        tipo: 'warning',
+        icono: 'ri-flask-line',
+        referencia_id: String(resultado.id_analisis_calidad),
+        ruta: '/recepcion/aprobacion-gerencia',
       });
     } catch (notifErr: any) {
-      console.warn('[createAnalisis] Notificación WebSocket falló (no crítico):', notifErr?.message);
+      console.warn('[createAnalisis] Notificación falló (no crítico):', notifErr?.message);
     }
 
     return resultado;
@@ -110,7 +120,16 @@ export class AnalisisService {
 
   // 2. VEREDICTO (Desde pantalla de Gerencia)
   async veredictoGerencia(idAnalisis: number, dto: VeredictoGerenciaDto, usuarioId: number) {
-    const analisis = await this.prisma.analisisCalidad.findUnique({ where: { id_analisis_calidad: idAnalisis } });
+    const analisis = await this.prisma.analisisCalidad.findUnique({
+      where: { id_analisis_calidad: idAnalisis },
+      include: {
+        detalle_recepcion: {
+          include: {
+            estado_transaccion: true
+          }
+        }
+      }
+    });
     if (!analisis) throw new NotFoundException('Análisis no encontrado');
 
     let estadoAnalisisNombre = '';
@@ -118,7 +137,18 @@ export class AnalisisService {
 
     if (dto.veredicto === 'APROBAR') {
       estadoAnalisisNombre = 'Muestra Aprobada';
-      estadoDetalleNombre = 'Muestra Aprobada';
+      if (analisis.tipo_analisis === 'Muestra General') {
+        // En Muestra General la carga ya descargó en patio.
+        // Si ya tiene pesada de salida registrada o ya estaba cerrada en báscula, DEBE mantenerse como Pesada Cerrada.
+        if (analisis.detalle_recepcion?.pesada_salida != null || analisis.detalle_recepcion?.estado_transaccion?.nombre === 'Pesada Cerrada') {
+          estadoDetalleNombre = 'Pesada Cerrada';
+        } else {
+          // Si aún no pesa salida, queda en Pesada Abierta para que báscula capture la tara
+          estadoDetalleNombre = 'Pesada Abierta';
+        }
+      } else {
+        estadoDetalleNombre = 'Muestra Aprobada';
+      }
     } else if (dto.veredicto === 'SEGUNDA_MUESTRA') {
       estadoAnalisisNombre = 'Muestra Rechazada'; // Se rechaza este análisis en específico (historial)
       estadoDetalleNombre = 'Pendiente de Muestrear'; // La carga física regresa al patio para nuevo muestreo
@@ -152,12 +182,39 @@ export class AnalisisService {
       return { success: true, estado: estadoDetalleNombre };
     });
 
-    this.notifications.emitNotification('new_notification', {
-      title: 'Veredicto de Gerencia Tomado',
-      message: `El análisis ${analisis.numero_analisis} fue dictaminado como: ${estadoAnalisisNombre}.`,
-      type: dto.veredicto === 'APROBAR' ? 'success' : 'error',
-      module: 'RECEPCION'
-    });
+    try {
+      let rolDestino = 'bascula';
+      let rutaDestino = '/recepcion/bascula';
+      let mensaje = `El análisis ${analisis.numero_analisis} fue APROBADO por Gerencia. Listo para pesaje en báscula.`;
+      let tipoNotif = 'success';
+      let iconoNotif = 'ri-checkbox-circle-line';
+
+      if (dto.veredicto === 'SEGUNDA_MUESTRA') {
+        rolDestino = 'muestreo';
+        rutaDestino = '/recepcion/muestreo';
+        mensaje = `Gerencia solicitó SEGUNDA MUESTRA para el análisis ${analisis.numero_analisis}.`;
+        tipoNotif = 'warning';
+        iconoNotif = 'ri-repeat-line';
+      } else if (dto.veredicto === 'DEVOLUCION') {
+        rolDestino = 'bascula';
+        rutaDestino = '/recepcion/bascula';
+        mensaje = `Gerencia RECHAZÓ el lote del análisis ${analisis.numero_analisis}. Generar pase de salida.`;
+        tipoNotif = 'danger';
+        iconoNotif = 'ri-close-circle-line';
+      }
+
+      await this.notificationsService.create({
+        rol_destino: rolDestino,
+        titulo: `Veredicto de Gerencia: ${dto.veredicto}`,
+        mensaje,
+        tipo: tipoNotif,
+        icono: iconoNotif,
+        referencia_id: String(idAnalisis),
+        ruta: rutaDestino,
+      });
+    } catch (notifErr: any) {
+      console.warn('[veredictoGerencia] Notificación falló (no crítico):', notifErr?.message);
+    }
 
     return resultado;
   }
@@ -174,7 +231,7 @@ export class AnalisisService {
         ],
       },
       include: {
-        detalle_recepcion: { include: { proveedor: true, recepcion: true, estado_transaccion: true } },
+        detalle_recepcion: { include: { proveedor: true, recepcion: true, estado_transaccion: true, tipo_cafe: true } },
         catador: true, calidad: true, estado_transaccion: true,
         analisis_defectos: { include: { defecto: true } },
         analisis_zarandas: { include: { zaranda: true } },
@@ -210,6 +267,63 @@ export class AnalisisService {
           } 
         },
         catador: true, calidad: true, estado_transaccion: true,
+        analisis_defectos: { include: { defecto: true } },
+        analisis_zarandas: { include: { zaranda: true } },
+        analisis_tazas: { include: { taza: true } }
+      },
+      orderBy: { fecha_analisis: 'desc' }
+    });
+  }
+
+  // 5. COMPARATIVO POR RANGO DE FECHAS
+  async buscarComparativoFechas(fechaInicio: string, fechaFin: string) {
+    if (!fechaInicio || !fechaFin) return [];
+
+    const startStr = fechaInicio.includes('T') ? fechaInicio : `${fechaInicio}T00:00:00`;
+    const endStr = fechaFin.includes('T') ? fechaFin : `${fechaFin}T23:59:59.999`;
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Formato de fechas inválido');
+    }
+
+    // Identificar los id_detalle_recepcion con análisis o recepción dentro del rango
+    const analisisEnRango = await this.prisma.analisisCalidad.findMany({
+      where: {
+        OR: [
+          { fecha_analisis: { gte: start, lte: end } },
+          { detalle_recepcion: { recepcion: { fecha_entrada: { gte: start, lte: end } } } }
+        ]
+      },
+      select: { id_detalle_recepcion: true }
+    });
+
+    const idsDetalle = Array.from(new Set(analisisEnRango.map((a) => a.id_detalle_recepcion)));
+
+    if (idsDetalle.length === 0) return [];
+
+    // Obtener todos los análisis asociados para completar la comparación (Previa y General)
+    return this.prisma.analisisCalidad.findMany({
+      where: {
+        id_detalle_recepcion: { in: idsDetalle }
+      },
+      include: {
+        detalle_recepcion: {
+          include: {
+            proveedor: true,
+            recepcion: {
+              include: {
+                placa_cabezal: true
+              }
+            },
+            estado_transaccion: true,
+            tipo_cafe: true,
+          }
+        },
+        catador: true,
+        calidad: true,
+        estado_transaccion: true,
         analisis_defectos: { include: { defecto: true } },
         analisis_zarandas: { include: { zaranda: true } },
         analisis_tazas: { include: { taza: true } }

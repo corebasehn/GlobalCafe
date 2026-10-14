@@ -1,7 +1,8 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../../auth/useAuth";
 import { getBoletaPesadaApi } from "../../../../api/reception.api";
+import { enviarImpresionMatricial } from "../../../../api/printer.api";
 
 const PAGE_W = "24.13cm";
 const PAGE_H = "13.97cm";
@@ -16,6 +17,12 @@ type FilaPeso = {
 
 function fmt(n: number) {
   return n.toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtDiferencia(dif: number | null) {
+  if (dif == null) return "—";
+  const signo = dif > 0 ? "+" : "";
+  return `${signo}${fmt(dif)} LB`;
 }
 
 function fmtFecha(d: Date | null) {
@@ -35,8 +42,8 @@ export default function BoletaPesadaPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [fontFamily, setFontFamily] = useState<string>("Arial");
-  const [fontSize, setFontSize] = useState<string>("8pt");
+  const [fontFamily, setFontFamily] = useState<string>("Courier New");
+  const [fontSize, setFontSize] = useState<string>("9pt");
   const [leyendaCafeExterno, setLeyendaCafeExterno] = useState<string>("CAFÉ EXTERNO (SERVICIO DE MAQUILADO)");
 
   const esPrimera = tipo === "primera";
@@ -72,6 +79,27 @@ export default function BoletaPesadaPage() {
       .catch(() => setError("Error al obtener los datos de impresion."))
       .finally(() => setLoading(false));
   }, [idDetalle]);
+
+  const [imprimiendoMatricial, setImprimiendoMatricial] = useState(false);
+
+  const handlePrintMatricial = async () => {
+    if (!data) return;
+    setImprimiendoMatricial(true);
+    try {
+      const res = await enviarImpresionMatricial(
+        esPrimera ? "boleta_pesada_primera" : "boleta_pesada_segunda",
+        data,
+        esCopia
+      );
+      if (res.success) {
+        alert("🖨️ " + res.message);
+      } else {
+        alert("Error de impresión matricial: " + res.message);
+      }
+    } finally {
+      setImprimiendoMatricial(false);
+    }
+  };
 
   useEffect(() => {
     if (!data || loading) return;
@@ -155,8 +183,11 @@ export default function BoletaPesadaPage() {
     if (f.peso != null) pesoBruto += f.signo === "+" ? f.peso : -f.peso;
     totalSacos += f.signo === "+" ? f.sacos : -f.sacos;
   }
-  const tara = 0.5 * totalSacos;
+  const taraUnitaria = detalle?.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
+  const tara = taraUnitaria * totalSacos;
   const qNeto = (pesoBruto - tara)/100;
+  const pesoRemision = detalle?.cantidad_qq != null ? Number(detalle.cantidad_qq) * 100 : null;
+  const diferencia = pesoRemision != null ? pesoBruto - pesoRemision : null;
 
   return (
     <>
@@ -169,9 +200,10 @@ export default function BoletaPesadaPage() {
         }
 
         body {
-          font-family: ${fontFamily}, Helvetica, sans-serif;
+          font-family: ${fontFamily}, "Courier New", Courier, monospace;
           font-size: ${fontSize};
           background: white;
+          color: #000000;
         }
 
         @media screen {
@@ -207,6 +239,15 @@ export default function BoletaPesadaPage() {
         }
 
         @media print {
+          * {
+            -webkit-font-smoothing: none !important;
+            font-smooth: never !important;
+            text-rendering: geometricPrecision !important;
+            color: #000000 !important;
+          }
+          body {
+            color: #000000 !important;
+          }
           .boleta-paper { padding: 0; }
           .no-print { display: none !important; }
         }
@@ -247,7 +288,7 @@ export default function BoletaPesadaPage() {
           font-size: ${getFontSize(0.9375)};
         }
         .blt-peso-table th {
-          border-bottom: 1px solid #333;
+          border-bottom: 1px solid #000000;
           padding: 2px 6px;
           font-size: ${getFontSize(0.875)};
           font-weight: bold;
@@ -261,24 +302,23 @@ export default function BoletaPesadaPage() {
           border-collapse: collapse;
           margin-bottom: 4px;
           font-size: ${getFontSize(0.9375)};
-          border-top: 1px solid #333;
+          border-top: 1px solid #000000;
         }
         .blt-totales td {
-          padding: 2px 0;
+          padding: 2px 4px 2px 0;
           white-space: nowrap;
-          width: 50%;
         }
         .blt-totales strong { font-weight: bold; }
 
         .blt-footer {
-          border-top: 1px solid #333;
+          border-top: 1px solid #000000;
           padding-top: 4px;
           font-size: ${getFontSize(0.9375)};
         }
 
         .blt-leyenda-externa {
           background: #ffffff;
-          border: 2px solid #333;
+          border: 2px solid #000000;
           padding: 3px;
           text-align: center;
           font-weight: bold;
@@ -301,7 +341,14 @@ export default function BoletaPesadaPage() {
       `}</style>
 
       <div className="no-print">
-        <button onClick={() => window.print()}>Imprimir</button>
+        <button
+          style={{ backgroundColor: "#198754", color: "white", fontWeight: "bold" }}
+          onClick={handlePrintMatricial}
+          disabled={imprimiendoMatricial}
+        >
+          {imprimiendoMatricial ? "Enviando..." : "🖨️ Imprimir en FX-890II (Matricial)"}
+        </button>
+        <button onClick={() => window.print()}>Imprimir (Navegador)</button>
         <button onClick={() => window.close()}>Cerrar</button>
       </div>
 
@@ -318,7 +365,7 @@ export default function BoletaPesadaPage() {
         <table className="blt-info">
           <tbody>
             <tr>
-              <td className="lbl">DESPACHO:</td>
+              <td className="lbl"># RECEPCIÓN:</td>
               <td>{recepcion?.numero_entrada ?? "—"}</td>
               <td className="lbl">COSECHA:</td>
               <td>{recepcion?.cosecha?.cosecha ?? "—"}</td>
@@ -356,7 +403,7 @@ export default function BoletaPesadaPage() {
 
         <div className="blt-pergamino">{detalle.tipo_cafe?.tipo_cafe?.toUpperCase() ?? "N/A"}</div>
 
-        <div className="blt-section-title">NOTA DE PESO DEL CAMION</div>
+        <div className="blt-section-title">PESO DETALLE DEL CAMION</div>
 
         <table className="blt-peso-table">
           <thead>
@@ -372,7 +419,9 @@ export default function BoletaPesadaPage() {
               <tr key={i}>
                 <td>{fila.concepto}</td>
                 <td className="tr">
-                  {fila.peso != null ? `${fila.signo}${fmt(fila.peso)}` : "—"}
+                  {esPrimera
+                    ? (fila.peso != null ? "******" : "—")
+                    : (fila.peso != null ? `${fila.signo}${fmt(fila.peso)}` : "—")}
                 </td>
                 <td className="tr">{fila.sacos === 0 ? "0" : `${fila.signo}${fila.sacos}`}</td>
                 <td>{fmtFecha(fila.fecha)}</td>
@@ -384,13 +433,29 @@ export default function BoletaPesadaPage() {
         <table className="blt-totales">
           <tbody>
             <tr>
-              <td><strong>PESO BRUTO:</strong>&nbsp;{fmt(pesoBruto)} LB</td>
-              <td><strong>TOTAL SACOS:</strong>&nbsp;{totalSacos}</td>
+              <td style={{ width: "30%" }}>
+                <strong>PESO BRUTO:</strong>&nbsp;{esPrimera ? "****** LB" : `${fmt(pesoBruto)} LB`}
+              </td>
+              <td style={{ width: "32%" }}>
+                <strong>TOTAL SACOS:</strong>&nbsp;{totalSacos}
+              </td>
+              <td style={{ width: "38%" }}>
+                {!esPrimera && (
+                  <><strong>PESO REMISIÓN:</strong>&nbsp;{pesoRemision != null ? `${fmt(pesoRemision)} LB` : "—"}</>
+                )}
+              </td>
             </tr>
             {!esPrimera && (
               <tr>
-                <td><strong>TARA (0.5 × sacos):</strong>&nbsp;{fmt(tara)} LB</td>
-                <td><strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ</td>
+                <td>
+                  <strong>TARA ({taraUnitaria} × sacos):</strong>&nbsp;{fmt(tara)} LB
+                </td>
+                <td>
+                  <strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ
+                </td>
+                <td>
+                  <strong>DIFERENCIA (BRUTO - REMISIÓN):</strong>&nbsp;{fmtDiferencia(diferencia)}
+                </td>
               </tr>
             )}
           </tbody>

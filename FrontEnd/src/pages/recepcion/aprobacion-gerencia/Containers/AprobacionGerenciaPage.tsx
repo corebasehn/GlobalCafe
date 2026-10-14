@@ -35,6 +35,8 @@ export interface MuestraGerencia {
   remision: string;
   proveedor_nombre: string;
   cantidad_qq: number;
+  tipo_analisis: string;
+  tipo_cafe: string;
 }
 
 export default function AprobacionGerenciaPage() {
@@ -90,6 +92,8 @@ export default function AprobacionGerenciaPage() {
         remision: ana.detalle_recepcion?.remision || "N/A",
         proveedor_nombre: ana.detalle_recepcion?.proveedor?.nombre || "N/A",
         cantidad_qq: Number(ana.detalle_recepcion?.cantidad_qq || 0),
+        tipo_analisis: ana.tipo_analisis || "N/A",
+        tipo_cafe: ana.detalle_recepcion?.tipo_cafe?.tipo_cafe || "N/A",
       }));
 
       setMuestras(mapeadas);
@@ -141,18 +145,20 @@ export default function AprobacionGerenciaPage() {
     }
   };
 
-  const onConfirmFalto = async (decision: "APROBAR" | "DEVOLVER", obs: string) => {
+  const onConfirmFalto = async (decision: "APROBAR" | "DEVOLVER", obs: string): Promise<boolean> => {
     try {
       setSubmitting(true);
       await decidirFaltosApi(selectedFalto.id_detalle_recepcion, decision, obs);
       toast.success(decision === "APROBAR" ? "Carga aprobada correctamente" : "Carga devuelta");
-      if (decision === "APROBAR" || decision === "DEVOLVER") {
+      if (decision === "APROBAR") {
         setShowFaltoModal(false);
         loadData();
       }
+      return true;
     } catch (error: any) {
       console.error("Error al procesar decisión:", error);
       toast.error(error.response?.data?.message || "Error al registrar veredicto");
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -216,7 +222,7 @@ export default function AprobacionGerenciaPage() {
                   title={
                     <div className="d-flex align-items-center gap-2">
                       <ShieldAlert className="w-4 h-4 text-warning" /> 
-                      <span>Segregación (Faltos de Patio)</span>
+                      <span>Segregación (Sacos con problemas)</span>
                       {pendientesFaltos.length > 0 && <Badge bg="warning-transparent" className="rounded-pill text-dark">{pendientesFaltos.length}</Badge>}
                     </div>
                   }

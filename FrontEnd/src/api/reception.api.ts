@@ -33,6 +33,8 @@ export interface DetalleRecepcion {
   };
   proveedor?: { nombre: string };
   tipo_remision?: { nombre: string };
+  tipo_empaque?: { id_tipo_empaque: number; tipo_empaque: string; tara: number };
+  tipo_cafe?: { id_tipo_cafe: number; tipo_cafe: string };
   recepcion?: any;
 }
 
@@ -69,6 +71,7 @@ export interface CreateReceptionDetalleRequest {
 
 export interface CreateReceptionRequest {
   id_sucursal?: number;
+  id_tipo_remision?: number;
   id_cosecha: number;
   tipo_vehiculo: string;
   id_placa_cabezal: number;
@@ -139,13 +142,28 @@ export async function registrarEntradaCabezalApi(id: number, id_placa_entrante: 
   return data;
 }
 
-export async function registrarPesadaSalidaApi(id: number, peso: number): Promise<any> {
-  const { data } = await http.put<any>(`/reception/bascula/salida/${id}`, { peso });
+export async function registrarPesadaSalidaApi(id: number, peso: number, observaciones?: string): Promise<any> {
+  const { data } = await http.put<any>(`/reception/bascula/salida/${id}`, { peso, observaciones });
+  return data;
+}
+
+export async function actualizarObservacionesDetalleApi(id: number, observaciones: string): Promise<any> {
+  const { data } = await http.patch<any>(`/reception/detalle/${id}/observaciones`, { observaciones });
   return data;
 }
 
 export async function getBoletaPesadaApi(idDetalle: number): Promise<any> {
   const { data } = await http.get<any>(`/reception/bascula/boleta-pesada/${idDetalle}`);
+  return data;
+}
+
+export async function getBoletaRecepcionApi(idRecepcion: number): Promise<any> {
+  const { data } = await http.get<any>(`/reception/boleta-recepcion/${idRecepcion}`);
+  return data;
+}
+
+export async function getBoletaDevolucionApi(idDetalle: number): Promise<any> {
+  const { data } = await http.get<any>(`/reception/boleta-devolucion/${idDetalle}`);
   return data;
 }
 
@@ -166,4 +184,48 @@ export async function getExternosOmitidosApi(): Promise<any[]> {
 
 export async function actualizarOmitirAnalisisApi(idDetalle: number, omitir: boolean): Promise<void> {
   await http.patch(`/reception/detalle/${idDetalle}/omitir-analisis`, { omitir_analisis: omitir });
+}
+
+// ==========================================
+// APIs PARA OTROS MOVIMIENTOS (CASULLA)
+// ==========================================
+
+export interface CreateOtroMovimientoRequest {
+  id_sucursal?: number;
+  id_cosecha?: number;
+  tipo_vehiculo: string;
+  id_placa_cabezal: number;
+  id_placa_furgon?: number;
+  id_conductor: number;
+  id_municipio?: number;
+  id_proveedor?: number;
+  id_tipo_movimiento?: number;
+  remision?: string;
+  observaciones?: string;
+  peso_tara_inicial?: number;
+}
+
+export async function getOtrosMovimientosApi(q?: string): Promise<any[]> {
+  const { data } = await http.get<any[]>("/reception/otros-movimientos", { params: { q } });
+  return data;
+}
+
+export async function createOtroMovimientoApi(payload: CreateOtroMovimientoRequest): Promise<any> {
+  const { data } = await http.post<any>("/reception/otros-movimientos", payload);
+  return data;
+}
+
+export async function registrarPrimeraPesadaOtroMovimientoApi(idDetalle: number, peso: number, observaciones?: string): Promise<any> {
+  const { data } = await http.put<any>(`/reception/otros-movimientos/primera-pesada/${idDetalle}`, { peso, observaciones });
+  return data;
+}
+
+export async function registrarSegundaPesadaOtroMovimientoApi(idDetalle: number, peso: number, observaciones?: string): Promise<any> {
+  const { data } = await http.put<any>(`/reception/otros-movimientos/segunda-pesada/${idDetalle}`, { peso, observaciones });
+  return data;
+}
+
+export async function getBoletaPesadaOtroMovimientoApi(idDetalle: number): Promise<any> {
+  const { data } = await http.get<any>(`/reception/otros-movimientos/boleta-pesada/${idDetalle}`);
+  return data;
 }

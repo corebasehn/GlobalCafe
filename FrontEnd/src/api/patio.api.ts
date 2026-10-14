@@ -7,6 +7,7 @@ export interface NotaPatioRequest {
   cantidad_sacos_buenos: number;
   cantidad_sacos_faltos: number;
   observaciones_faltos?: string;
+  id_tipo_empaque?: number;
 }
 
 export interface RecepcionPatio extends DetalleRecepcion {

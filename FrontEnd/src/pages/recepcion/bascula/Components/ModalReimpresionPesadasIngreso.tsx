@@ -2,6 +2,7 @@ import { useState, KeyboardEvent } from "react";
 import { Search, Loader2, Printer, ChevronRight, ChevronDown } from "lucide-react";
 import { Modal, Button, Form, InputGroup, Table, Badge } from "react-bootstrap";
 import { buscarPesadasApi } from "../../../../api/reception.api";
+import ModalOpcionesImpresion from "./ModalOpcionesImpresion";
 
 interface Props {
   show: boolean;
@@ -16,7 +17,11 @@ function getBadgeVariant(estado: string) {
 }
 
 export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props) {
-  const base = import.meta.env.BASE_URL;
+  const [impresionModal, setImpresionModal] = useState<{
+    show: boolean;
+    carga: any | null;
+    recepcion: any | null;
+  }>({ show: false, carga: null, recepcion: null });
 
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,16 +60,17 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
     setRecepciones([]);
     setBuscado(false);
     setExpandedRows([]);
+    setImpresionModal({ show: false, carga: null, recepcion: null });
     onClose();
   };
 
-  const handleReimprimir = (carga: any) => {
-    const tipo = carga.pesada_salida != null ? "segunda" : "primera";
-    window.open(`${base}print/boleta-pesada/${carga.id_detalle_recepcion}/${tipo}?copia=true`, "_blank");
+  const handleOpenImpresion = (r: any, carga: any) => {
+    setImpresionModal({ show: true, carga, recepcion: r });
   };
 
   return (
-    <Modal show={show} onHide={handleClose} size="xl" centered>
+    <>
+      <Modal show={show} onHide={handleClose} size="xl" centered>
       <Modal.Header closeButton>
         <Modal.Title className="fs-6 d-flex align-items-center gap-2">
           <Printer size={18} className="text-primary" />
@@ -154,11 +160,12 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
                               <thead className="bg-light">
                                 <tr>
                                   <th>Remisión</th>
+                                  <th>Tipo de Café</th>
                                   <th>Proveedor / Finca</th>
                                   <th className="text-end">Pesada Entrada</th>
                                   <th className="text-end">Pesada Salida</th>
                                   <th className="text-center">Estado</th>
-                                  <th className="text-center">Tipo Boleta</th>
+                                  <th className="text-center">Documentos</th>
                                   <th className="text-center">Acción</th>
                                 </tr>
                               </thead>
@@ -170,6 +177,11 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
                                   return (
                                     <tr key={carga.id_detalle_recepcion}>
                                       <td className="fw-medium">{carga.remision}</td>
+                                      <td>
+                                        <Badge bg="secondary-transparent" className="text-secondary fw-semibold">
+                                          {carga.tipo_cafe?.tipo_cafe || "—"}
+                                        </Badge>
+                                      </td>
                                       <td>{carga.proveedor?.nombre ?? "—"}</td>
                                       <td className="text-end font-monospace">
                                         {carga.pesada_entrada
@@ -188,15 +200,20 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
                                       </td>
                                       <td className="text-center">
                                         <Badge bg={tieneSalida ? "success-transparent" : "primary-transparent"}>
-                                          {tieneSalida ? "2da Pesada" : "1ra Pesada"}
+                                          {tieneSalida ? "1ra y 2da Pesada" : "1ra Pesada"}
                                         </Badge>
+                                        {carga.devolucion && (
+                                          <Badge bg="danger-transparent" className="ms-1">
+                                            Devolución ({carga.devolucion.cantidad_sacos} {carga.devolucion.cantidad_sacos === 1 ? "saco" : "sacos"})
+                                          </Badge>
+                                        )}
                                       </td>
                                       <td className="text-center">
                                         <Button
                                           size="sm"
                                           variant="outline-primary"
                                           className="d-inline-flex align-items-center gap-1"
-                                          onClick={(e) => { e.stopPropagation(); handleReimprimir(carga); }}
+                                          onClick={(e) => { e.stopPropagation(); handleOpenImpresion(r, carga); }}
                                         >
                                           <Printer size={13} /> Reimprimir
                                         </Button>
@@ -225,6 +242,14 @@ export default function ModalReimpresionPesadasIngreso({ show, onClose }: Props)
       <Modal.Footer>
         <Button variant="secondary" onClick={handleClose}>Cerrar</Button>
       </Modal.Footer>
-    </Modal>
+      </Modal>
+
+      <ModalOpcionesImpresion
+        show={impresionModal.show}
+        carga={impresionModal.carga}
+        recepcion={impresionModal.recepcion}
+        onClose={() => setImpresionModal({ show: false, carga: null, recepcion: null })}
+      />
+    </>
   );
 }
