@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Modal, Button, Form, Row, Col, InputGroup, Alert } from "react-bootstrap";
+import { Modal, Button, Form, Row, Col, InputGroup } from "react-bootstrap";
 import { Weight, Zap, Loader2, Save, ArrowRight } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -30,11 +30,13 @@ export default function ModalPesajeOtroMovimiento({
   const [observaciones, setObservaciones] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [capturingScale, setCapturingScale] = useState(false);
+  const [allowManualInput, setAllowManualInput] = useState(false);
 
   useEffect(() => {
     if (show) {
       setPesoInput("");
       setObservaciones("");
+      setAllowManualInput(false);
     }
   }, [show, tipo, movimiento]);
 
@@ -72,18 +74,21 @@ export default function ModalPesajeOtroMovimiento({
       clearTimeout(timeoutId);
       const data = await response.json();
 
-      if (data.estado === "exito") {
+      if (data.estado === "exito" && data.peso && Number(data.peso) > 0) {
         setPesoInput(data.peso.toString());
+        setAllowManualInput(false);
         toast.success(`Peso capturado de báscula: ${Number(data.peso).toLocaleString()} LB`);
       } else {
-        toast.error(`Error de la báscula: ${data.mensaje}`);
+        setAllowManualInput(true);
+        toast.error(`Error de la báscula: ${data.mensaje || "Sin peso válido"}. Ingreso manual habilitado.`);
       }
     } catch (error: any) {
       clearTimeout(timeoutId);
+      setAllowManualInput(true);
       if (error.name === "AbortError") {
-        toast.error("La báscula tardó demasiado en responder (8s). Verifique que el .exe esté abierto y la báscula conectada.");
+        toast.error("La báscula tardó demasiado en responder (8s). Se habilitó el ingreso manual.");
       } else {
-        toast.error("No se pudo conectar con el Agente de Báscula. Verifique que el .exe esté abierto en esta PC.");
+        toast.error("No se pudo conectar con el Agente de Báscula. Se habilitó el ingreso manual.");
       }
     } finally {
       setCapturingScale(false);
@@ -127,7 +132,6 @@ export default function ModalPesajeOtroMovimiento({
       } else {
         if (pesoActual <= (primeraPesadaPrevia || 0)) {
           toast.error("El peso bruto (salida) debe ser mayor que la tara de entrada.");
-          return;
         }
       }
       try {
@@ -227,22 +231,31 @@ export default function ModalPesajeOtroMovimiento({
                 type="number"
                 step="0.01"
                 min="0.01"
-                autoFocus
+                autoFocus={allowManualInput}
                 required
+                readOnly={!allowManualInput}
+                tabIndex={allowManualInput ? 0 : -1}
                 value={pesoInput}
                 onChange={(e) => {
+                  if (!allowManualInput) return;
                   const val = e.target.value;
                   if (val === "" || Number(val) >= 0) setPesoInput(val);
                 }}
                 className="text-end font-monospace fw-bold fs-3 border-start-0 border-end-0"
                 placeholder="0.00"
-                style={{ MozAppearance: "textfield" } as React.CSSProperties}
+                style={{
+                  MozAppearance: "textfield",
+                  backgroundColor: allowManualInput ? "#ffffff" : "#e9ecef",
+                  cursor: allowManualInput ? "text" : "not-allowed",
+                } as React.CSSProperties}
                 onWheel={(e) => e.currentTarget.blur()}
               />
               <InputGroup.Text className="fw-bold bg-light">LB</InputGroup.Text>
             </InputGroup>
-            <Form.Text className="text-muted">
-              Presione el botón para capturar automáticamente o escriba el peso manualmente.
+            <Form.Text className={allowManualInput ? "text-warning fw-semibold" : "text-muted"}>
+              {allowManualInput
+                ? "⚠️ Sin respuesta del agente: ingreso manual habilitado."
+                : "🔒 Campo protegido. Presione 'Capturar de Báscula' para obtener el peso."}
             </Form.Text>
           </Form.Group>
 

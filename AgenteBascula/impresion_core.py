@@ -19,6 +19,9 @@ except ImportError:
 ESC_RESET = b"\x1b@"                    # Inicializar impresora
 ESC_DRAFT = b"\x1bx\x00"                # Modo borrador alta velocidad (Draft)
 ESC_CP850 = b"\x1bt\x01"                # Tabla de caracteres 1 (PC850 Multilingual / Latin)
+ESC_PROP_OFF = b"\x1bp\x00"             # Desactivar espaciado proporcional (PS OFF)
+ESC_10CPI = b"\x1bP"                    # Fijar paso Pica 10 CPI (80 cols = 8.0 pulgadas ancho completo)
+ESC_12CPI = b"\x1bM"                    # Fijar paso Elite 12 CPI (96 cols = 8.0 pulgadas)
 ESC_SPACING_6LPI = b"\x1b2"             # Interlineado de 1/6 pulgada (6 líneas por pulgada)
 ESC_PAGE_33 = b"\x1bC\x21"              # Largo de página: 33 líneas (5.5 pulgadas / Media Carta)
 ESC_PAGE_66 = b"\x1bC\x42"              # Largo de página: 66 líneas (11 pulgadas / Carta Completa)
@@ -30,7 +33,8 @@ ESC_UNDERLINE_ON = b"\x1b-\x01"         # Subrayado ON
 ESC_UNDERLINE_OFF = b"\x1b-\x00"        # Subrayado OFF
 ESC_FORM_FEED = b"\x0c"                 # Avance al corte de página (Form Feed)
 
-ANCHO_ESTANDAR = 80                     # 80 columnas para hojas estándar de carro angosto
+ANCHO_ESTANDAR = 80                     # 80 columnas a 10 CPI = 8.0 pulgadas (ancho útil completo)
+MARGEN_SUPERIOR_LINEAS = 4              # Saltos de línea iniciales para librar el membrete preimpreso
 
 
 def encode_cp850(texto: str) -> bytes:
@@ -175,27 +179,32 @@ def enviar_raw(nombre_impresora: str, datos: bytes, titulo_doc: str = "Boleta Gl
 # FORMATEADORES DE BOLETAS (ESC/P)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def init_boleta(media_carta: bool = True) -> bytes:
+def init_boleta(media_carta: bool = True, margen_lineas: int = MARGEN_SUPERIOR_LINEAS) -> bytes:
     """Inicializa la impresora con configuración para boleta continua."""
     buf = bytearray()
     buf.extend(ESC_RESET)
     buf.extend(ESC_CP850)
     buf.extend(ESC_DRAFT)
+    buf.extend(ESC_PROP_OFF)
+    buf.extend(ESC_COND_OFF)
+    buf.extend(ESC_10CPI)
     buf.extend(ESC_SPACING_6LPI)
     if media_carta:
         buf.extend(ESC_PAGE_33)  # 33 líneas = 5.5 pulgadas
     else:
         buf.extend(ESC_PAGE_66)  # 66 líneas = 11 pulgadas
+    if margen_lineas > 0:
+        buf.extend(b"\r\n" * margen_lineas)
     return bytes(buf)
 
 
 def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_copia: bool = False) -> bytes:
     """
     Construye el documento ESC/P para Boleta de 1ª o 2ª Pesada.
-    Diseñado para media carta (33 líneas), ancho de 80 columnas.
+    Diseñado para media carta (33 líneas), ancho de 80 columnas a 10 CPI (8 pulgadas).
     """
-    detalle = data.get("detalle", data)
-    recepcion = detalle.get("recepcion", {})
+    detalle = data.get("detalle", data) or {}
+    recepcion = detalle.get("recepcion") or {}
     devolucion = data.get("devolucion")
 
     buf = bytearray()
@@ -210,32 +219,31 @@ def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_c
         buf.extend(encode_cp850(centrar("*** COPIA ***") + "\r\n"))
     buf.extend(ESC_BOLD_OFF)
 
-    # INFORMACIÓN GENERAL (en 2 columnas)
-    no_entrada = recepcion.get("numero_entrada", "—")
-    cosecha = recepcion.get("cosecha", {}).get("cosecha", "—") if isinstance(recepcion.get("cosecha"), dict) else str(recepcion.get("cosecha") or "—")
+    # INFORMACIÓN GENERAL (en 2 columnas cubriendo 80 caracteres)
+    no_entrada = recepcion.get("numero_entrada") or "—"
+    cosecha = (recepcion.get("cosecha", {}).get("cosecha") if isinstance(recepcion.get("cosecha"), dict) else recepcion.get("cosecha")) or "—"
     fecha_hoy = fmt_fecha(datetime.now())
-    cliente = detalle.get("proveedor", {}).get("nombre", "—") if isinstance(detalle.get("proveedor"), dict) else str(detalle.get("proveedor") or "—")
-    remision = detalle.get("remision", "—")
-    
-    placa_cab = recepcion.get("placa_cabezal", {}).get("placa", "—") if isinstance(recepcion.get("placa_cabezal"), dict) else str(recepcion.get("placa_cabezal") or "—")
+    cliente = (detalle.get("proveedor", {}).get("nombre") if isinstance(detalle.get("proveedor"), dict) else detalle.get("proveedor")) or "—"
+    remision = detalle.get("remision") or "—"
+
+    placa_cab = (recepcion.get("placa_cabezal", {}).get("placa") if isinstance(recepcion.get("placa_cabezal"), dict) else recepcion.get("placa_cabezal")) or "—"
     placa_fur = recepcion.get("placa_furgon", {}).get("placa") if isinstance(recepcion.get("placa_furgon"), dict) else recepcion.get("placa_furgon")
     placa_completa = f"{placa_cab} / {placa_fur}" if placa_fur else placa_cab
 
-    conductor = recepcion.get("conductor", {}).get("nombre", "—") if isinstance(recepcion.get("conductor"), dict) else str(recepcion.get("conductor") or "—")
-    telefono = recepcion.get("conductor", {}).get("telefono", "—") if isinstance(recepcion.get("conductor"), dict) else str(recepcion.get("conductor_telefono") or "—")
+    conductor = (recepcion.get("conductor", {}).get("nombre") if isinstance(recepcion.get("conductor"), dict) else recepcion.get("conductor")) or "—"
+    telefono = (recepcion.get("conductor", {}).get("telefono") if isinstance(recepcion.get("conductor"), dict) else recepcion.get("conductor_telefono")) or "—"
     observaciones = detalle.get("observaciones") or recepcion.get("observaciones") or "—"
 
-    col1_w = 40
     def fila_2col(l1, v1, l2, v2):
-        c1 = f"{l1:<13} {str(v1)[:24]:<24}"
-        c2 = f"{l2:<11} {str(v2)[:26]:<26}"
+        c1 = f"{l1:<13} {str(v1)[:25]:<25}"
+        c2 = f"{l2:<11} {str(v2)[:28]:<28}"
         return f"{c1} {c2}\r\n"
 
     buf.extend(encode_cp850(fila_2col("# RECEPCION:", no_entrada, "COSECHA:", cosecha)))
     buf.extend(encode_cp850(fila_2col("FECHA:", fecha_hoy, "CLIENTE:", cliente)))
     buf.extend(encode_cp850(fila_2col("REMISION:", remision, "PLACA:", placa_completa)))
     buf.extend(encode_cp850(fila_2col("CONDUCTOR:", conductor, "TELEFONO:", telefono)))
-    buf.extend(encode_cp850(f"{'OBSERVACION:':<13} {str(observaciones)[:64]}\r\n"))
+    buf.extend(encode_cp850(f"{'OBSERVACION:':<13} {str(observaciones)[:66]}\r\n"))
 
     # CAFÉ EXTERNO
     id_tipo_remision = detalle.get("id_tipo_remision")
@@ -245,15 +253,15 @@ def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_c
         buf.extend(ESC_BOLD_OFF)
 
     # TIPO DE CAFÉ
-    tipo_cafe = detalle.get("tipo_cafe", {}).get("tipo_cafe", "N/A") if isinstance(detalle.get("tipo_cafe"), dict) else str(detalle.get("tipo_cafe") or "N/A")
+    tipo_cafe = (detalle.get("tipo_cafe", {}).get("tipo_cafe") if isinstance(detalle.get("tipo_cafe"), dict) else detalle.get("tipo_cafe")) or "N/A"
     buf.extend(ESC_BOLD_ON)
-    buf.extend(encode_cp850(f"TIPO: {tipo_cafe.upper()}\r\n"))
+    buf.extend(encode_cp850(f"TIPO: {str(tipo_cafe).upper()}\r\n"))
     buf.extend(ESC_BOLD_OFF)
 
-    # TABLA DE MEDICIONES DE PESO
+    # TABLA DE MEDICIONES DE PESO (80 columnas exactas)
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
     buf.extend(ESC_BOLD_ON)
-    buf.extend(encode_cp850(f"{'MEDICION':<25} {'PESO (LB)':>15} {'SACOS':>10}   {'FECHA / HORA':<25}\r\n"))
+    buf.extend(encode_cp850(f"{'MEDICION':<24} {'PESO (LB)':>16} {'SACOS':>10}    {'FECHA / HORA':<24}\r\n"))
     buf.extend(ESC_BOLD_OFF)
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
 
@@ -263,18 +271,20 @@ def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_c
 
     # Fila Peso Inicial
     txt_peso_ini = "******" if es_primera else (f"+{fmt_numero(peso_entrada)}" if peso_entrada else "—")
-    buf.extend(encode_cp850(f"{'PESO INICIAL':<25} {txt_peso_ini:>15} {f'+{sacos_iniciales}':>10}   {fecha_entrada:<25}\r\n"))
+    buf.extend(encode_cp850(f"{'PESO INICIAL':<24} {txt_peso_ini:>16} {f'+{sacos_iniciales}':>10}    {fecha_entrada:<24}\r\n"))
 
     # Cambios de cabezal si aplican
-    cambios = detalle.get("cambios_cabezal", [])
+    cambios = detalle.get("cambios_cabezal") or []
     for c in cambios:
         if c.get("peso_cabezal_entrante") is not None:
             p_sal = c.get("peso_cabezal_saliente")
             p_ent = c.get("peso_cabezal_entrante")
             f_sal = fmt_fecha(c.get("fecha_creacion"))
             f_ent = fmt_fecha(c.get("fecha_modificacion"))
-            buf.extend(encode_cp850(f"{'CABEZAL INICIAL':<25} {f'-{fmt_numero(p_sal)}':>15} {'0':>10}   {f_sal:<25}\r\n"))
-            buf.extend(encode_cp850(f"{'CABEZAL FINAL':<25} {f'+{fmt_numero(p_ent)}':>15} {'0':>10}   {f_ent:<25}\r\n"))
+            txt_sal = "******" if es_primera else f"-{fmt_numero(p_sal)}"
+            txt_ent = "******" if es_primera else f"+{fmt_numero(p_ent)}"
+            buf.extend(encode_cp850(f"{'CABEZAL INICIAL':<24} {txt_sal:>16} {'0':>10}    {f_sal:<24}\r\n"))
+            buf.extend(encode_cp850(f"{'CABEZAL FINAL':<24} {txt_ent:>16} {'0':>10}    {f_ent:<24}\r\n"))
 
     peso_bruto = float(peso_entrada) if peso_entrada else 0.0
     total_sacos = int(sacos_iniciales)
@@ -283,26 +293,27 @@ def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_c
     if not es_primera:
         peso_salida = detalle.get("pesada_salida")
         fecha_salida = fmt_fecha(detalle.get("fecha_salida_bascula"))
-        sacos_dev = devolucion.get("cantidad_sacos", 0) if devolucion else 0
-        buf.extend(encode_cp850(f"{'PESO FINAL':<25} {f'-{fmt_numero(peso_salida)}':>15} {f'-{sacos_dev}':>10}   {fecha_salida:<25}\r\n"))
+        sacos_dev = (devolucion.get("cantidad_sacos") or 0) if devolucion else 0
+        buf.extend(encode_cp850(f"{'PESO FINAL':<24} {f'-{fmt_numero(peso_salida)}':>16} {f'-{sacos_dev}':>10}    {fecha_salida:<24}\r\n"))
 
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
 
     # TOTALES Y RESUMEN
     buf.extend(ESC_BOLD_ON)
     if es_primera:
-        buf.extend(encode_cp850(f"PESO BRUTO: ****** LB       TOTAL SACOS: {total_sacos}\r\n"))
+        buf.extend(encode_cp850(dos_columnas("PESO BRUTO: ****** LB", f"TOTAL SACOS: {total_sacos}") + "\r\n"))
     else:
         peso_salida_val = float(detalle.get("pesada_salida") or 0.0)
         peso_bruto_neto = peso_bruto - peso_salida_val
-        tara_unitaria = float(detalle.get("tipo_empaque", {}).get("tara", 0.5) if isinstance(detalle.get("tipo_empaque"), dict) else 0.5)
+        tara_unitaria = float((detalle.get("tipo_empaque", {}).get("tara") if isinstance(detalle.get("tipo_empaque"), dict) else None) or 0.5)
         tara_total = tara_unitaria * total_sacos
         q_neto = (peso_bruto_neto - tara_total) / 100.0 if peso_bruto_neto else 0.0
         peso_remision = float(detalle.get("cantidad_qq") or 0.0) * 100.0
         diferencia = peso_bruto_neto - peso_remision if peso_remision else 0.0
+        signo_dif = "+" if diferencia > 0 else ""
 
-        linea_tot1 = f"PESO BRUTO: {fmt_numero(peso_bruto_neto):>10} LB   TOTAL SACOS: {total_sacos:<6}   PESO REMISION: {fmt_numero(peso_remision)} LB"
-        linea_tot2 = f"TARA EMPAQUE: {fmt_numero(tara_total):>8} LB   QQ NETO TOTAL: {fmt_numero(q_neto):<6}   DIFERENCIA: {fmt_numero(diferencia)} LB"
+        linea_tot1 = f"PESO BRUTO: {fmt_numero(peso_bruto_neto):>10} LB   TOTAL SACOS: {total_sacos:<6}   PESO REMISION: {fmt_numero(peso_remision):>10} LB"
+        linea_tot2 = f"TARA EMPAQUE: {fmt_numero(tara_total):>8} LB   QQ NETO TOTAL: {fmt_numero(q_neto):<6} DIFERENCIA: {f'{signo_dif}{fmt_numero(diferencia)}':>13} LB"
         buf.extend(encode_cp850(linea_tot1 + "\r\n"))
         buf.extend(encode_cp850(linea_tot2 + "\r\n"))
     buf.extend(ESC_BOLD_OFF)
@@ -330,24 +341,24 @@ def construir_boleta_recepcion(data: Dict[str, Any], es_copia: bool = False) -> 
         buf.extend(encode_cp850(centrar("*** COPIA ***") + "\r\n"))
     buf.extend(ESC_BOLD_OFF)
 
-    no_entrada = data.get("numero_entrada", "—")
+    no_entrada = data.get("numero_entrada") or "—"
     fecha_ent = fmt_fecha(data.get("fecha_entrada"))
-    conductor = data.get("conductor", {}).get("nombre", "—") if isinstance(data.get("conductor"), dict) else str(data.get("conductor") or "—")
-    transporte = data.get("conductor", {}).get("transporte", {}).get("nombre", "—") if isinstance(data.get("conductor"), dict) and isinstance(data.get("conductor").get("transporte"), dict) else "—"
+    conductor = (data.get("conductor", {}).get("nombre") if isinstance(data.get("conductor"), dict) else data.get("conductor")) or "—"
+    transporte = (data.get("conductor", {}).get("transporte", {}).get("nombre") if isinstance(data.get("conductor"), dict) and isinstance(data.get("conductor").get("transporte"), dict) else None) or "—"
 
-    cabezal = data.get("placa_cabezal", {}).get("placa", "—") if isinstance(data.get("placa_cabezal"), dict) else str(data.get("placa_cabezal") or "—")
+    cabezal = (data.get("placa_cabezal", {}).get("placa") if isinstance(data.get("placa_cabezal"), dict) else data.get("placa_cabezal")) or "—"
     furgon = data.get("placa_furgon", {}).get("placa") if isinstance(data.get("placa_furgon"), dict) else data.get("placa_furgon")
     placas = f"{cabezal} / {furgon}" if furgon else cabezal
 
-    muni = data.get("municipio", {})
-    origen = muni.get("nombre", "—") if isinstance(muni, dict) else str(muni or "—")
-    cosecha = data.get("cosecha", {}).get("cosecha", "—") if isinstance(data.get("cosecha"), dict) else str(data.get("cosecha") or "—")
-    marchamos = data.get("marchamo", "—")
-    obs = data.get("observaciones", "—")
+    muni = data.get("municipio") or {}
+    origen = (muni.get("nombre") if isinstance(muni, dict) else muni) or "—"
+    cosecha = (data.get("cosecha", {}).get("cosecha") if isinstance(data.get("cosecha"), dict) else data.get("cosecha")) or "—"
+    marchamos = data.get("marchamo") or "—"
+    obs = data.get("observaciones") or "—"
 
     def fila_2col(l1, v1, l2, v2):
-        c1 = f"{l1:<13} {str(v1)[:24]:<24}"
-        c2 = f"{l2:<11} {str(v2)[:26]:<26}"
+        c1 = f"{l1:<13} {str(v1)[:25]:<25}"
+        c2 = f"{l2:<11} {str(v2)[:28]:<28}"
         return f"{c1} {c2}\r\n"
 
     buf.extend(encode_cp850(fila_2col("# RECEPCION:", no_entrada, "FECHA:", fecha_ent)))
@@ -355,7 +366,7 @@ def construir_boleta_recepcion(data: Dict[str, Any], es_copia: bool = False) -> 
     buf.extend(encode_cp850(fila_2col("CONDUCTOR:", conductor, "ORIGEN:", origen)))
     buf.extend(encode_cp850(fila_2col("MARCHAMOS:", marchamos, "COSECHA:", cosecha)))
     if obs and obs != "—":
-        buf.extend(encode_cp850(f"{'OBSERVACION:':<13} {str(obs)[:64]}\r\n"))
+        buf.extend(encode_cp850(f"{'OBSERVACION:':<13} {str(obs)[:66]}\r\n"))
 
     # TABLA DE DETALLES
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
@@ -364,16 +375,16 @@ def construir_boleta_recepcion(data: Dict[str, Any], es_copia: bool = False) -> 
     buf.extend(ESC_BOLD_OFF)
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
 
-    detalles = data.get("detalles", [])
+    detalles = data.get("detalles") or []
     total_sacos = 0
     total_qq = 0.0
 
     for d in detalles:
-        rem = str(d.get("remision", "—"))[:11]
-        prov = d.get("proveedor", {}).get("nombre", "—") if isinstance(d.get("proveedor"), dict) else str(d.get("proveedor") or "—")
-        prov = prov[:27]
-        tipo = d.get("tipo_cafe", {}).get("tipo_cafe", "—") if isinstance(d.get("tipo_cafe"), dict) else str(d.get("tipo_cafe") or "—")
-        tipo = tipo[:17]
+        rem = str(d.get("remision") or "—")[:11]
+        prov = (d.get("proveedor", {}).get("nombre") if isinstance(d.get("proveedor"), dict) else d.get("proveedor")) or "—"
+        prov = str(prov)[:27]
+        tipo = (d.get("tipo_cafe", {}).get("tipo_cafe") if isinstance(d.get("tipo_cafe"), dict) else d.get("tipo_cafe")) or "—"
+        tipo = str(tipo)[:17]
         sacos = int(d.get("cantidad_sacos") or 0)
         qq = float(d.get("cantidad_qq") or 0.0)
 
@@ -398,8 +409,8 @@ def construir_pase_salida(data: Dict[str, Any]) -> bytes:
     """
     Construye el documento ESC/P para Pase de Salida de Báscula.
     """
-    detalle = data.get("detalle", data)
-    recepcion = detalle.get("recepcion", {})
+    detalle = data.get("detalle", data) or {}
+    recepcion = detalle.get("recepcion") or {}
 
     buf = bytearray()
     buf.extend(init_boleta(media_carta=True))
@@ -411,29 +422,29 @@ def construir_pase_salida(data: Dict[str, Any]) -> bytes:
     buf.extend(ESC_BOLD_OFF)
     buf.extend(encode_cp850(dos_columnas("", f"Emitido: {fmt_fecha(datetime.now())}") + "\r\n"))
 
-    no_entrada = recepcion.get("numero_entrada", "—")
-    cliente = detalle.get("proveedor", {}).get("nombre", "—") if isinstance(detalle.get("proveedor"), dict) else str(detalle.get("proveedor") or "—")
-    tipo_vehiculo = recepcion.get("tipo_vehiculo", "—")
-    cabezal = recepcion.get("placa_cabezal", {}).get("placa", "—") if isinstance(recepcion.get("placa_cabezal"), dict) else str(recepcion.get("placa_cabezal") or "—")
-    
-    es_destarse = detalle.get("estado_transaccion", {}).get("nombre") == "Sin Cabezal"
+    no_entrada = recepcion.get("numero_entrada") or "—"
+    cliente = (detalle.get("proveedor", {}).get("nombre") if isinstance(detalle.get("proveedor"), dict) else detalle.get("proveedor")) or "—"
+    tipo_vehiculo = recepcion.get("tipo_vehiculo") or "—"
+    cabezal = (recepcion.get("placa_cabezal", {}).get("placa") if isinstance(recepcion.get("placa_cabezal"), dict) else recepcion.get("placa_cabezal")) or "—"
+
+    es_destarse = (detalle.get("estado_transaccion") or {}).get("nombre") == "Sin Cabezal"
     if es_destarse:
         furgon = "DESACOPLADO"
     else:
-        furgon = recepcion.get("placa_furgon", {}).get("placa", "—") if isinstance(recepcion.get("placa_furgon"), dict) else str(recepcion.get("placa_furgon") or "—")
+        furgon = (recepcion.get("placa_furgon", {}).get("placa") if isinstance(recepcion.get("placa_furgon"), dict) else recepcion.get("placa_furgon")) or "—"
 
-    conductor = recepcion.get("conductor", {}).get("nombre", "—") if isinstance(recepcion.get("conductor"), dict) else str(recepcion.get("conductor") or "—")
-    transporte = recepcion.get("conductor", {}).get("transporte", {}).get("nombre", "Particular") if isinstance(recepcion.get("conductor"), dict) and isinstance(recepcion.get("conductor").get("transporte"), dict) else "Particular"
+    conductor = (recepcion.get("conductor", {}).get("nombre") if isinstance(recepcion.get("conductor"), dict) else recepcion.get("conductor")) or "—"
+    transporte = (recepcion.get("conductor", {}).get("transporte", {}).get("nombre") if isinstance(recepcion.get("conductor"), dict) and isinstance(recepcion.get("conductor").get("transporte"), dict) else None) or "Particular"
 
     obs = "SALE POR DESACOPLO DEL FURGON" if es_destarse else (detalle.get("observaciones") or recepcion.get("observaciones") or "Sin observaciones.")
 
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
-    buf.extend(encode_cp850(f"{'# RECEPCION:':<15} {str(no_entrada):<24} {'FECHA Y HORA:':<15} {fmt_fecha(datetime.now()):<24}\r\n"))
-    buf.extend(encode_cp850(f"{'CLIENTE/PROV:':<15} {str(cliente)[:24]:<24} {'TIPO VEHICULO:':<15} {str(tipo_vehiculo)[:24]:<24}\r\n"))
-    buf.extend(encode_cp850(f"{'PLACA CABEZAL:':<15} {str(cabezal):<24} {'PLACA FURGON:':<15} {str(furgon):<24}\r\n"))
-    buf.extend(encode_cp850(f"{'CONDUCTOR:':<15} {str(conductor)[:24]:<24} {'TRANSPORTE:':<15} {str(transporte)[:24]:<24}\r\n"))
+    buf.extend(encode_cp850(f"{'# RECEPCION:':<15} {str(no_entrada):<24} {'FECHA Y HORA:':<15} {fmt_fecha(datetime.now()):<23}\r\n"))
+    buf.extend(encode_cp850(f"{'CLIENTE/PROV:':<15} {str(cliente)[:24]:<24} {'TIPO VEHICULO:':<15} {str(tipo_vehiculo)[:23]:<23}\r\n"))
+    buf.extend(encode_cp850(f"{'PLACA CABEZAL:':<15} {str(cabezal):<24} {'PLACA FURGON:':<15} {str(furgon):<23}\r\n"))
+    buf.extend(encode_cp850(f"{'CONDUCTOR:':<15} {str(conductor)[:24]:<24} {'TRANSPORTE:':<15} {str(transporte)[:23]:<23}\r\n"))
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
-    buf.extend(encode_cp850(f"OBSERVACIONES: {str(obs)[:63]}\r\n\r\n"))
+    buf.extend(encode_cp850(f"OBSERVACIONES: {str(obs)[:64]}\r\n\r\n"))
 
     # 3 Firmas
     buf.extend(encode_cp850(f"{'HECHO POR':^26} {'AUTORIZADO POR':^26} {'FIRMA MOTORISTA':^26}\r\n\r\n\r\n"))
@@ -447,8 +458,8 @@ def construir_boleta_devolucion(data: Dict[str, Any], es_copia: bool = False) ->
     """
     Construye el documento ESC/P para Boleta de Devolución / Rechazo de Café.
     """
-    recepcion = data.get("recepcion", {})
-    analisis = (data.get("analisis_calidad") or [{}])[0]
+    recepcion = data.get("recepcion") or {}
+    analisis = (data.get("analisis_calidad") or [{}])[0] or {}
 
     buf = bytearray()
     buf.extend(init_boleta(media_carta=True))
@@ -460,26 +471,26 @@ def construir_boleta_devolucion(data: Dict[str, Any], es_copia: bool = False) ->
         buf.extend(encode_cp850(centrar("*** COPIA ***") + "\r\n"))
     buf.extend(ESC_BOLD_OFF)
 
-    no_entrada = recepcion.get("numero_entrada", "—")
-    remision = data.get("remision", "—")
-    cliente = data.get("proveedor", {}).get("nombre", "—") if isinstance(data.get("proveedor"), dict) else str(data.get("proveedor") or "—")
-    sacos = data.get("cantidad_sacos", 0)
-    qq = data.get("cantidad_qq", 0)
+    no_entrada = recepcion.get("numero_entrada") or "—"
+    remision = data.get("remision") or "—"
+    cliente = (data.get("proveedor", {}).get("nombre") if isinstance(data.get("proveedor"), dict) else data.get("proveedor")) or "—"
+    sacos = data.get("cantidad_sacos") or 0
+    qq = data.get("cantidad_qq") or 0
 
     motivo = analisis.get("observaciones") or data.get("observaciones") or "No se especificaron detalles adicionales."
 
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
-    buf.extend(encode_cp850(f"{'# RECEPCION:':<15} {str(no_entrada):<24} {'FECHA RECHAZO:':<15} {fmt_fecha(analisis.get('fecha_analisis')):<24}\r\n"))
-    buf.extend(encode_cp850(f"{'REMISION:':<15} {str(remision):<24} {'CLIENTE/PROV:':<15} {str(cliente)[:24]:<24}\r\n"))
-    buf.extend(encode_cp850(f"{'SACOS DEVUELTOS:':<15} {str(sacos):<24} {'QQ DEVUELTOS:':<15} {fmt_numero(qq):<24}\r\n"))
+    buf.extend(encode_cp850(f"{'# RECEPCION:':<15} {str(no_entrada):<24} {'FECHA RECHAZO:':<15} {fmt_fecha(analisis.get('fecha_analisis')):<23}\r\n"))
+    buf.extend(encode_cp850(f"{'REMISION:':<15} {str(remision):<24} {'CLIENTE/PROV:':<15} {str(cliente)[:23]:<23}\r\n"))
+    buf.extend(encode_cp850(f"{'SACOS DEVUELTOS:':<15} {str(sacos):<24} {'QQ DEVUELTOS:':<15} {fmt_numero(qq):<23}\r\n"))
     buf.extend(encode_cp850("-" * ANCHO_ESTANDAR + "\r\n"))
     buf.extend(ESC_BOLD_ON)
     buf.extend(encode_cp850(f"MOTIVO DEVOLUCION / RECHAZO:\r\n"))
     buf.extend(ESC_BOLD_OFF)
     buf.extend(encode_cp850(f"{str(motivo)[:150]}\r\n\r\n"))
 
-    buf.extend(encode_cp850(f"{'Firma Catacion/Calidad':^38} {'Firma Transportista/Cliente':^38}\r\n\r\n\r\n"))
-    buf.extend(encode_cp850(f"{'___________________________':^38} {'___________________________':^38}\r\n"))
+    buf.extend(encode_cp850(f"{'Firma Catacion/Calidad':^39} {'Firma Transportista/Cliente':^39}\r\n\r\n\r\n"))
+    buf.extend(encode_cp850(f"{'___________________________':^39} {'___________________________':^39}\r\n"))
 
     buf.extend(ESC_FORM_FEED)
     return bytes(buf)

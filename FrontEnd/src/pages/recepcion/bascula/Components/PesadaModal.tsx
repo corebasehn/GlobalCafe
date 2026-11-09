@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Loader2, Weight, Save, Zap } from "lucide-react";
 import { Modal, Form, Button, InputGroup, Row, Col } from "react-bootstrap";
 import Select from "react-select";
@@ -37,6 +37,13 @@ export default function PesadaModal({
   onClose, onPesoChange, onBodegaChange, onPlacaChange, onConductorChange, onObservacionesChange, onSubmit,
 }: PesadaModalProps) {
   const [capturingScale, setCapturingScale] = useState(false);
+  const [allowManualInput, setAllowManualInput] = useState(false);
+
+  useEffect(() => {
+    if (show) {
+      setAllowManualInput(false);
+    }
+  }, [show, modalMode, selectedCarga]);
 
   const handleCapturarBascula = async () => {
     setCapturingScale(true);
@@ -47,17 +54,20 @@ export default function PesadaModal({
       clearTimeout(timeoutId);
       const data = await response.json();
 
-      if (data.estado === "exito") {
+      if (data.estado === "exito" && data.peso && Number(data.peso) > 0) {
         onPesoChange(data.peso);
+        setAllowManualInput(false);
       } else {
-        alert(`Error de la báscula: ${data.mensaje}`);
+        setAllowManualInput(true);
+        alert(`Error de la báscula: ${data.mensaje || "No se recibió un peso válido"}. Se habilitó el ingreso manual.`);
       }
     } catch (error: any) {
       clearTimeout(timeoutId);
+      setAllowManualInput(true);
       if (error.name === "AbortError") {
-        alert("La báscula tardó demasiado en responder (8s). Verifique que el .exe esté abierto y la báscula conectada.");
+        alert("La báscula tardó demasiado en responder (8s). Se habilitó el ingreso manual.");
       } else {
-        alert("No se pudo conectar con el Agente de Báscula. Verifique que el .exe esté abierto en esta PC.");
+        alert("No se pudo conectar con el Agente de Báscula. Se habilitó el ingreso manual.");
       }
     } finally {
       setCapturingScale(false);
@@ -123,22 +133,31 @@ export default function PesadaModal({
                   type="number"
                   step="0.01"
                   min="0.01"
-                  autoFocus
+                  autoFocus={allowManualInput}
                   required
+                  readOnly={!allowManualInput}
+                  tabIndex={allowManualInput ? 0 : -1}
                   value={pesoInput}
                   onChange={(e) => {
+                    if (!allowManualInput) return;
                     const val = e.target.value;
                     if (val === "" || Number(val) >= 0) onPesoChange(val);
                   }}
                   className="text-end font-monospace fw-bold fs-3"
                   placeholder="0.00"
-                  style={{ MozAppearance: "textfield" } as React.CSSProperties}
+                  style={{
+                    MozAppearance: "textfield",
+                    backgroundColor: allowManualInput ? "#ffffff" : "#e9ecef",
+                    cursor: allowManualInput ? "text" : "not-allowed",
+                  } as React.CSSProperties}
                   onWheel={(e) => e.currentTarget.blur()}
                 />
                 <InputGroup.Text className="fw-bold">LB</InputGroup.Text>
               </InputGroup>
-              <Form.Text className="text-muted">
-                Presione el botón para capturar automáticamente o escriba el peso manualmente.
+              <Form.Text className={allowManualInput ? "text-warning fw-semibold" : "text-muted"}>
+                {allowManualInput
+                  ? "⚠️ Sin respuesta del agente: ingreso manual habilitado."
+                  : "🔒 Campo protegido. Presione 'Capturar de Báscula' para obtener el peso."}
               </Form.Text>
             </Form.Group>
 
