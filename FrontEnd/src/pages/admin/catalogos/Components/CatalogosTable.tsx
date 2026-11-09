@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Edit, Loader2, MoreVertical } from "lucide-react";
-import { Table, Badge, Dropdown } from 'react-bootstrap';
+import { Table, Badge, Dropdown, Pagination } from 'react-bootstrap';
+
+const PAGE_SIZE = 15;
 
 interface CatalogosTableProps {
   activeTab: string;
@@ -16,6 +19,30 @@ export default function CatalogosTable({
   searchTerm,
   onEdit
 }: CatalogosTableProps) {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab, searchTerm, data.length]);
+
+  const term = searchTerm.toLowerCase();
+  const filteredData = data.filter(item => {
+    const mainText = (item.nombre || item.placa || item.cosecha || item.tipo_cafe || item.tipo_remision || item.tipo_empaque || item.codigo || "").toLowerCase();
+    const secondaryText = (item.rtn || item.dni || item.licencia || item.descripcion || "").toLowerCase();
+    const deptoText = (item.departamento?.nombre || "").toLowerCase();
+    const bodegaText = (item.bodega?.nombre || "").toLowerCase();
+    const sentidoText = (item.sentido_pesaje || "").toLowerCase();
+    
+    return mainText.includes(term) || 
+           secondaryText.includes(term) || 
+           deptoText.includes(term) || 
+           bodegaText.includes(term) ||
+           sentidoText.includes(term);
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedData = filteredData.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   
   const renderActions = (item: any, idField: string) => (
     <td className="text-center">
@@ -53,21 +80,6 @@ export default function CatalogosTable({
       );
     }
 
-    const term = searchTerm.toLowerCase();
-    const filteredData = data.filter(item => {
-      const mainText = (item.nombre || item.placa || item.cosecha || item.tipo_cafe || item.tipo_remision || item.tipo_empaque || item.codigo || "").toLowerCase();
-      const secondaryText = (item.rtn || item.dni || item.licencia || item.descripcion || "").toLowerCase();
-      const deptoText = (item.departamento?.nombre || "").toLowerCase();
-      const bodegaText = (item.bodega?.nombre || "").toLowerCase();
-      const sentidoText = (item.sentido_pesaje || "").toLowerCase();
-      
-      return mainText.includes(term) || 
-             secondaryText.includes(term) || 
-             deptoText.includes(term) || 
-             bodegaText.includes(term) ||
-             sentidoText.includes(term);
-    });
-
     if (filteredData.length === 0) {
       return (
         <tr>
@@ -80,7 +92,7 @@ export default function CatalogosTable({
 
     switch (activeTab) {
       case "proveedores":
-        return filteredData.map((p) => (
+        return paginatedData.map((p) => (
           <tr key={p.id_proveedor}>
             {renderActions(p, "id_proveedor")}
             <td className="fw-semibold">{p.nombre}</td>
@@ -90,7 +102,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "transportes":
-        return filteredData.map((t) => (
+        return paginatedData.map((t) => (
           <tr key={t.id_transporte}>
             {renderActions(t, "id_transporte")}
             <td className="fw-semibold">{t.nombre}</td>
@@ -100,7 +112,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "conductores":
-        return filteredData.map((c) => (
+        return paginatedData.map((c) => (
           <tr key={c.id_conductor}>
             {renderActions(c, "id_conductor")}
             <td className="fw-semibold">{c.nombre}</td>
@@ -111,7 +123,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "placas-cabezal":
-        return filteredData.map((p) => (
+        return paginatedData.map((p) => (
           <tr key={p.id_placa_cabezal}>
             {renderActions(p, "id_placa_cabezal")}
             <td className="fw-semibold">{p.placa}</td>
@@ -119,7 +131,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "placas-furgon":
-        return filteredData.map((p) => (
+        return paginatedData.map((p) => (
           <tr key={p.id_placa_furgon}>
             {renderActions(p, "id_placa_furgon")}
             <td className="fw-semibold">{p.placa}</td>
@@ -127,7 +139,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "cosechas":
-        return filteredData.map((c) => (
+        return paginatedData.map((c) => (
           <tr key={c.id_cosecha}>
             {renderActions(c, "id_cosecha")}
             <td className="fw-semibold">{c.cosecha}</td>
@@ -136,7 +148,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "departamentos":
-        return filteredData.map((d) => (
+        return paginatedData.map((d) => (
           <tr key={d.id_departamento}>
             {renderActions(d, "id_departamento")}
             <td className="fw-semibold">{d.nombre}</td>
@@ -144,7 +156,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "municipios":
-        return filteredData.map((m) => (
+        return paginatedData.map((m) => (
           <tr key={m.id_municipio}>
             {renderActions(m, "id_municipio")}
             <td className="fw-semibold">{m.nombre}</td>
@@ -153,7 +165,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "bodegas":
-        return filteredData.map((b) => (
+        return paginatedData.map((b) => (
           <tr key={b.id_bodega}>
             {renderActions(b, "id_bodega")}
             <td className="fw-semibold">{b.nombre}</td>
@@ -162,7 +174,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "estibas":
-        return filteredData.map((e) => (
+        return paginatedData.map((e) => (
           <tr key={e.id_estibas}>
             {renderActions(e, "id_estibas")}
             <td className="fw-semibold">{e.nombre}</td>
@@ -171,7 +183,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "tipos-cafe":
-        return filteredData.map((item) => (
+        return paginatedData.map((item) => (
           <tr key={item.id_tipo_cafe}>
             {renderActions(item, "id_tipo_cafe")}
             <td className="fw-semibold">{item.tipo_cafe}</td>
@@ -179,7 +191,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "tipos-remision":
-        return filteredData.map((item) => (
+        return paginatedData.map((item) => (
           <tr key={item.id_tipo_remision}>
             {renderActions(item, "id_tipo_remision")}
             <td className="fw-semibold">{item.tipo_remision}</td>
@@ -187,7 +199,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "tipos-empaque":
-        return filteredData.map((item) => (
+        return paginatedData.map((item) => (
           <tr key={item.id_tipo_empaque}>
             {renderActions(item, "id_tipo_empaque")}
             <td className="fw-semibold">{item.tipo_empaque}</td>
@@ -196,7 +208,7 @@ export default function CatalogosTable({
           </tr>
         ));
       case "tipos-movimiento":
-        return filteredData.map((item) => {
+        return paginatedData.map((item) => {
           const isActivo = item.activo ?? item.estado ?? true;
           return (
             <tr key={item.id}>
@@ -221,7 +233,7 @@ export default function CatalogosTable({
           );
         });
       default: // Catálogos simples (Catadores, Calidades, Defectos, Zarandas, Tazas)
-        return filteredData.map((item) => {
+        return paginatedData.map((item) => {
           const idField = Object.keys(item).find(key => key.startsWith('id_')) || 'id';
           return (
             <tr key={item[idField]}>
@@ -235,30 +247,60 @@ export default function CatalogosTable({
   };
 
   return (
-    <div className="table-responsive">
-      <Table hover className="table text-nowrap table-bordered mb-0">
-        <thead>
-          <tr>
-            <th scope="col" className="text-center">Acciones</th>
-            {activeTab === "tipos-movimiento" && <th scope="col">Código</th>}
-            <th scope="col">{activeTab === "tipos-movimiento" ? "Nombre del Movimiento" : "Descripción principal"}</th>
-            {(activeTab === "proveedores" || activeTab === "transportes") && <th>RTN</th>}
-            {activeTab === "conductores" && <th>DNI</th>}
-            {activeTab === "conductores" && <th>Licencia</th>}
-            {["proveedores", "conductores", "transportes"].includes(activeTab) && <th>Teléfono</th>}
-            {activeTab === "municipios" && <th>Departamento</th>}
-            {activeTab === "cosechas" && <th className="text-center">Status</th>}
-            {activeTab === "bodegas" && <th className="text-center">Tipo</th>}
-            {activeTab === "estibas" && <th>Bodega</th>}
-            {activeTab === "tipos-empaque" && <th>Tara</th>}
-            {activeTab === "tipos-movimiento" && <th>Descripción</th>}
-            {activeTab === "tipos-movimiento" && <th className="text-center">Sentido de Pesaje</th>}
-            <th scope="col" className="text-center">Estado</th>
-          </tr>
-        </thead>
-        <tbody>{renderTableContent()}</tbody>
-      </Table>
+    <div>
+      <div className="table-responsive">
+        <Table hover className="table text-nowrap table-bordered mb-0">
+          <thead>
+            <tr>
+              <th scope="col" className="text-center">Acciones</th>
+              {activeTab === "tipos-movimiento" && <th scope="col">Código</th>}
+              <th scope="col">{activeTab === "tipos-movimiento" ? "Nombre del Movimiento" : "Descripción principal"}</th>
+              {(activeTab === "proveedores" || activeTab === "transportes") && <th scope="col">RTN</th>}
+              {activeTab === "conductores" && <th scope="col">DNI</th>}
+              {activeTab === "conductores" && <th scope="col">Licencia</th>}
+              {["proveedores", "conductores", "transportes"].includes(activeTab) && <th scope="col">Teléfono</th>}
+              {activeTab === "municipios" && <th scope="col">Departamento</th>}
+              {activeTab === "cosechas" && <th scope="col" className="text-center">Status</th>}
+              {activeTab === "bodegas" && <th scope="col" className="text-center">Tipo</th>}
+              {activeTab === "estibas" && <th scope="col">Bodega</th>}
+              {activeTab === "tipos-empaque" && <th scope="col">Tara</th>}
+              {activeTab === "tipos-movimiento" && <th scope="col">Descripción</th>}
+              {activeTab === "tipos-movimiento" && <th scope="col" className="text-center">Sentido de Pesaje</th>}
+              <th scope="col" className="text-center">Estado</th>
+            </tr>
+          </thead>
+          <tbody>{renderTableContent()}</tbody>
+        </Table>
+      </div>
+
+      {!loading && filteredData.length > 0 && (
+        <div className="d-flex justify-content-between align-items-center px-3 py-2 border-top">
+          <span className="text-muted small">
+            {totalPages > 1 ? `Página ${safePage} de ${totalPages} — ` : ""}{filteredData.length} {filteredData.length === 1 ? "registro" : "registros"}
+          </span>
+
+          {totalPages > 1 && (
+            <Pagination size="sm" className="mb-0">
+              <Pagination.First onClick={() => setCurrentPage(1)} disabled={safePage === 1} />
+              <Pagination.Prev onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={safePage === 1} />
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter(p => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+                .reduce<(number | string)[]>((acc, p, idx, arr) => {
+                  if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("...");
+                  acc.push(p);
+                  return acc;
+                }, [])
+                .map((p, idx) =>
+                  p === "..."
+                    ? <Pagination.Ellipsis key={`e-${idx}`} disabled />
+                    : <Pagination.Item key={p} active={p === safePage} onClick={() => setCurrentPage(p as number)}>{p}</Pagination.Item>
+                )}
+              <Pagination.Next onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={safePage === totalPages} />
+              <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={safePage === totalPages} />
+            </Pagination>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-
