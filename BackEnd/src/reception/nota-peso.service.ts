@@ -19,6 +19,7 @@ export class NotaPesoService {
         notas_peso: { none: {} }, // Que no tengan nota de peso aún
         recepcion: {
           estado: true,
+          cosecha: { cosecha_actual: true },
           OR: [
             { id_tipo_movimiento: 1 },
             { id_tipo_movimiento: null },
@@ -166,7 +167,15 @@ export class NotaPesoService {
   // 3. Obtener todas las notas de peso emitidas
   async findAll() {
     return this.prisma.notaDePeso.findMany({
-      where: { estado: true },
+      where: {
+        estado: true,
+        detalle_recepcion: {
+          recepcion: {
+            estado: true,
+            cosecha: { cosecha_actual: true },
+          },
+        },
+      },
       include: {
         detalles: true,
         detalle_recepcion: {

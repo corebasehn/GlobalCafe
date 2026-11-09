@@ -97,7 +97,8 @@ export default function ModalRemision({
     (c) => c.id_transporte.toString() === formData.id_transporte
   );
 
-  const cosechaOptions = cosechas.map((c) => ({ value: c.id_cosecha.toString(), label: c.cosecha }));
+  const cosechasActivas = cosechas.filter((c) => c.cosecha_actual);
+  const cosechaOptions = (cosechasActivas.length > 0 ? cosechasActivas : cosechas).map((c) => ({ value: c.id_cosecha.toString(), label: c.cosecha }));
   const municipioOptions = municipios.map((m) => ({
     value: m.id_municipio.toString(),
     label: `${m.nombre}${(m as any).departamento?.nombre ? `, ${(m as any).departamento.nombre}` : ""}`,

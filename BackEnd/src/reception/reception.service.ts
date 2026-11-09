@@ -110,6 +110,7 @@ export class ReceptionService {
     return this.prisma.recepcion.findMany({
       where: { 
         estado: true,
+        cosecha: { cosecha_actual: true },
         OR: [
           { id_tipo_movimiento: 1 },
           { id_tipo_movimiento: null }
@@ -168,6 +169,7 @@ export class ReceptionService {
       where: {
         fecha_entrada: { gte: inicioDia, lte: finDia },
         estado: true,
+        cosecha: { cosecha_actual: true },
       },
     });
 
@@ -176,6 +178,7 @@ export class ReceptionService {
         recepcion: {
           fecha_entrada: { gte: inicioDia, lte: finDia },
           estado: true,
+          cosecha: { cosecha_actual: true },
         },
         estado: true,
       },
@@ -188,6 +191,7 @@ export class ReceptionService {
     const enProceso = await this.prisma.recepcion.count({
       where: {
         estado: true,
+        cosecha: { cosecha_actual: true },
         detalles: {
           some: {
             estado: true,
@@ -200,12 +204,13 @@ export class ReceptionService {
     });
 
     // B. TAREAS PENDIENTES (To-Do List por área)
-    const tareasMuestreo = await this.prisma.detalleRecepcion.count({ where: { estado: true, estado_transaccion: { nombre: 'Pendiente de Muestrear' } } });
-    const tareasLab = await this.prisma.detalleRecepcion.count({ where: { estado: true, estado_transaccion: { nombre: 'Muestreado' } } });
-    const tareasGerencia = await this.prisma.detalleRecepcion.count({ where: { estado: true, estado_transaccion: { nombre: 'Muestra Previa Pendiente de Aprobacion' } } });
+    const tareasMuestreo = await this.prisma.detalleRecepcion.count({ where: { estado: true, recepcion: { estado: true, cosecha: { cosecha_actual: true } }, estado_transaccion: { nombre: 'Pendiente de Muestrear' } } });
+    const tareasLab = await this.prisma.detalleRecepcion.count({ where: { estado: true, recepcion: { estado: true, cosecha: { cosecha_actual: true } }, estado_transaccion: { nombre: 'Muestreado' } } });
+    const tareasGerencia = await this.prisma.detalleRecepcion.count({ where: { estado: true, recepcion: { estado: true, cosecha: { cosecha_actual: true } }, estado_transaccion: { nombre: 'Muestra Previa Pendiente de Aprobacion' } } });
     const tareasBascula = await this.prisma.recepcion.count({ 
       where: { 
         estado: true, 
+        cosecha: { cosecha_actual: true },
         detalles: { 
           some: { 
             estado: true, 
@@ -217,7 +222,7 @@ export class ReceptionService {
 
     // C. ACTIVIDAD RECIENTE (Últimos 5 ingresos creados)
     const ultimosIngresos = await this.prisma.recepcion.findMany({
-      where: { estado: true },
+      where: { estado: true, cosecha: { cosecha_actual: true } },
       orderBy: { fecha_entrada: 'desc' },
       take: 5,
       include: { 
@@ -395,6 +400,7 @@ export class ReceptionService {
     return this.prisma.recepcion.findMany({
       where: {
         estado: true,
+        cosecha: { cosecha_actual: true },
         OR: [
           { id_tipo_movimiento: 1 },
           { id_tipo_movimiento: null }
@@ -742,6 +748,7 @@ export class ReceptionService {
     const recepciones = await this.prisma.recepcion.findMany({
       where: {
         estado: true,
+        cosecha: { cosecha_actual: true },
         OR: [
           { numero_entrada: { contains: term, mode: 'insensitive' } },
           { placa_cabezal: { placa: { contains: term, mode: 'insensitive' } } },
@@ -944,6 +951,7 @@ export class ReceptionService {
     return this.prisma.recepcion.findMany({
       where: {
         estado: true,
+        cosecha: { cosecha_actual: true },
         detalles: {
           some: {
             estado: true,
@@ -974,6 +982,7 @@ export class ReceptionService {
     return this.prisma.recepcion.findMany({
       where: {
         estado: true,
+        cosecha: { cosecha_actual: true },
         detalles: { some: { estado: true, id_tipo_remision: 2, omitir_analisis: true } },
       },
       include: {
@@ -1012,7 +1021,11 @@ export class ReceptionService {
         estado: true,
         pesada_entrada: { not: null },
         pesada_salida: null,
-        notas_patio: { none: {} }
+        notas_patio: { none: {} },
+        recepcion: {
+          estado: true,
+          cosecha: { cosecha_actual: true }
+        }
       },
       include: {
         recepcion: {
@@ -1130,7 +1143,11 @@ export class ReceptionService {
     const faltos = await this.prisma.detalleRecepcion.findMany({
       where: {
         estado: true,
-        estado_transaccion: { nombre: 'Pendiente de Aprobación por Faltos' }
+        estado_transaccion: { nombre: 'Pendiente de Aprobación por Faltos' },
+        recepcion: {
+          estado: true,
+          cosecha: { cosecha_actual: true }
+        }
       },
       include: {
         recepcion: {
@@ -1239,6 +1256,9 @@ export class ReceptionService {
     let idCosecha = dto.id_cosecha;
     if (!idCosecha) {
       const cosechaActiva = await this.prisma.cosecha.findFirst({
+        where: { estado: true, cosecha_actual: true },
+        orderBy: { id_cosecha: 'desc' }
+      }) || await this.prisma.cosecha.findFirst({
         where: { estado: true },
         orderBy: { id_cosecha: 'desc' }
       });
@@ -1364,6 +1384,7 @@ export class ReceptionService {
   async findOtrosMovimientos(q?: string) {
     const where: any = {
       estado: true,
+      cosecha: { cosecha_actual: true },
       id_tipo_movimiento: { not: 1 }
     };
 

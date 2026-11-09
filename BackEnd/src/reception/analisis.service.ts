@@ -225,6 +225,12 @@ export class AnalisisService {
     const term = q.trim().toLowerCase();
     return this.prisma.analisisCalidad.findMany({
       where: {
+        detalle_recepcion: {
+          recepcion: {
+            estado: true,
+            cosecha: { cosecha_actual: true },
+          },
+        },
         OR: [
           { detalle_recepcion: { recepcion: { numero_entrada: { contains: term, mode: 'insensitive' } } } },
           { detalle_recepcion: { remision: { contains: term, mode: 'insensitive' } } },
@@ -246,6 +252,13 @@ export class AnalisisService {
   async findAllPendientes() {
     return this.prisma.analisisCalidad.findMany({
       where: { 
+        detalle_recepcion: {
+          estado: true,
+          recepcion: {
+            estado: true,
+            cosecha: { cosecha_actual: true },
+          },
+        },
         estado_transaccion: { 
           nombre: {
             in: [
@@ -291,6 +304,12 @@ export class AnalisisService {
     // Identificar los id_detalle_recepcion con análisis o recepción dentro del rango
     const analisisEnRango = await this.prisma.analisisCalidad.findMany({
       where: {
+        detalle_recepcion: {
+          recepcion: {
+            estado: true,
+            cosecha: { cosecha_actual: true },
+          },
+        },
         OR: [
           { fecha_analisis: { gte: start, lte: end } },
           { detalle_recepcion: { recepcion: { fecha_entrada: { gte: start, lte: end } } } }
