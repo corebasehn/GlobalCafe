@@ -99,6 +99,11 @@ export default function ModalRemision({
 
   const cosechasActivas = cosechas.filter((c) => c.cosecha_actual);
   const cosechaOptions = (cosechasActivas.length > 0 ? cosechasActivas : cosechas).map((c) => ({ value: c.id_cosecha.toString(), label: c.cosecha }));
+  const cosechaSeleccionada = cosechas.find((c) => c.id_cosecha.toString() === formData.id_cosecha) || cosechasActivas[0];
+  const codCosechaMatch = cosechaSeleccionada?.cosecha?.match(/(\d{4})\D+(\d{4})/);
+  const codCosechaPreview = codCosechaMatch
+    ? `${codCosechaMatch[1].slice(-2)}${codCosechaMatch[2].slice(-2)}`
+    : (cosechaSeleccionada?.cosecha?.replace(/[^a-zA-Z0-9]/g, "") || "XXXX");
   const municipioOptions = municipios.map((m) => ({
     value: m.id_municipio.toString(),
     label: `${m.nombre}${(m as any).departamento?.nombre ? `, ${(m as any).departamento.nombre}` : ""}`,
@@ -244,11 +249,11 @@ export default function ModalRemision({
                       <Form.Label className="mb-0 fw-semibold fs-13 text-dark">Tipo de Remisión</Form.Label>
                       {formData.id_tipo_remision === "1" || findOpt(tipoRemisionOptions, formData.id_tipo_remision)?.label.toLowerCase().includes("int") ? (
                         <Badge bg="info-subtle" className="text-info border border-info-subtle fw-semibold">
-                          Correlativo: INT-XXXXX
+                          Correlativo: INT-{codCosechaPreview}-XXXXX
                         </Badge>
                       ) : (
                         <Badge bg="primary-subtle" className="text-primary border border-primary-subtle fw-semibold">
-                          Correlativo: EXT-XXXXX
+                          Correlativo: EXT-{codCosechaPreview}-XXXXX
                         </Badge>
                       )}
                     </div>

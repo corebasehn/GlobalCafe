@@ -1,9 +1,11 @@
 import { Injectable, NotFoundException, InternalServerErrorException } from '@nestjs/common';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaService } from '../prisma.service'; 
 import { CreateReceptionDto } from './dto/create-reception.dto';
 import { UpdateReceptionDto } from './dto/update-reception.dto';
 import { CreateOtroMovimientoDto } from './dto/create-otro-movimiento.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { generarCorrelativos, getCodigoCosechaById } from './correlativos.helper';
 
 @Injectable()
 export class ReceptionService {
@@ -11,6 +13,49 @@ export class ReceptionService {
     private prisma: PrismaService,
     private notificationsService: NotificationsService
   ) {}
+
+  private async generarNumeroEntrada(prefix: string, idCosecha?: number | null): Promise<string> {
+    const codCosecha = await getCodigoCosechaById(this.prisma, idCosecha);
+    const [correlativo] = await generarCorrelativos({
+      prefix,
+      codCosecha,
+      digits: 5,
+      countFn: (base) =>
+        this.prisma.recepcion.count({ where: { numero_entrada: { startsWith: base } } }),
+      existsFn: async (candidate) =>
+        Boolean(
+          await this.prisma.recepcion.findUnique({
+            where: { numero_entrada: candidate },
+            select: { id_recepcion: true },
+          }),
+        ),
+    });
+    return correlativo;
+  }
+
+  private async generarNumerosMuestra(
+    db: PrismaClient | Prisma.TransactionClient,
+    idCosecha?: number | null,
+    cantidad = 1,
+  ): Promise<string[]> {
+    if (cantidad <= 0) return [];
+    const codCosecha = await getCodigoCosechaById(db, idCosecha);
+    return generarCorrelativos({
+      prefix: 'MUE',
+      codCosecha,
+      digits: 5,
+      cantidad,
+      countFn: (base) =>
+        db.detalleRecepcion.count({ where: { numero_muestra: { startsWith: base } } }),
+      existsFn: async (candidate) =>
+        Boolean(
+          await db.detalleRecepcion.findFirst({
+            where: { numero_muestra: candidate },
+            select: { id_detalle_recepcion: true },
+          }),
+        ),
+    });
+  }
 
   // 1. CREAR (Incluye Usuario ID del Guardián)
   async create(dto: CreateReceptionDto, usuarioId: number) {
@@ -39,18 +84,13 @@ export class ReceptionService {
       prefix = 'EXT';
     }
 
-    // Correlativo independiente por prefijo
-    const countExistentes = await this.prisma.recepcion.count({
-      where: { numero_entrada: { startsWith: `${prefix}-` } },
-    });
-    let seq = countExistentes + 1;
-    let correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
-    while (await this.prisma.recepcion.findUnique({ where: { numero_entrada: correlativo } })) {
-      seq++;
-      correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
-    }
-
-    const countMuestras = await this.prisma.detalleRecepcion.count();
+    // Correlativo independiente por prefijo y cosecha (Ej: INT-2627-00001)
+    const correlativo = await this.generarNumeroEntrada(prefix, dto.id_cosecha);
+    const muestras = await this.generarNumerosMuestra(
+      this.prisma,
+      dto.id_cosecha,
+      dto.detalles?.length || 0,
+    );
 
     const nuevaRecepcion = await this.prisma.recepcion.create({
       data: {
@@ -70,7 +110,7 @@ export class ReceptionService {
         // Relación con Detalles (Equivalente al cascade: true)
         detalles: {
           create: dto.detalles?.map((det, i) => ({
-            numero_muestra: `MUE-${String(countMuestras + i + 1).padStart(5, '0')}`,
+            numero_muestra: muestras[i],
             id_proveedor: det.id_proveedor,
             id_estado_transaccion: estadoInicial.id_estado_transaccion,
             cantidad_sacos: det.cantidad_sacos,
@@ -360,7 +400,9 @@ export class ReceptionService {
         });
 
         // Procesar detalles nuevos o existentes
-        let countMuestras = await tx.detalleRecepcion.count();
+        const nuevasCount = detalles.filter(d => !d.id_detalle_recepcion).length;
+        const muestrasNuevas = await this.generarNumerosMuestra(tx, actualizada.id_cosecha, nuevasCount);
+        let nuevaIdx = 0;
         for (const det of detalles) {
           const { id_detalle_recepcion, ...datosDetalle } = det; // Extraemos el ID para no intentar actualizar la llave primaria
           if (id_detalle_recepcion) {
@@ -374,13 +416,12 @@ export class ReceptionService {
               },
             });
           } else {
-            countMuestras++;
             await tx.detalleRecepcion.create({
               data: {
                 ...datosDetalle,
                   id_estado_transaccion: idEstadoInicial, // Asignamos el estado inicial automático
                 id_recepcion: id,
-                numero_muestra: `MUE-${String(countMuestras).padStart(5, '0')}`,
+                numero_muestra: muestrasNuevas[nuevaIdx++],
                 usuario_creacion: usuarioId
               },
             });
@@ -1100,7 +1141,7 @@ export class ReceptionService {
         });
         if (!estadoFaltos) throw new InternalServerErrorException('Estado "Pendiente de Aprobación por Faltos" no encontrado');
 
-        const countMuestras = await tx.detalleRecepcion.count();
+        const [numeroMuestraFalto] = await this.generarNumerosMuestra(tx, detalleOriginal.recepcion?.id_cosecha, 1);
 
         // El nuevo registro nace con los sacos faltos y la observación de por qué salieron faltos
         await tx.detalleRecepcion.create({
@@ -1111,7 +1152,7 @@ export class ReceptionService {
             cantidad_sacos: cantidad_sacos_faltos,
             cantidad_qq: (Number(detalleOriginal.cantidad_qq) / detalleOriginal.cantidad_sacos) * cantidad_sacos_faltos,
             remision: `${detalleOriginal.remision}-F`,
-            numero_muestra: `MUE-${String(countMuestras + 1).padStart(5, '0')}`,
+            numero_muestra: numeroMuestraFalto,
             observaciones: `${observaciones_faltos}`,
             id_tipo_empaque: empaqueFinalId,
             id_tipo_cafe: detalleOriginal.id_tipo_cafe,
@@ -1140,9 +1181,22 @@ export class ReceptionService {
         }
       });
 
-      // 3. Crear el registro maestro de la Nota de Patio
-      const count = await tx.notaDePatio.count();
-      const correlativo = `NP-${String(count + 1).padStart(5, '0')}`;
+      // 3. Crear el registro maestro de la Nota de Patio (Ej: NP-2627-00001)
+      const codCosecha = await getCodigoCosechaById(tx, detalleOriginal.recepcion?.id_cosecha);
+      const [correlativo] = await generarCorrelativos({
+        prefix: 'NP',
+        codCosecha,
+        digits: 5,
+        countFn: (base) =>
+          tx.notaDePatio.count({ where: { numero_nota_patio: { startsWith: base } } }),
+        existsFn: async (candidate) =>
+          Boolean(
+            await tx.notaDePatio.findUnique({
+              where: { numero_nota_patio: candidate },
+              select: { id_nota_patio: true },
+            }),
+          ),
+      });
 
       const notaPatio = await tx.notaDePatio.create({
         data: {
@@ -1335,15 +1389,7 @@ export class ReceptionService {
       }
     }
 
-    const countOtros = await this.prisma.recepcion.count({
-      where: { id_tipo_movimiento: idTipoMov }
-    });
-    let seq = countOtros + 1;
-    let correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
-    while (await this.prisma.recepcion.findUnique({ where: { numero_entrada: correlativo } })) {
-      seq++;
-      correlativo = `${prefix}-${String(seq).padStart(5, '0')}`;
-    }
+    const correlativo = await this.generarNumeroEntrada(prefix, idCosecha);
 
     const estadoPesadaAbierta = await this.prisma.estadoTransaccion.findUnique({
       where: { nombre: 'Pesada Abierta' }

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, InternalServerErrorException, BadRequest
 import { PrismaService } from '../prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { LiquidarNotaPesoDto } from './dto/liquidar-nota-peso.dto';
+import { formatCodigoCosecha, generarCorrelativos, getCodigoCosechaById } from './correlativos.helper';
 
 @Injectable()
 export class NotaPesoService {
@@ -52,7 +53,7 @@ export class NotaPesoService {
     const detalle = await this.prisma.detalleRecepcion.findUnique({
       where: { id_detalle_recepcion: idDetalle },
       include: {
-        recepcion: true,
+        recepcion: { include: { cosecha: true } },
         tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
@@ -124,9 +125,27 @@ export class NotaPesoService {
     const pesoNetoFinalQQ = Math.max(0, subtotalQQ - descuentoHumedadQQ - descuentoDanoQQ - descuentoOtrosQQ);
 
     return this.prisma.$transaction(async (tx) => {
-      // Generar Correlativo NP-0000001
-      const count = await tx.notaDePeso.count();
-      const correlativo = `NP-${String(count + 1).padStart(7, '0')}`;
+      const codCosecha = detalle.recepcion?.cosecha?.cosecha
+        ? formatCodigoCosecha(detalle.recepcion.cosecha.cosecha)
+        : await getCodigoCosechaById(tx, detalle.recepcion?.id_cosecha);
+
+      // Generar Correlativo por cosecha (Ej: NP-2627-0000001)
+      const [correlativo] = await generarCorrelativos({
+        prefix: 'NP',
+        codCosecha,
+        digits: 7,
+        countFn: (base) =>
+          tx.notaDePeso.count({
+            where: { numero_nota_peso: { startsWith: base } },
+          }),
+        existsFn: async (candidate) =>
+          Boolean(
+            await tx.notaDePeso.findUnique({
+              where: { numero_nota_peso: candidate },
+              select: { id_nota_peso: true },
+            }),
+          ),
+      });
 
       const notaPeso = await tx.notaDePeso.create({
         data: {

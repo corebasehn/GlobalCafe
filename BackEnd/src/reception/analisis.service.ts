@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, InternalServerErrorException, BadRequest
 import { PrismaService } from '../prisma.service';
 import { CreateAnalisisDto, VeredictoGerenciaDto } from './dto/create-analisis.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { formatCodigoCosecha, generarCorrelativos, getCodigoCosechaById } from './correlativos.helper';
 
 @Injectable()
 export class AnalisisService {
@@ -27,13 +28,42 @@ export class AnalisisService {
       throw new InternalServerErrorException(`El estado "${nombreEstadoDestino}" no existe en BD`);
     }
 
-    // Generar correlativo (Ej: AN-2024-0001)
-    const count = await this.prisma.analisisCalidad.count();
-    const correlativo = `AN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
-
     let resultado: any;
     try {
     resultado = await this.prisma.$transaction(async (tx) => {
+      const detalleActual = await tx.detalleRecepcion.findUnique({
+        where: { id_detalle_recepcion: dto.id_detalle_recepcion },
+        include: {
+          estado_transaccion: true,
+          recepcion: { include: { cosecha: true } },
+        },
+      });
+      if (!detalleActual) {
+        throw new NotFoundException('Detalle de recepción no encontrado');
+      }
+
+      const codCosecha = detalleActual.recepcion?.cosecha?.cosecha
+        ? formatCodigoCosecha(detalleActual.recepcion.cosecha.cosecha)
+        : await getCodigoCosechaById(tx, detalleActual.recepcion?.id_cosecha);
+
+      // Generar correlativo por cosecha (Ej: AN-2627-0001)
+      const [correlativo] = await generarCorrelativos({
+        prefix: 'AN',
+        codCosecha,
+        digits: 4,
+        countFn: (base) =>
+          tx.analisisCalidad.count({
+            where: { numero_analisis: { startsWith: base } },
+          }),
+        existsFn: async (candidate) =>
+          Boolean(
+            await tx.analisisCalidad.findFirst({
+              where: { numero_analisis: candidate },
+              select: { id_analisis_calidad: true },
+            }),
+          ),
+      });
+
       // A. Guardamos el resultado del laboratorio
       const analisis = await tx.analisisCalidad.create({
         data: {
@@ -75,11 +105,6 @@ export class AnalisisService {
       });
 
       // B. Cambiamos el estado de la carga para que viaje virtualmente a Gerencia solo si no ha cerrado pesada
-      const detalleActual = await tx.detalleRecepcion.findUnique({
-        where: { id_detalle_recepcion: dto.id_detalle_recepcion },
-        include: { estado_transaccion: true }
-      });
-
       if (!detalleActual?.pesada_salida && detalleActual?.estado_transaccion?.nombre !== 'Pesada Cerrada') {
         await tx.detalleRecepcion.update({
           where: { id_detalle_recepcion: dto.id_detalle_recepcion },
@@ -105,7 +130,7 @@ export class AnalisisService {
       await this.notificationsService.create({
         rol_destino: 'gerencia',
         titulo: 'Análisis de Laboratorio Completado',
-        mensaje: `Resultados registrados para ${correlativo}. Esperando veredicto de Gerencia.`,
+        mensaje: `Resultados registrados para ${resultado.numero_analisis}. Esperando veredicto de Gerencia.`,
         tipo: 'warning',
         icono: 'ri-flask-line',
         referencia_id: String(resultado.id_analisis_calidad),
