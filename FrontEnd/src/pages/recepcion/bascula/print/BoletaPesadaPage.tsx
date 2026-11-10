@@ -188,6 +188,9 @@ export default function BoletaPesadaPage() {
   const qNeto = (pesoBruto - tara)/100;
   const pesoRemision = detalle?.cantidad_qq != null ? Number(detalle.cantidad_qq) * 100 : null;
   const diferencia = pesoRemision != null ? pesoBruto - pesoRemision : null;
+  const pesadoPor = esPrimera
+    ? (data.pesado_por_entrada || profile?.nombre || "—")
+    : (data.pesado_por_salida || profile?.nombre || "—");
 
   return (
     <>
@@ -462,7 +465,7 @@ export default function BoletaPesadaPage() {
         </table>
 
         <div className="blt-footer">
-          <strong>Recibido por:</strong>&nbsp;{profile?.nombre ?? "—"}
+          <strong>Pesado por:</strong>&nbsp;{pesadoPor}
         </div>
 
       </div>

@@ -499,6 +499,7 @@ export class ReceptionService {
         id_bodega_descargada: idBodega,
         fecha_entrada_bascula: new Date(),
         id_estado_transaccion: estadoEnPesaje.id_estado_transaccion,
+        id_usuario_pesada_entrada: usuarioId,
         usuario_modificacion: usuarioId,
         fecha_modificacion: new Date()
       },
@@ -670,6 +671,7 @@ export class ReceptionService {
       fecha_salida_bascula: new Date(), 
       peso_neto: pesoNeto, 
       id_estado_transaccion: estadoCompletado.id_estado_transaccion, 
+      id_usuario_pesada_salida: usuarioId,
       usuario_modificacion: usuarioId, 
       fecha_modificacion: new Date() 
     };
@@ -940,7 +942,43 @@ export class ReceptionService {
       ? todosDetalles.every(d => d.id_estado_transaccion === estadoCerrada.id_estado_transaccion)
       : false;
 
-    return { detalle, devolucion, allClosed };
+    const userIds = [
+      detalle.id_usuario_pesada_entrada,
+      detalle.id_usuario_pesada_salida,
+      detalle.usuario_modificacion,
+    ].filter((id): id is number => typeof id === 'number');
+
+    const usuarios =
+      userIds.length > 0
+        ? await this.prisma.usuario.findMany({
+            where: { id: { in: Array.from(new Set(userIds)) } },
+            select: { id: true, nombre_visible: true, usuario: true },
+          })
+        : [];
+
+    const getNombreUsuario = (id?: number | null) => {
+      if (!id) return null;
+      const found = usuarios.find((u) => u.id === id);
+      return found?.nombre_visible || found?.usuario || null;
+    };
+
+    const pesado_por_entrada =
+      getNombreUsuario(detalle.id_usuario_pesada_entrada) ||
+      (detalle.estado_transaccion?.nombre === 'Pesada Abierta'
+        ? getNombreUsuario(detalle.usuario_modificacion)
+        : null);
+
+    const pesado_por_salida =
+      getNombreUsuario(detalle.id_usuario_pesada_salida) ||
+      (detalle.pesada_salida != null ? getNombreUsuario(detalle.usuario_modificacion) : null);
+
+    return {
+      detalle,
+      devolucion,
+      allClosed,
+      pesado_por_entrada,
+      pesado_por_salida,
+    };
   }
 
   // ==========================================

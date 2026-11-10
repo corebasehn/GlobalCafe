@@ -641,8 +641,10 @@ model DetalleRecepcion {
   remision                   String            @db.VarChar(50)
   fecha_entrada_bascula      DateTime?         @db.Timestamptz(6)
   pesada_entrada             Decimal?          @db.Decimal(10, 2)
+  id_usuario_pesada_entrada  Int?
   fecha_salida_bascula       DateTime?         @db.Timestamptz(6)
   pesada_salida              Decimal?          @db.Decimal(10, 2)
+  id_usuario_pesada_salida   Int?
   id_bodega_descargada       Int?
   cantidad_sacos_descargados Int?
   peso_neto                  Decimal?          @db.Decimal(10, 2)

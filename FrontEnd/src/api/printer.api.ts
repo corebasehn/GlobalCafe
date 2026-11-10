@@ -73,6 +73,17 @@ export async function guardarImpresoraConfig(nombre: string): Promise<boolean> {
   }
 }
 
+function getNombreUsuarioActual(): string | null {
+  try {
+    const raw = localStorage.getItem("auth_profile");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed?.nombre || parsed?.usuario || null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Envía datos de documento al Agente Local para impresión directa en modo RAW (ESC/P)
  */
@@ -84,6 +95,11 @@ export async function enviarImpresionMatricial(
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
   const impresoraGuardada = localStorage.getItem("globalcafe_impresora_matricial") || undefined;
+  const usuarioActual = getNombreUsuarioActual();
+  const datosConUsuario =
+    datos && typeof datos === "object" && !Array.isArray(datos)
+      ? { ...datos, usuario_impresion: datos.usuario_impresion || usuarioActual }
+      : datos;
 
   try {
     const response = await fetch(`${AGENT_PRINTER_URL}/imprimir`, {
@@ -92,7 +108,7 @@ export async function enviarImpresionMatricial(
       body: JSON.stringify({
         tipo,
         esCopia,
-        datos,
+        datos: datosConUsuario,
         impresora: impresoraGuardada,
       }),
       signal: controller.signal,

@@ -318,9 +318,27 @@ def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_c
         buf.extend(encode_cp850(linea_tot2 + "\r\n"))
     buf.extend(ESC_BOLD_OFF)
 
-    # FIRMAS Y PIE
+    # PIE DE BOLETA
+    if es_primera:
+        pesado_por = (
+            data.get("pesado_por_entrada")
+            or detalle.get("pesado_por_entrada")
+            or data.get("usuario_impresion")
+            or "—"
+        )
+    else:
+        pesado_por = (
+            data.get("pesado_por_salida")
+            or detalle.get("pesado_por_salida")
+            or data.get("usuario_impresion")
+            or "—"
+        )
+
     buf.extend(encode_cp850("\r\n"))
-    buf.extend(encode_cp850(dos_columnas("Firma Basculero: _____________________", "Firma Conductor: _____________________") + "\r\n"))
+    buf.extend(ESC_BOLD_ON)
+    buf.extend(encode_cp850("Pesado por: "))
+    buf.extend(ESC_BOLD_OFF)
+    buf.extend(encode_cp850(f"{str(pesado_por)[:66]}\r\n"))
 
     # FORM FEED (avanza el papel a la siguiente perforación)
     buf.extend(ESC_FORM_FEED)
