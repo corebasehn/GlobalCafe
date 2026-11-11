@@ -2,7 +2,12 @@ import { Injectable, NotFoundException, InternalServerErrorException, BadRequest
 import { PrismaService } from '../prisma.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 import { LiquidarNotaPesoDto } from './dto/liquidar-nota-peso.dto';
-import { formatCodigoCosecha, generarCorrelativos, getCodigoCosechaById } from './correlativos.helper';
+import {
+  formatCodigoCosecha,
+  generarCorrelativos,
+  getCodigoCosechaById,
+  resolverOrigenRemision,
+} from './correlativos.helper';
 
 @Injectable()
 export class NotaPesoService {
@@ -54,6 +59,7 @@ export class NotaPesoService {
       where: { id_detalle_recepcion: idDetalle },
       include: {
         recepcion: { include: { cosecha: true } },
+        tipo_remision: true,
         tipo_empaque: true,
         analisis_calidad: {
           orderBy: { fecha_analisis: 'desc' },
@@ -129,9 +135,15 @@ export class NotaPesoService {
         ? formatCodigoCosecha(detalle.recepcion.cosecha.cosecha)
         : await getCodigoCosechaById(tx, detalle.recepcion?.id_cosecha);
 
-      // Generar Correlativo por cosecha (Ej: NP-2627-0000001)
+      // Correlativo independiente por origen (Global/Externo) y cosecha
+      // (Ej: NP-INT-2627-0000001 / NP-EXT-2627-0000001)
+      const origen = resolverOrigenRemision({
+        idTipoRemision: detalle.id_tipo_remision,
+        nombreTipoRemision: detalle.tipo_remision?.tipo_remision,
+        numeroEntrada: detalle.recepcion?.numero_entrada,
+      });
       const [correlativo] = await generarCorrelativos({
-        prefix: 'NP',
+        prefix: `NP-${origen}`,
         codCosecha,
         digits: 7,
         countFn: (base) =>

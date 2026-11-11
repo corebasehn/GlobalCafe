@@ -1181,10 +1181,11 @@ export class ReceptionService {
         }
       });
 
-      // 3. Crear el registro maestro de la Nota de Patio (Ej: NP-2627-00001)
+      // 3. Crear el registro maestro de la Nota de Patio (Ej: PAT-2627-00001)
+      // Prefijo PAT para no confundir con la Nota de Peso (NP-INT / NP-EXT)
       const codCosecha = await getCodigoCosechaById(tx, detalleOriginal.recepcion?.id_cosecha);
       const [correlativo] = await generarCorrelativos({
-        prefix: 'NP',
+        prefix: 'PAT',
         codCosecha,
         digits: 5,
         countFn: (base) =>

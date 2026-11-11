@@ -682,7 +682,7 @@ export default function NotaPesoPage() {
                    <div className="text-right">
                       <h3 className="text-lg font-bold text-neutral-800 border-b-2 border-neutral-800 pb-1 mb-2">NOTA DE PESO</h3>
                       <div className="text-sm">
-                        <span className="font-bold">NP #:</span> <span className="text-red-600 font-mono text-lg">{selectedNota.numero_nota_peso.split('-')[1]}</span>
+                        <span className="font-bold">NP #:</span> <span className="text-red-600 font-mono text-lg">{selectedNota.numero_nota_peso}</span>
                       </div>
                    </div>
                 </div>

@@ -52,6 +52,28 @@ export async function getCodigoCosechaById(
   return formatCodigoCosecha(actual?.cosecha);
 }
 
+export type OrigenRemision = 'INT' | 'EXT';
+
+/**
+ * Determina si un café es Interno (Global) o Externo para separar correlativos.
+ * Regla (igual que en Recepción): id_tipo_remision 1 o nombre que contenga "int" => INT; cualquier otro tipo => EXT.
+ * Si no hay tipo de remisión, se toma del prefijo del número de entrada (INT-/EXT-); por defecto EXT.
+ */
+export function resolverOrigenRemision(options: {
+  idTipoRemision?: number | null;
+  nombreTipoRemision?: string | null;
+  numeroEntrada?: string | null;
+}): OrigenRemision {
+  const { idTipoRemision, nombreTipoRemision, numeroEntrada } = options;
+  const nombre = (nombreTipoRemision || '').toLowerCase();
+
+  if (idTipoRemision || nombre) {
+    return idTipoRemision === 1 || nombre.includes('int') ? 'INT' : 'EXT';
+  }
+
+  return (numeroEntrada || '').trim().toUpperCase().startsWith('INT-') ? 'INT' : 'EXT';
+}
+
 export function buildCorrelativoBase(prefix: string, codCosecha: string): string {
   return `${prefix}-${codCosecha}-`;
 }

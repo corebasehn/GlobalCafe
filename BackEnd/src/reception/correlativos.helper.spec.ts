@@ -3,6 +3,7 @@ import {
   formatCodigoCosecha,
   generarCorrelativos,
   getCodigoCosechaById,
+  resolverOrigenRemision,
 } from './correlativos.helper';
 
 describe('correlativos.helper', () => {
@@ -110,6 +111,45 @@ describe('correlativos.helper', () => {
 
     it('construye la base de prefijo correctamente', () => {
       expect(buildCorrelativoBase('NP', '2627')).toBe('NP-2627-');
+    });
+
+    it('lleva correlativos de Nota de Peso independientes para INT y EXT', async () => {
+      const existentes = ['NP-INT-2627-0000001', 'NP-INT-2627-0000002', 'NP-EXT-2627-0000001'];
+      const countFn = async (base: string) => existentes.filter((n) => n.startsWith(base)).length;
+      const existsFn = async (c: string) => existentes.includes(c);
+
+      const [interno] = await generarCorrelativos({ prefix: 'NP-INT', codCosecha: '2627', digits: 7, countFn, existsFn });
+      const [externo] = await generarCorrelativos({ prefix: 'NP-EXT', codCosecha: '2627', digits: 7, countFn, existsFn });
+
+      expect(interno).toBe('NP-INT-2627-0000003');
+      expect(externo).toBe('NP-EXT-2627-0000002');
+    });
+
+    it('genera Nota de Patio con prefijo PAT sin mezclarse con Nota de Peso', async () => {
+      const [patio] = await generarCorrelativos({
+        prefix: 'PAT',
+        codCosecha: '2627',
+        digits: 5,
+        countFn: async (base) => (base === 'PAT-2627-' ? 0 : 99),
+        existsFn: async () => false,
+      });
+      expect(patio).toBe('PAT-2627-00001');
+    });
+  });
+
+  describe('resolverOrigenRemision', () => {
+    it('usa el tipo de remisión cuando existe', () => {
+      expect(resolverOrigenRemision({ idTipoRemision: 1 })).toBe('INT');
+      expect(resolverOrigenRemision({ idTipoRemision: 2 })).toBe('EXT');
+      expect(resolverOrigenRemision({ idTipoRemision: 7, nombreTipoRemision: 'Interno Global' })).toBe('INT');
+      expect(resolverOrigenRemision({ idTipoRemision: 2, nombreTipoRemision: 'Externo', numeroEntrada: 'INT-00001' })).toBe('EXT');
+    });
+
+    it('cae al prefijo del número de entrada si no hay tipo de remisión', () => {
+      expect(resolverOrigenRemision({ numeroEntrada: 'INT-2627-00001' })).toBe('INT');
+      expect(resolverOrigenRemision({ numeroEntrada: 'EXT-2627-00001' })).toBe('EXT');
+      expect(resolverOrigenRemision({ numeroEntrada: 'REC-00010' })).toBe('EXT');
+      expect(resolverOrigenRemision({})).toBe('EXT');
     });
   });
 });
