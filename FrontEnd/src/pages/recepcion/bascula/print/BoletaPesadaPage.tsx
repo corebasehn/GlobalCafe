@@ -19,6 +19,10 @@ function fmt(n: number) {
   return n.toLocaleString("es-HN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function fmtEntero(n: number) {
+  return Math.round(n).toLocaleString("es-HN", { maximumFractionDigits: 0 });
+}
+
 function fmtDiferencia(dif: number | null) {
   if (dif == null) return "—";
   const signo = dif > 0 ? "+" : "";
@@ -184,10 +188,11 @@ export default function BoletaPesadaPage() {
     totalSacos += f.signo === "+" ? f.sacos : -f.sacos;
   }
   const taraUnitaria = detalle?.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
-  const tara = taraUnitaria * totalSacos;
-  const qNeto = (pesoBruto - tara)/100;
+  const tara = Math.round(taraUnitaria * totalSacos);
+  const pesoNetoLb = pesoBruto - tara;
+  const qNeto = pesoNetoLb / 100;
   const pesoRemision = detalle?.cantidad_qq != null ? Number(detalle.cantidad_qq) * 100 : null;
-  const diferencia = pesoRemision != null ? pesoBruto - pesoRemision : null;
+  const diferencia = pesoRemision != null ? pesoNetoLb - pesoRemision : null;
   const pesadoPor = esPrimera
     ? (data.pesado_por_entrada || profile?.nombre || "—")
     : (data.pesado_por_salida || profile?.nombre || "—");
@@ -451,13 +456,13 @@ export default function BoletaPesadaPage() {
             {!esPrimera && (
               <tr>
                 <td>
-                  <strong>TARA ({taraUnitaria} × sacos):</strong>&nbsp;{fmt(tara)} LB
+                  <strong>TARA ({taraUnitaria} × sacos):</strong>&nbsp;{fmtEntero(tara)} LB
                 </td>
                 <td>
                   <strong>QUINTALES NETO TOTAL:</strong>&nbsp;{fmt(qNeto)} QQ
                 </td>
                 <td>
-                  <strong>DIFERENCIA (BRUTO - REMISIÓN):</strong>&nbsp;{fmtDiferencia(diferencia)}
+                  <strong>DIFERENCIA (NETO - REMISIÓN):</strong>&nbsp;{fmtDiferencia(diferencia)}
                 </td>
               </tr>
             )}

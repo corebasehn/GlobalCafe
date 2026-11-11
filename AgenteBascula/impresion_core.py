@@ -8,6 +8,7 @@ import sys
 import os
 import re
 from datetime import datetime
+from decimal import Decimal, ROUND_HALF_UP
 from typing import List, Dict, Any, Optional
 
 try:
@@ -306,14 +307,15 @@ def construir_boleta_pesada(data: Dict[str, Any], es_primera: bool = False, es_c
         peso_salida_val = float(detalle.get("pesada_salida") or 0.0)
         peso_bruto_neto = peso_bruto - peso_salida_val
         tara_unitaria = float((detalle.get("tipo_empaque", {}).get("tara") if isinstance(detalle.get("tipo_empaque"), dict) else None) or 0.5)
-        tara_total = tara_unitaria * total_sacos
-        q_neto = (peso_bruto_neto - tara_total) / 100.0 if peso_bruto_neto else 0.0
+        tara_total = int(Decimal(str(tara_unitaria * total_sacos)).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+        peso_neto_lb = peso_bruto_neto - tara_total if peso_bruto_neto else 0.0
+        q_neto = peso_neto_lb / 100.0
         peso_remision = float(detalle.get("cantidad_qq") or 0.0) * 100.0
-        diferencia = peso_bruto_neto - peso_remision if peso_remision else 0.0
+        diferencia = peso_neto_lb - peso_remision if peso_remision else 0.0
         signo_dif = "+" if diferencia > 0 else ""
 
         linea_tot1 = f"PESO BRUTO: {fmt_numero(peso_bruto_neto):>10} LB   TOTAL SACOS: {total_sacos:<6}   PESO REMISION: {fmt_numero(peso_remision):>10} LB"
-        linea_tot2 = f"TARA EMPAQUE: {fmt_numero(tara_total):>8} LB   QQ NETO TOTAL: {fmt_numero(q_neto):<6} DIFERENCIA: {f'{signo_dif}{fmt_numero(diferencia)}':>13} LB"
+        linea_tot2 = f"TARA EMPAQUE: {fmt_numero(tara_total, 0):>8} LB   QQ NETO TOTAL: {fmt_numero(q_neto):<6} DIFERENCIA: {f'{signo_dif}{fmt_numero(diferencia)}':>13} LB"
         buf.extend(encode_cp850(linea_tot1 + "\r\n"))
         buf.extend(encode_cp850(linea_tot2 + "\r\n"))
     buf.extend(ESC_BOLD_OFF)

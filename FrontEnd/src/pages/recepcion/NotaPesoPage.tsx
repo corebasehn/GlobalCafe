@@ -120,7 +120,8 @@ export default function NotaPesoPage() {
   const taraUnitariaLB = liquidarModal.detalle?.tipo_empaque?.tara != null
     ? Number(liquidarModal.detalle.tipo_empaque.tara)
     : 0.5;
-  const calcTaraQQ = (calcSacos * taraUnitariaLB) / 100;
+  const calcTaraLB = Math.round(calcSacos * taraUnitariaLB);
+  const calcTaraQQ = calcTaraLB / 100;
   const calcSubtotalQQ = Math.max(0, calcPesoBrutoQQ - calcTaraQQ);
 
   const calcDescHumedadQQ = formHumedad > 12 ? calcSubtotalQQ * ((formHumedad - 12) / 100) : 0;
@@ -485,7 +486,7 @@ export default function NotaPesoPage() {
                   </div>
                   <div className="col-sm-3">
                     <span className="text-muted small d-block">Tara Sacos ({taraUnitariaLB} LB/saco)</span>
-                    <strong className="text-danger">-{calcTaraQQ.toFixed(3)} QQ</strong>
+                    <strong className="text-danger">-{calcTaraQQ.toFixed(2)} QQ ({calcTaraLB} LB)</strong>
                   </div>
                 </div>
               </div>
@@ -738,7 +739,7 @@ export default function NotaPesoPage() {
                       <tr>
                         <td className="py-3 font-bold">{selectedNota.detalles[0].cantidad_sacos}</td>
                         <td>{Number(selectedNota.detalles[0].peso_bruto).toFixed(2)}</td>
-                        <td>{Number(selectedNota.detalles[0].tara).toFixed(3)}</td>
+                        <td>{Number(selectedNota.detalles[0].tara).toFixed(2)}</td>
                         <td>{Number(selectedNota.detalles[0].porcentaje_descuento_humedad || 0).toFixed(2)}%</td>
                         <td>{Number(selectedNota.detalles[0].porcentaje_descuento_dano || 0).toFixed(2)}%</td>
                         <td>{Number(selectedNota.detalles[0].porcentaje_descuento_peso || 0).toFixed(2)}%</td>

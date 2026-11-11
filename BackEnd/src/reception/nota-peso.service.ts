@@ -92,9 +92,10 @@ export class NotaPesoService {
     const pesoBrutoQQ = pesoNetoLB / 100;
     
     // 3. Calcular Tara de Sacos según tipo de empaque (fallback a 0.50 LB si no está configurado)
-    // Según el formato: Tara (QQ) = (Sacos * taraUnitariaLB) / 100
+    // Según el formato: Tara (LB) redondeada a entero estándar; Tara (QQ) = Tara (LB) / 100
     const taraUnitariaLB = detalle.tipo_empaque?.tara != null ? Number(detalle.tipo_empaque.tara) : 0.5;
-    const taraQQ = (detalle.cantidad_sacos * taraUnitariaLB) / 100;
+    const taraLB = Math.round(detalle.cantidad_sacos * taraUnitariaLB);
+    const taraQQ = taraLB / 100;
     
     // 4. Peso Neto antes de descuentos
     const subtotalQQ = pesoBrutoQQ - taraQQ;
