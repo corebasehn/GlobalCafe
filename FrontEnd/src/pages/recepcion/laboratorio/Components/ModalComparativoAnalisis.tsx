@@ -217,8 +217,8 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
   };
 
   return (
-    <Modal show={show} onHide={handleClose} size="xl" centered>
-      <Modal.Header closeButton>
+    <Modal show={show} onHide={handleClose} size="xl" centered className="modal-comparativo-print">
+      <Modal.Header closeButton className="d-print-none">
         <Modal.Title className="fs-6 d-flex align-items-center gap-2">
           <GitCompare size={18} className="text-primary" />
           <span>Reporte Comparativo de Análisis (Previa vs General)</span>
@@ -227,7 +227,7 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
 
       <Modal.Body className="p-4">
         {/* Barra de búsqueda */}
-        <InputGroup className="mb-4">
+        <InputGroup className="mb-4 d-print-none">
           <InputGroup.Text className="bg-light border-end-0 text-muted">
             <Search size={15} />
           </InputGroup.Text>
@@ -314,7 +314,7 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
         ) : grupoSeleccionado ? (
           /* Vista del reporte comparativo */
           <div>
-            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 d-print-none">
               <div className="d-flex align-items-center gap-2">
                 {grupos.length > 1 && (
                   <Button
@@ -360,7 +360,7 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
 
             {/* Aviso si falta alguna de las dos boletas */}
             {(!grupoSeleccionado.previa || !grupoSeleccionado.general) && (
-              <div className="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center gap-2">
+              <div className="alert alert-warning py-2 px-3 small mb-3 d-flex align-items-center gap-2 d-print-none">
                 <AlertCircle size={16} />
                 <span>
                   {!grupoSeleccionado.general
@@ -374,27 +374,71 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
             <div id="print-comparativo" className="comparativo-print-container">
               <style>{`
                 @media print {
-                  @page { margin: 0.6cm; size: letter portrait; }
+                  @page {
+                    margin: 0.6cm;
+                    size: letter portrait;
+                  }
                   html, body {
                     height: auto !important;
+                    width: auto !important;
+                    overflow: visible !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     background: white !important;
                   }
-                  body * { visibility: hidden; }
-                  * { transform: none !important; }
-                  #print-comparativo {
-                    position: absolute !important;
-                    left: 0 !important;
-                    top: 0 !important;
+                  body > *:not(.modal-comparativo-print) {
+                    display: none !important;
+                  }
+                  .d-print-none {
+                    display: none !important;
+                  }
+                  .modal.modal-comparativo-print {
+                    position: static !important;
+                    display: block !important;
                     width: 100% !important;
-                    visibility: visible !important;
+                    height: auto !important;
+                    overflow: visible !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                  }
+                  .modal-comparativo-print .modal-dialog {
+                    position: static !important;
+                    display: block !important;
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    min-height: 0 !important;
+                    margin: 0 !important;
+                    transform: none !important;
+                  }
+                  .modal-comparativo-print .modal-content {
+                    position: static !important;
+                    display: block !important;
+                    border: none !important;
+                    border-radius: 0 !important;
+                    box-shadow: none !important;
+                    background: white !important;
+                    width: 100% !important;
+                  }
+                  .modal-comparativo-print .modal-body {
+                    position: static !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                  }
+                  #print-comparativo {
+                    position: static !important;
+                    width: 100% !important;
+                    margin: 0 !important;
                     font-family: Arial, sans-serif !important;
                     font-size: 11px !important;
                     background: white !important;
                     color: black !important;
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
                   }
-                  #print-comparativo * { visibility: visible !important; }
+                  .comparativo-no-break {
+                    break-inside: avoid !important;
+                    page-break-inside: avoid !important;
+                  }
                 }
               `}</style>
 
@@ -478,7 +522,7 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
                 </div>
 
                 {/* TABLA RESUMEN COMPARATIVO DE PARÁMETROS CRÍTICOS */}
-                <div style={{ marginBottom: "14px" }}>
+                <div className="comparativo-no-break" style={{ marginBottom: "14px" }}>
                   <p style={{ fontWeight: "bold", fontSize: "12px", margin: "0 0 6px", textTransform: "uppercase" }}>
                     1. Comparación de Parámetros Físicos y Rendimiento
                   </p>
@@ -781,6 +825,7 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
 
                 {/* Firmas al pie */}
                 <div
+                  className="comparativo-no-break"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr 1fr",
@@ -818,7 +863,7 @@ export default function ModalComparativoAnalisis({ show, onClose, initialGrupo =
         )}
       </Modal.Body>
 
-      <Modal.Footer>
+      <Modal.Footer className="d-print-none">
         <Button variant="secondary" onClick={handleClose}>
           Cerrar
         </Button>
