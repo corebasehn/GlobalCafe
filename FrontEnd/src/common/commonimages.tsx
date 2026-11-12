@@ -23,9 +23,9 @@ import downloadsvg from '../assets/images/backgrounds/download.svg';
 
 //Brandlogos
 
-import desktopdark from '../assets/images/brand-logos/eCoffee-core-tipografia-lado-white.png';
+import desktopdark from '../assets/images/brand-logos/LogoGlobalBlanco.png';
 // import desktoplogo from '../assets/images/brand-logos/desktop-logo.png';
-import desktoplogo from '../assets/images/brand-logos/eCoffe-core-tipografia-lado-color.png';
+import desktoplogo from '../assets/images/brand-logos/LogoGlobalColor.png';
 // import desktopwhite from '../assets/images/brand-logos/desktop-white.png';
 import desktopwhite from '../assets/images/brand-logos/LogoGlobalCoffeeBlancoNegro.png';
 import favicon from '../assets/images/brand-logos/favicon.ico';

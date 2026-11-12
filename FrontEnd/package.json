@@ -50,6 +50,8 @@
     "formik": "^2.4.6",
     "gridjs": "^6.2.0",
     "gridjs-react": "^6.1.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.14.0",
     "moment": "^2.30.1",

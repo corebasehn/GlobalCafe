@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { Container, Row, Col, Card } from 'react-bootstrap';
 
 // Assets
-import logoImg from "../../../../assets/images/brand-logos/eCoffe-core-color.png";
+import logoImg from "../../../../assets/images/brand-logos/LogoGlobalColor.png";
 
 // Components
 import LoginForm from "../Components/LoginForm";
