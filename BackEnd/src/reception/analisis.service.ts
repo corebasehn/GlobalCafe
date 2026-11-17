@@ -35,11 +35,36 @@ export class AnalisisService {
         where: { id_detalle_recepcion: dto.id_detalle_recepcion },
         include: {
           estado_transaccion: true,
+          notas_patio: true,
           recepcion: { include: { cosecha: true } },
         },
       });
       if (!detalleActual) {
         throw new NotFoundException('Detalle de recepción no encontrado');
+      }
+
+      // Si la carga ya tiene Nota de Patio o pesada de salida, cualquier análisis nuevo es Muestra General
+      const tieneNotaPatio = (detalleActual.notas_patio?.length ?? 0) > 0;
+      const yaCerroPesada =
+        detalleActual.pesada_salida != null ||
+        detalleActual.estado_transaccion?.nombre === 'Pesada Cerrada';
+      const tipoAnalisisReal =
+        dto.tipo_analisis === 'Muestra General' || tieneNotaPatio || yaCerroPesada
+          ? 'Muestra General'
+          : dto.tipo_analisis;
+
+      const nombreEstadoReal =
+        tipoAnalisisReal === 'Muestra General'
+          ? 'Muestra General Pendiente de Aprobacion'
+          : 'Muestra Previa Pendiente de Aprobacion';
+
+      const estadoAnalisisDestino =
+        nombreEstadoReal === nombreEstadoDestino
+          ? estadoDestino
+          : await tx.estadoTransaccion.findUnique({ where: { nombre: nombreEstadoReal } });
+
+      if (!estadoAnalisisDestino) {
+        throw new InternalServerErrorException(`El estado "${nombreEstadoReal}" no existe en BD`);
       }
 
       const codCosecha = detalleActual.recepcion?.cosecha?.cosecha
@@ -68,8 +93,8 @@ export class AnalisisService {
       const analisis = await tx.analisisCalidad.create({
         data: {
           id_detalle_recepcion: dto.id_detalle_recepcion,
-          id_estado_transaccion: estadoDestino.id_estado_transaccion,
-          tipo_analisis: dto.tipo_analisis,
+          id_estado_transaccion: estadoAnalisisDestino.id_estado_transaccion,
+          tipo_analisis: tipoAnalisisReal,
           numero_analisis: correlativo,
           id_catador: dto.id_catador,
           primer_rendimiento: dto.primer_rendimiento,
@@ -105,11 +130,11 @@ export class AnalisisService {
       });
 
       // B. Cambiamos el estado de la carga para que viaje virtualmente a Gerencia solo si no ha cerrado pesada
-      if (!detalleActual?.pesada_salida && detalleActual?.estado_transaccion?.nombre !== 'Pesada Cerrada') {
+      if (!yaCerroPesada) {
         await tx.detalleRecepcion.update({
           where: { id_detalle_recepcion: dto.id_detalle_recepcion },
           data: {
-            id_estado_transaccion: estadoDestino.id_estado_transaccion,
+            id_estado_transaccion: estadoAnalisisDestino.id_estado_transaccion,
             usuario_modificacion: usuarioId,
             fecha_modificacion: new Date(),
           }
@@ -150,33 +175,49 @@ export class AnalisisService {
       include: {
         detalle_recepcion: {
           include: {
-            estado_transaccion: true
+            estado_transaccion: true,
+            notas_patio: true,
           }
         }
       }
     });
     if (!analisis) throw new NotFoundException('Análisis no encontrado');
 
+    const yaCerroPesada =
+      analisis.detalle_recepcion?.pesada_salida != null ||
+      analisis.detalle_recepcion?.estado_transaccion?.nombre === 'Pesada Cerrada';
+    const tieneNotaPatio = (analisis.detalle_recepcion?.notas_patio?.length ?? 0) > 0;
+    const esMuestraGeneral =
+      analisis.tipo_analisis === 'Muestra General' ||
+      (analisis.tipo_analisis || '').toLowerCase().includes('general') ||
+      tieneNotaPatio ||
+      yaCerroPesada;
+
     let estadoAnalisisNombre = '';
     let estadoDetalleNombre = '';
 
     if (dto.veredicto === 'APROBAR') {
       estadoAnalisisNombre = 'Muestra Aprobada';
-      if (analisis.tipo_analisis === 'Muestra General') {
-        // En Muestra General la carga ya descargó en patio.
-        // Si ya tiene pesada de salida registrada o ya estaba cerrada en báscula, DEBE mantenerse como Pesada Cerrada.
-        if (analisis.detalle_recepcion?.pesada_salida != null || analisis.detalle_recepcion?.estado_transaccion?.nombre === 'Pesada Cerrada') {
-          estadoDetalleNombre = 'Pesada Cerrada';
-        } else {
-          // Si aún no pesa salida, queda en Pesada Abierta para que báscula capture la tara
-          estadoDetalleNombre = 'Pesada Abierta';
-        }
+      if (yaCerroPesada) {
+        // Si ya tiene pesada de salida registrada o ya estaba cerrada en báscula, SIEMPRE debe mantenerse como Pesada Cerrada.
+        estadoDetalleNombre = 'Pesada Cerrada';
+      } else if (esMuestraGeneral) {
+        // En Muestra General la carga ya descargó en patio; si aún no pesa salida, queda en Pesada Abierta para capturar tara
+        estadoDetalleNombre = 'Pesada Abierta';
       } else {
         estadoDetalleNombre = 'Muestra Aprobada';
       }
     } else if (dto.veredicto === 'SEGUNDA_MUESTRA') {
       estadoAnalisisNombre = 'Muestra Rechazada'; // Se rechaza este análisis en específico (historial)
-      estadoDetalleNombre = 'Pendiente de Muestrear'; // La carga física regresa al patio para nuevo muestreo
+      if (yaCerroPesada) {
+        // Si ya cerró pesada en báscula, se mantiene en Pesada Cerrada para no regresarla a báscula ni sacarla de Nota de Peso
+        estadoDetalleNombre = 'Pesada Cerrada';
+      } else if (esMuestraGeneral) {
+        // Si ya tiene Nota de Patio pero aún no pesa salida, regresa a Muestra General Recibida (para Laboratorio y Báscula)
+        estadoDetalleNombre = 'Muestra General Recibida';
+      } else {
+        estadoDetalleNombre = 'Pendiente de Muestrear'; // La carga física regresa al patio para nuevo muestreo previo
+      }
     } else if (dto.veredicto === 'DEVOLUCION') {
       estadoAnalisisNombre = 'Muestra Rechazada';
       estadoDetalleNombre = 'Muestra Rechazada';
@@ -192,10 +233,16 @@ export class AnalisisService {
     const resultado = await this.prisma.$transaction(async (tx) => {
       const nuevaObs = dto.observaciones ? `${analisis.observaciones || ''}\n[Gerencia]: ${dto.observaciones}` : analisis.observaciones;
       
-      // Actualizar el Análisis
+      // Actualizar el Análisis (y corregir tipo_analisis a Muestra General si ya tenía Nota de Patio / Pesada Cerrada)
       await tx.analisisCalidad.update({
         where: { id_analisis_calidad: idAnalisis },
-        data: { id_estado_transaccion: estadoAnalisis.id_estado_transaccion, observaciones: nuevaObs, usuario_modificacion: usuarioId, fecha_modificacion: new Date() }
+        data: {
+          id_estado_transaccion: estadoAnalisis.id_estado_transaccion,
+          tipo_analisis: esMuestraGeneral ? 'Muestra General' : analisis.tipo_analisis,
+          observaciones: nuevaObs,
+          usuario_modificacion: usuarioId,
+          fecha_modificacion: new Date(),
+        }
       });
 
       // Actualizar la Carga en Patio
@@ -208,16 +255,20 @@ export class AnalisisService {
     });
 
     try {
-      let rolDestino = 'bascula';
-      let rutaDestino = '/recepcion/bascula';
-      let mensaje = `El análisis ${analisis.numero_analisis} fue APROBADO por Gerencia. Listo para pesaje en báscula.`;
+      let rolDestino = esMuestraGeneral && yaCerroPesada ? 'recepcion' : 'bascula';
+      let rutaDestino = esMuestraGeneral && yaCerroPesada ? '/recepcion/nota-peso' : '/recepcion/bascula';
+      let mensaje = esMuestraGeneral && yaCerroPesada
+        ? `El análisis general ${analisis.numero_analisis} fue APROBADO por Gerencia. Listo para liquidar en Nota de Peso.`
+        : `El análisis ${analisis.numero_analisis} fue APROBADO por Gerencia. Listo para pesaje en báscula.`;
       let tipoNotif = 'success';
       let iconoNotif = 'ri-checkbox-circle-line';
 
       if (dto.veredicto === 'SEGUNDA_MUESTRA') {
-        rolDestino = 'muestreo';
-        rutaDestino = '/recepcion/muestreo';
-        mensaje = `Gerencia solicitó SEGUNDA MUESTRA para el análisis ${analisis.numero_analisis}.`;
+        rolDestino = esMuestraGeneral ? 'laboratorio' : 'muestreo';
+        rutaDestino = esMuestraGeneral ? '/recepcion/laboratorio' : '/recepcion/muestreo';
+        mensaje = esMuestraGeneral
+          ? `Gerencia solicitó SEGUNDA MUESTRA GENERAL para el análisis ${analisis.numero_analisis}. Ingrese nuevamente el análisis en Laboratorio.`
+          : `Gerencia solicitó SEGUNDA MUESTRA para el análisis ${analisis.numero_analisis}.`;
         tipoNotif = 'warning';
         iconoNotif = 'ri-repeat-line';
       } else if (dto.veredicto === 'DEVOLUCION') {

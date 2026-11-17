@@ -93,7 +93,13 @@ export default function CatacionModal({ muestra, catadores, calidades, defectos,
       return;
     }
 
-    const tipoAnalisis = (muestra.estado_transaccion?.nombre === "Muestra General Recibida" || muestra.esMuestraGeneralPendiente)
+    const tieneNotaPatio = (muestra as any).notas_patio && (muestra as any).notas_patio.length > 0;
+    const tipoAnalisis = (
+      muestra.estado_transaccion?.nombre === "Muestra General Recibida" ||
+      muestra.esMuestraGeneralPendiente ||
+      tieneNotaPatio ||
+      muestra.pesada_salida != null
+    )
       ? "Muestra General" 
       : "Muestra Previa";
 

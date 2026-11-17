@@ -46,6 +46,7 @@ export class NotaPesoService {
         tipo_cafe: true,
         tipo_empaque: true,
         analisis_calidad: {
+          include: { estado_transaccion: true },
           orderBy: { fecha_analisis: 'desc' },
         },
       },
@@ -62,6 +63,7 @@ export class NotaPesoService {
         tipo_remision: true,
         tipo_empaque: true,
         analisis_calidad: {
+          include: { estado_transaccion: true },
           orderBy: { fecha_analisis: 'desc' },
         },
       },
@@ -75,11 +77,20 @@ export class NotaPesoService {
 
     // Validación de Muestra General (obligatoria a menos que la recepción tenga omitir análisis externo)
     if (!detalle.omitir_analisis) {
-      const tieneMuestraGeneral = detalle.analisis_calidad.some(
+      const muestrasGenerales = detalle.analisis_calidad.filter(
         a => a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')
       );
-      if (!tieneMuestraGeneral) {
-        throw new BadRequestException('No se puede liquidar: La muestra general no ha sido creada para este ingreso.');
+      const tieneMuestraGeneralValida = muestrasGenerales.some(
+        a => a.estado_transaccion?.nombre !== 'Muestra Rechazada'
+      );
+      if (!tieneMuestraGeneralValida) {
+        throw new BadRequestException('No se puede liquidar: La muestra general no ha sido creada (o fue rechazada para segunda muestra) para este ingreso.');
+      }
+      const tieneMuestraGeneralPendiente = muestrasGenerales.some(
+        a => a.estado_transaccion?.nombre?.includes('Pendiente')
+      );
+      if (tieneMuestraGeneralPendiente) {
+        throw new BadRequestException('No se puede liquidar: La muestra general aún está pendiente de aprobación por Gerencia.');
       }
     }
 
@@ -100,9 +111,13 @@ export class NotaPesoService {
     // 4. Peso Neto antes de descuentos
     const subtotalQQ = pesoBrutoQQ - taraQQ;
 
-    // 5. Obtener descuentos (del DTO editado por el usuario o de la muestra de laboratorio como fallback)
+    // 5. Obtener descuentos (del DTO editado por el usuario o de la muestra de laboratorio válida como fallback)
     const analisis = detalle.analisis_calidad.find(
-      a => a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')
+      a =>
+        (a.tipo_analisis === 'Muestra General' || a.tipo_analisis?.toLowerCase().includes('general')) &&
+        a.estado_transaccion?.nombre !== 'Muestra Rechazada'
+    ) || detalle.analisis_calidad.find(
+      a => a.estado_transaccion?.nombre !== 'Muestra Rechazada'
     ) || detalle.analisis_calidad[0];
     const humedadPerc = dto?.humedad !== undefined && dto?.humedad !== null
       ? Number(dto.humedad)
@@ -248,7 +263,8 @@ export class NotaPesoService {
             tipo_cafe: true,
             tipo_empaque: true,
             analisis_calidad: {
-                include: { catador: true }
+                include: { catador: true, estado_transaccion: true },
+                orderBy: { fecha_analisis: 'desc' },
             }
           },
         },

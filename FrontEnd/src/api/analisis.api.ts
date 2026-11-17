@@ -26,6 +26,9 @@ export interface AnalisisTazaItem {
 
 export interface AnalisisResponse {
   id_analisis: number;
+  id_analisis_calidad?: number;
+  id_estado_transaccion?: number;
+  estado_transaccion?: { id_estado_transaccion?: number; nombre: string };
   fecha_analisis: string;
   tipo_analisis: string;
   humedad?: number;

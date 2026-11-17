@@ -23,7 +23,14 @@ const NotaPesoDocumento = forwardRef<HTMLDivElement, NotaPesoDocumentoProps>(
     const recepcion = nota.detalle_recepcion?.recepcion;
     const proveedor = nota.detalle_recepcion?.proveedor;
     const tipoCafe = nota.detalle_recepcion?.tipo_cafe?.tipo_cafe;
-    const analisis = nota.detalle_recepcion?.analisis_calidad?.[0];
+    const analisis = nota.detalle_recepcion?.analisis_calidad?.find(
+      (a: any) =>
+        (a.tipo_analisis === "Muestra General" || a.tipo_analisis?.toLowerCase().includes("general")) &&
+        a.estado_transaccion?.nombre !== "Muestra Rechazada" &&
+        a.id_estado_transaccion !== 6
+    ) || nota.detalle_recepcion?.analisis_calidad?.find(
+      (a: any) => a.estado_transaccion?.nombre !== "Muestra Rechazada" && a.id_estado_transaccion !== 6
+    ) || nota.detalle_recepcion?.analisis_calidad?.[0];
 
     return (
       <div
@@ -349,7 +356,12 @@ export default function NotaPesoPage() {
 
   const handleOpenLiquidar = (detalle: any) => {
     const analisisGeneral = detalle.analisis_calidad?.find(
-      (a: any) => a.tipo_analisis === "Muestra General" || a.tipo_analisis?.toLowerCase().includes("general")
+      (a: any) =>
+        (a.tipo_analisis === "Muestra General" || a.tipo_analisis?.toLowerCase().includes("general")) &&
+        a.estado_transaccion?.nombre !== "Muestra Rechazada" &&
+        a.id_estado_transaccion !== 6
+    ) || detalle.analisis_calidad?.find(
+      (a: any) => a.estado_transaccion?.nombre !== "Muestra Rechazada" && a.id_estado_transaccion !== 6
     ) || detalle.analisis_calidad?.[0];
 
     const humedadInicial = analisisGeneral?.humedad != null
@@ -605,15 +617,28 @@ export default function NotaPesoPage() {
                         <td className="text-end font-bold text-amber-700">{Number(p.peso_neto).toLocaleString()} LB</td>
                         <td className="text-center">
                           {(() => {
-                            const tieneMuestraGeneral = p.analisis_calidad?.some(
+                            const muestrasGenerales = (p.analisis_calidad || []).filter(
                               (a: any) => a.tipo_analisis === "Muestra General" || a.tipo_analisis?.toLowerCase().includes("general")
                             );
-                            const puedeLiquidar = Boolean(p.omitir_analisis || tieneMuestraGeneral);
+                            const tieneMuestraGeneralActiva = muestrasGenerales.some(
+                              (a: any) => a.estado_transaccion?.nombre !== "Muestra Rechazada" && a.id_estado_transaccion !== 6
+                            );
+                            const tieneMuestraGeneralPendiente = muestrasGenerales.some(
+                              (a: any) => (a.estado_transaccion?.nombre || "").includes("Pendiente") || a.id_estado_transaccion === 4 || a.id_estado_transaccion === 12
+                            );
 
-                            if (!puedeLiquidar) {
+                            if (!p.omitir_analisis && !tieneMuestraGeneralActiva) {
                               return (
                                 <Badge bg="danger-transparent" className="text-danger fw-semibold fs-11 py-1 px-2 border border-danger-subtle">
                                   Pendiente de crear muestra general
+                                </Badge>
+                              );
+                            }
+
+                            if (!p.omitir_analisis && tieneMuestraGeneralPendiente) {
+                              return (
+                                <Badge bg="warning-transparent" className="text-warning fw-semibold fs-11 py-1 px-2 border border-warning-subtle">
+                                  Muestra general pendiente de aprobación
                                 </Badge>
                               );
                             }

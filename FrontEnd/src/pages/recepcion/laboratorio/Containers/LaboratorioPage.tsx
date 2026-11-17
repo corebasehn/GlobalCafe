@@ -67,17 +67,20 @@ export default function LaboratorioPage() {
           // 1. "Muestreado" (Muestra previa tomada en patio antes de descargar)
           // 2. Muestra General Pendiente:
           //    - Está en "Muestra General Recibida"
-          //    - O bien: ya tiene Nota de Patio (o pesada cerrada) y aún NO tiene el análisis general en analisis_calidad
+          //    - O bien: ya tiene Nota de Patio (o pesada cerrada) y aún NO tiene el análisis general activo (no rechazado) en analisis_calidad
           const nombreEstado = det.estado_transaccion?.nombre || "";
           const tieneNotaPatio = (det as any).notas_patio && (det as any).notas_patio.length > 0;
           const tieneGeneralHecha = (det as any).analisis_calidad?.some(
-            (a: any) => (a.tipo_analisis || "").toLowerCase().includes("general")
+            (a: any) =>
+              (a.tipo_analisis || "").toLowerCase().includes("general") &&
+              a.estado_transaccion?.nombre !== "Muestra Rechazada" &&
+              a.id_estado_transaccion !== 6
           );
 
-          const esPreviaPendiente = nombreEstado === "Muestreado";
+          const esPreviaPendiente = nombreEstado === "Muestreado" && !tieneNotaPatio;
           const esGeneralPendiente = (
             nombreEstado === "Muestra General Recibida" ||
-            (tieneNotaPatio && (nombreEstado === "Pesada Cerrada" || nombreEstado === "Pesaje Completado"))
+            (tieneNotaPatio && (nombreEstado === "Pesada Cerrada" || nombreEstado === "Pesaje Completado" || nombreEstado === "Muestreado" || nombreEstado === "Pesada Abierta"))
           ) && !tieneGeneralHecha;
 
           if (det.estado && (esPreviaPendiente || esGeneralPendiente)) {
@@ -91,11 +94,21 @@ export default function LaboratorioPage() {
         });
       });
 
-      // Añadimos las que están pendientes de aprobación de Gerencia (Previa y General)
+      // Añadimos las que están pendientes de aprobación de Gerencia (Previa y General), incluyendo cuando el detalle ya está en Pesada Cerrada
       analisisPendientes.forEach(ana => {
         const det = ana.detalle_recepcion;
-        const nombreEstado = det?.estado_transaccion?.nombre || "";
-        if (det && (nombreEstado === "Muestra Previa Pendiente de Aprobacion" || nombreEstado === "Muestra General Pendiente de Aprobacion")) {
+        const nombreEstadoDet = det?.estado_transaccion?.nombre || "";
+        const nombreEstadoAna = ana.estado_transaccion?.nombre || "";
+        if (
+          det &&
+          !pendientes.some(p => p.id_detalle_recepcion === det.id_detalle_recepcion && p.analisis?.id_analisis_calidad === ana.id_analisis_calidad) &&
+          (
+            nombreEstadoDet === "Muestra Previa Pendiente de Aprobacion" ||
+            nombreEstadoDet === "Muestra General Pendiente de Aprobacion" ||
+            nombreEstadoAna === "Muestra Previa Pendiente de Aprobacion" ||
+            nombreEstadoAna === "Muestra General Pendiente de Aprobacion"
+          )
+        ) {
            pendientes.push({
              ...det,
              numero_entrada: det.recepcion?.numero_entrada || "N/A",

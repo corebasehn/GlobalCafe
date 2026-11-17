@@ -89,10 +89,15 @@ export default function LabTable({ muestras, loading, hasRowActions, hasPermissi
           ) : (
             muestras.map((m) => {
               const estadoNombre = m.estado_transaccion?.nombre || "";
-              const isMuestreado = estadoNombre === "Muestreado";
-              const isGeneralRecibida = estadoNombre === "Muestra General Recibida" || !!m.esMuestraGeneralPendiente;
-              const isPendienteAprobacionPrevia = estadoNombre === "Muestra Previa Pendiente de Aprobacion";
-              const isPendienteAprobacionGeneral = estadoNombre === "Muestra General Pendiente de Aprobacion";
+              const estadoAnaNombre = m.analisis?.estado_transaccion?.nombre || "";
+              const isMuestreado = estadoNombre === "Muestreado" && !m.esMuestraGeneralPendiente && !m.analisis;
+              const isGeneralRecibida = (estadoNombre === "Muestra General Recibida" || !!m.esMuestraGeneralPendiente) && !m.analisis;
+              const isPendienteAprobacionPrevia =
+                estadoNombre === "Muestra Previa Pendiente de Aprobacion" ||
+                estadoAnaNombre === "Muestra Previa Pendiente de Aprobacion";
+              const isPendienteAprobacionGeneral =
+                estadoNombre === "Muestra General Pendiente de Aprobacion" ||
+                estadoAnaNombre === "Muestra General Pendiente de Aprobacion";
 
               const tipoAnalisis: string =
                 m.analisis?.tipo_analisis ||

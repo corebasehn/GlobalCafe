@@ -168,6 +168,13 @@ export class ReceptionService {
               select: {
                 id_analisis_calidad: true,
                 tipo_analisis: true,
+                id_estado_transaccion: true,
+                estado_transaccion: {
+                  select: {
+                    id_estado_transaccion: true,
+                    nombre: true,
+                  }
+                }
               }
             }
           }
@@ -1168,6 +1175,14 @@ export class ReceptionService {
       const estadoMuestreoGeneral = await tx.estadoTransaccion.findUnique({
         where: { nombre: 'Muestra General Recibida' }
       });
+      const estadoPesadaCerrada = await tx.estadoTransaccion.findUnique({
+        where: { nombre: 'Pesada Cerrada' }
+      });
+
+      const yaCerroPesada = detalleOriginal.pesada_salida != null;
+      const nuevoEstadoId = yaCerroPesada
+        ? (estadoPesadaCerrada?.id_estado_transaccion || detalleOriginal.id_estado_transaccion)
+        : (estadoMuestreoGeneral?.id_estado_transaccion || detalleOriginal.id_estado_transaccion);
 
       await tx.detalleRecepcion.update({
         where: { id_detalle_recepcion },
@@ -1175,7 +1190,7 @@ export class ReceptionService {
           cantidad_sacos: cantidad_sacos_buenos,
           id_tipo_empaque: empaqueFinalId,
           // El peso se mantiene igual (es el peso bruto del equipo)
-          id_estado_transaccion: estadoMuestreoGeneral?.id_estado_transaccion || detalleOriginal.id_estado_transaccion,
+          id_estado_transaccion: nuevoEstadoId,
           usuario_modificacion: usuarioId,
           fecha_modificacion: new Date()
         }

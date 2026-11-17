@@ -84,6 +84,8 @@ export default function ModalComparativoFechas({
 
       const g = mapa.get(idDet)!;
       const tipo = (ana.tipo_analisis || "").toLowerCase();
+      const esRechazada = ana.estado_transaccion?.nombre === "Muestra Rechazada" || ana.id_estado_transaccion === 6;
+      if (esRechazada) return;
 
       if (tipo.includes("previa")) {
         if (!g.previa || new Date(ana.fecha_analisis) > new Date(g.previa.fecha_analisis)) {
