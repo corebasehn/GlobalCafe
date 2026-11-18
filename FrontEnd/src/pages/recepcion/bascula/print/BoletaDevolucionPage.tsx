@@ -63,9 +63,11 @@ export default function BoletaDevolucionPage() {
     ? new Date(data.fecha_modificacion).toLocaleString("es-HN")
     : new Date().toLocaleString("es-HN");
 
-  // Extraer el motivo de gerencia (puede estar en analisis.observaciones o detalle.observaciones)
+  // Extraer el motivo de gerencia (si el detalle tiene observación de DEVOLUCIÓN, priorizarla sobre la muestra previa)
   let motivoDevolucion = "No se especificaron detalles adicionales.";
-  if (analisis?.observaciones) {
+  if (data.observaciones && (data.observaciones.includes("DEVUELTO") || data.observaciones.includes("DEVOLUCIÓN"))) {
+    motivoDevolucion = data.observaciones;
+  } else if (analisis?.observaciones) {
     motivoDevolucion = analisis.observaciones;
   } else if (data.observaciones) {
     motivoDevolucion = data.observaciones;

@@ -78,8 +78,6 @@ export default function ModalOpcionesImpresion({
     estadoNombre === "Pesada Cerrada" ||
     estadoNombre === "En Bodega";
 
-  const tienePaseSalida = tieneSalida || esDestarse || esCerrado;
-
   // Detección de devolución directa o por sacos faltos autorizados por Gerencia
   const devFaltoDeRecepcion = rec?.detalles?.find(
     (d: any) =>
@@ -95,6 +93,8 @@ export default function ModalOpcionesImpresion({
     estadoNombre.toLowerCase().includes("devoluci") ||
     carga.estado_transaccion?.nombre?.toLowerCase().includes("rechazada") ||
     carga.estado_transaccion?.nombre?.toLowerCase().includes("devoluci");
+
+  const tienePaseSalida = tieneSalida || esDestarse || esCerrado || esDevolucion || tieneDevolucionFaltos;
 
   const puedeImprimirDevolucion = esDevolucion || tieneDevolucionFaltos;
 

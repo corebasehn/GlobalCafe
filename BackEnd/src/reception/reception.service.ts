@@ -1171,17 +1171,23 @@ export class ReceptionService {
       }
 
       // 2. Actualizamos el detalle original con los sacos que SÍ se bajaron (buenos)
-      // Al crear nota de patio, el flujo indica que también debe notificarse a Laboratorio
+      // Si cantidad_sacos_buenos > 0, pasa a Muestra General Recibida y se crea Nota de Patio
       const estadoMuestreoGeneral = await tx.estadoTransaccion.findUnique({
         where: { nombre: 'Muestra General Recibida' }
       });
       const estadoPesadaCerrada = await tx.estadoTransaccion.findUnique({
         where: { nombre: 'Pesada Cerrada' }
       });
+      const estadoFaltos = await tx.estadoTransaccion.findUnique({
+        where: { nombre: 'Pendiente de Aprobación por Faltos' }
+      });
 
       const yaCerroPesada = detalleOriginal.pesada_salida != null;
+      const esTotalmenteFalto = Number(cantidad_sacos_buenos) === 0 && Number(cantidad_sacos_faltos) > 0;
       const nuevoEstadoId = yaCerroPesada
         ? (estadoPesadaCerrada?.id_estado_transaccion || detalleOriginal.id_estado_transaccion)
+        : esTotalmenteFalto
+        ? detalleOriginal.id_estado_transaccion // Se mantiene en Pesada Abierta mientras Gerencia decide sobre el 100% de faltos
         : (estadoMuestreoGeneral?.id_estado_transaccion || detalleOriginal.id_estado_transaccion);
 
       await tx.detalleRecepcion.update({
@@ -1218,29 +1224,34 @@ export class ReceptionService {
         data: {
           id_detalle_recepcion,
           numero_nota_patio: correlativo,
+          estado: !esTotalmenteFalto,
+          observaciones: esTotalmenteFalto ? `100% sacos con problemas (${cantidad_sacos_faltos} sacos): ${observaciones_faltos || ''}` : null,
           usuario_creacion: usuarioId,
           detalles: {
             create: {
               id_estibas: id_estiba,
               cantidad_sacos: cantidad_sacos_buenos,
+              estado: !esTotalmenteFalto,
               usuario_creacion: usuarioId
             }
           }
         }
       });
 
-      try {
-        await this.notificationsService.create({
-          rol_destino: 'laboratorio',
-          titulo: 'Patio: Nota Creada',
-          mensaje: `Nota ${correlativo} generada para ingreso ${detalleOriginal.recepcion.numero_entrada}. Muestra general requerida.`,
-          tipo: 'success',
-          icono: 'ri-file-list-3-line',
-          referencia_id: String(notaPatio.id_nota_patio),
-          ruta: '/recepcion/laboratorio',
-        });
-      } catch (err: any) {
-        console.warn('Error al registrar notificación de nota de patio:', err?.message);
+      if (!esTotalmenteFalto) {
+        try {
+          await this.notificationsService.create({
+            rol_destino: 'laboratorio',
+            titulo: 'Patio: Nota Creada',
+            mensaje: `Nota ${correlativo} generada para ingreso ${detalleOriginal.recepcion.numero_entrada}. Muestra general requerida.`,
+            tipo: 'success',
+            icono: 'ri-file-list-3-line',
+            referencia_id: String(notaPatio.id_nota_patio),
+            ruta: '/recepcion/laboratorio',
+          });
+        } catch (err: any) {
+          console.warn('Error al registrar notificación de nota de patio:', err?.message);
+        }
       }
 
       return notaPatio;
@@ -1326,16 +1337,57 @@ export class ReceptionService {
         }
       } else {
         const estadoDevolucion = await tx.estadoTransaccion.findUnique({ where: { nombre: 'Devolucion' } });
+        const obsDevolucion = `${detalle.observaciones} | DEVUELTO por Gerencia: ${observaciones || 'Sin comentarios'}`;
         await tx.detalleRecepcion.update({
           where: { id_detalle_recepcion: idDetalle },
           data: {
             id_estado_transaccion: estadoDevolucion?.id_estado_transaccion || detalle.id_estado_transaccion,
             estado: false, // Se marca como inactivo porque se devuelve
-            observaciones: `${detalle.observaciones} | DEVUELTO por Gerencia: ${observaciones || 'Sin comentarios'}`,
+            observaciones: obsDevolucion,
             usuario_modificacion: usuarioId,
             fecha_modificacion: new Date()
           }
         });
+
+        // Si el detalle original quedó con 0 sacos buenos (devolución total del 100% de la carga en patio),
+        // cerrar también el detalle original en estado Devolucion y restaurar sus sacos para la Boleta de Devolución / Pase de Salida
+        if (detalle.remision?.endsWith('-F')) {
+          const remisionBase = detalle.remision.replace(/-F$/, '');
+          const detalleOriginal = await tx.detalleRecepcion.findFirst({
+            where: {
+              id_recepcion: detalle.id_recepcion,
+              remision: remisionBase,
+            },
+          });
+
+          if (detalleOriginal && Number(detalleOriginal.cantidad_sacos) === 0) {
+            const obsOriginal = detalleOriginal.observaciones
+              ? `${detalleOriginal.observaciones} | DEVOLUCIÓN TOTAL EN PATIO (${detalle.cantidad_sacos} SACOS): ${obsDevolucion}`
+              : `DEVOLUCIÓN TOTAL EN PATIO (${detalle.cantidad_sacos} SACOS): ${obsDevolucion}`;
+
+            await tx.detalleRecepcion.update({
+              where: { id_detalle_recepcion: detalleOriginal.id_detalle_recepcion },
+              data: {
+                id_estado_transaccion: estadoDevolucion?.id_estado_transaccion || detalleOriginal.id_estado_transaccion,
+                cantidad_sacos: detalle.cantidad_sacos,
+                observaciones: obsOriginal,
+                usuario_modificacion: usuarioId,
+                fecha_modificacion: new Date(),
+              },
+            });
+
+            // Anular las notas de patio de 0 sacos asociadas al detalle original
+            await tx.notaDePatio.updateMany({
+              where: { id_detalle_recepcion: detalleOriginal.id_detalle_recepcion },
+              data: {
+                estado: false,
+                observaciones: obsOriginal,
+                usuario_modificacion: usuarioId,
+                fecha_modificacion: new Date(),
+              },
+            });
+          }
+        }
 
         try {
           await this.notificationsService.create({
