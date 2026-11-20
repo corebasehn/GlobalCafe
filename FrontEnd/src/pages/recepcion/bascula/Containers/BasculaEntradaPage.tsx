@@ -7,7 +7,6 @@ import { useAuth } from "../../../../auth/useAuth";
 
 import { getPendientesBasculaApi, registrarPesadaEntradaApi, registrarPesadaSalidaApi, registrarSalidaCabezalApi, registrarEntradaCabezalApi, updateReceptionApi, actualizarObservacionesDetalleApi } from "../../../../api/reception.api";
 import { getBodegasApi, Bodega, getPlacasCabezalApi, PlacaCabezal, getConductoresApi, Conductor } from "../../../../api/catalogs.api";
-import { imprimirMatricialPesada, imprimirMatricialPaseSalida } from "../../../../api/printer.api";
 
 // Estado IDs (según catálogo de base de datos)
 const ESTADO_PESADA_ABIERTA = 7;  // "Pesada Abierta"
@@ -18,6 +17,7 @@ import BasculaTable, { type ModalMode } from "../Components/BasculaTable";
 import PesadaModal from "../Components/PesadaModal";
 import ModalReimpresionPesadasIngreso from "../Components/ModalReimpresionPesadasIngreso";
 import ModalPaseSalidaObservaciones from "../Components/ModalPaseSalidaObservaciones";
+import ModalElegirImpresionPesada from "../Components/ModalElegirImpresionPesada";
 
 export default function BasculaEntradaPage() {
   const { hasPermission } = useAuth();
@@ -49,6 +49,23 @@ export default function BasculaEntradaPage() {
     recepcion: any | null;
     detalle: any | null;
   }>({ show: false, recepcion: null, detalle: null });
+
+  // Modal post-pesaje para elegir Impresora Matricial vs Láser/Navegador
+  const [impresionPostPesadaModal, setImpresionPostPesadaModal] = useState<{
+    show: boolean;
+    tipo: "primera" | "segunda" | "pase_salida";
+    idDetalle: number | null;
+    recepcion: any | null;
+    carga: any | null;
+    pendingPaseSalida: { recepcion: any; detalle: any } | null;
+  }>({
+    show: false,
+    tipo: "primera",
+    idDetalle: null,
+    recepcion: null,
+    carga: null,
+    pendingPaseSalida: null,
+  });
 
   useEffect(() => {
     loadData();
@@ -146,14 +163,14 @@ export default function BasculaEntradaPage() {
           observaciones: "SALE POR DESACOPLO DEL FURGON",
         });
         toast.success("Destarse de cabezal registrado. La carga queda 'Sin Cabezal'.");
-        // Imprimir Pase de Salida para el cabezal que sale
-        const base = import.meta.env.BASE_URL;
-        imprimirMatricialPaseSalida(selectedCarga.id_detalle_recepcion).then((res) => {
-          if (res.success) {
-            toast.success(`🖨️ ${res.message}`);
-          } else if (res.fallbackNeeded) {
-            window.open(`${base}print/pase-salida/${selectedCarga.id_detalle_recepcion}`, "_blank");
-          }
+        // Abrir modal para elegir impresora del Pase de Salida
+        setImpresionPostPesadaModal({
+          show: true,
+          tipo: "pase_salida",
+          idDetalle: selectedCarga.id_detalle_recepcion,
+          recepcion: selectedRecepcion,
+          carga: selectedCarga,
+          pendingPaseSalida: null,
         });
       } else if (modalMode === "ENTRADA_CABEZAL") {
         resultado = await registrarEntradaCabezalApi(selectedCarga.id_detalle_recepcion, Number(placaInput), peso);
@@ -173,36 +190,33 @@ export default function BasculaEntradaPage() {
 
       // ===== Lógica de impresión según estado resultante =====
       if (resultado?.id_estado_transaccion) {
-        const base = import.meta.env.BASE_URL;
         const idDet = selectedCarga.id_detalle_recepcion;
 
         if (resultado.id_estado_transaccion === ESTADO_PESADA_ABIERTA) {
-          // Primera Pesada
-          imprimirMatricialPesada(idDet, "primera", false).then((res) => {
-            if (res.success) {
-              toast.success(`🖨️ ${res.message}`);
-            } else if (res.fallbackNeeded) {
-              window.open(`${base}print/boleta-pesada/${idDet}/primera`, "_blank");
-            }
+          // Primera Pesada -> Preguntar dónde imprimir (Matricial o Láser/Navegador)
+          setImpresionPostPesadaModal({
+            show: true,
+            tipo: "primera",
+            idDetalle: idDet,
+            recepcion: selectedRecepcion,
+            carga: { ...selectedCarga, ...resultado },
+            pendingPaseSalida: null,
           });
         } else if (resultado.id_estado_transaccion === ESTADO_PESADA_CERRADA) {
-          // Segunda Pesada (se emite siempre al registrar tara)
-          imprimirMatricialPesada(idDet, "segunda", false).then((res) => {
-            if (res.success) {
-              toast.success(`🖨️ ${res.message}`);
-            } else if (res.fallbackNeeded) {
-              window.open(`${base}print/boleta-pesada/${idDet}/segunda`, "_blank");
-            }
+          // Segunda Pesada -> Preguntar dónde imprimir (y si cerró todo el viaje, luego pedir obs del Pase de Salida)
+          setImpresionPostPesadaModal({
+            show: true,
+            tipo: "segunda",
+            idDetalle: idDet,
+            recepcion: selectedRecepcion,
+            carga: { ...selectedCarga, ...resultado },
+            pendingPaseSalida: resultado.allClosed
+              ? {
+                  recepcion: selectedRecepcion,
+                  detalle: { ...selectedCarga, ...resultado, id_detalle_recepcion: idDet },
+                }
+              : null,
           });
-
-          // Si todos los detalles del viaje cerraron pesada → Levantar modal para Observaciones de Pase de Salida
-          if (resultado.allClosed) {
-            setPaseSalidaModal({
-              show: true,
-              recepcion: selectedRecepcion,
-              detalle: { ...selectedCarga, id_detalle_recepcion: idDet },
-            });
-          }
         }
       }
     } catch (error: any) {
@@ -213,30 +227,57 @@ export default function BasculaEntradaPage() {
     }
   };
 
+  const handleCloseImpresionPostPesada = () => {
+    const pending = impresionPostPesadaModal.pendingPaseSalida;
+    setImpresionPostPesadaModal({
+      show: false,
+      tipo: "primera",
+      idDetalle: null,
+      recepcion: null,
+      carga: null,
+      pendingPaseSalida: null,
+    });
+    if (pending) {
+      setPaseSalidaModal({
+        show: true,
+        recepcion: pending.recepcion,
+        detalle: pending.detalle,
+      });
+    }
+  };
+
   const handleConfirmPaseSalida = async (observaciones: string) => {
     if (!paseSalidaModal.detalle) return;
     const idDet = paseSalidaModal.detalle.id_detalle_recepcion;
+    const rec = paseSalidaModal.recepcion;
+    const det = paseSalidaModal.detalle;
     try {
       setSubmitting(true);
       if (observaciones && observaciones.trim().length > 0) {
         await actualizarObservacionesDetalleApi(idDet, observaciones.trim());
       }
-      const base = import.meta.env.BASE_URL;
-      imprimirMatricialPaseSalida(idDet).then((res) => {
-        if (res.success) {
-          toast.success(`🖨️ ${res.message}`);
-        } else if (res.fallbackNeeded) {
-          window.open(`${base}print/pase-salida/${idDet}`, "_blank");
-        }
-      });
       setPaseSalidaModal({ show: false, recepcion: null, detalle: null });
+      setImpresionPostPesadaModal({
+        show: true,
+        tipo: "pase_salida",
+        idDetalle: idDet,
+        recepcion: rec,
+        carga: det,
+        pendingPaseSalida: null,
+      });
       loadData();
     } catch (err: any) {
       console.error("Error al guardar observaciones del pase de salida:", err);
-      toast.error("Error al registrar observaciones, emitiendo pase...");
-      const base = import.meta.env.BASE_URL;
-      window.open(`${base}print/pase-salida/${idDet}`, "_blank");
+      toast.error("Error al registrar observaciones, seleccione dónde imprimir el pase...");
       setPaseSalidaModal({ show: false, recepcion: null, detalle: null });
+      setImpresionPostPesadaModal({
+        show: true,
+        tipo: "pase_salida",
+        idDetalle: idDet,
+        recepcion: rec,
+        carga: det,
+        pendingPaseSalida: null,
+      });
     } finally {
       setSubmitting(false);
     }
@@ -377,6 +418,15 @@ export default function BasculaEntradaPage() {
         submitting={submitting}
         onClose={() => setPaseSalidaModal({ show: false, recepcion: null, detalle: null })}
         onConfirm={handleConfirmPaseSalida}
+      />
+
+      <ModalElegirImpresionPesada
+        show={impresionPostPesadaModal.show}
+        tipo={impresionPostPesadaModal.tipo}
+        idDetalle={impresionPostPesadaModal.idDetalle}
+        recepcion={impresionPostPesadaModal.recepcion}
+        carga={impresionPostPesadaModal.carga}
+        onClose={handleCloseImpresionPostPesada}
       />
     </div>
   );
